@@ -99,7 +99,15 @@
       if (MEDIA.videos?.length){
         const h = document.createElement('h3'); h.textContent = 'Videos'; vGroup.before(h);
         MEDIA.videos.forEach((v,i)=>{
-          const b=document.createElement('button'); b.textContent=v.title||`Video ${i+1}`; b.onclick=()=>playMedia('video', v); vGroup.appendChild(b);
+          const b=document.createElement('button');
+          const title = v.title || `Video ${i+1}`;
+          // Add a YouTube label if this item uses YouTube
+          if (v.youtubeId) { b.innerHTML = title + ' · <small>YouTube</small>'; }
+          else { b.textContent = title; }
+          b.onclick=()=>playMedia('video', v);
+          vGroup.appendChild(b);
+        });
+      }`; b.onclick=()=>playMedia('video', v); vGroup.appendChild(b);
         });
       }
       if (MEDIA.photos?.length){
@@ -112,6 +120,14 @@
 
     // ===== Scene control =====
     async function playMedia(type, item){
+      // If this is a YouTube item, open in a new tab (best for Quest/phones) and keep menu
+      if (type==='video' && item.youtubeId){
+        const id = item.youtubeId.trim();
+        const url = `https://www.youtube.com/watch?v=${id}&vr=1`;
+        window.open(url, '_blank');
+        return; // do not hide menu / alter scene
+      }
+
       clearHotspots();
       infoPanel.style.display='none';
       menu.style.display='none';
@@ -233,5 +249,8 @@
     loadMenu();
     // After menu loads, enable Start Tour
     setTimeout(wireStartButton, 50);
+
+    // Tip: To add a YouTube video, put an entry in assets/media.json like:
+    // { "title": "My VR Clip", "youtubeId": "VIDEO_ID_HERE" }
   </script></body>
 </html>
