@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,6 @@
     :root { --gold:#ffd700; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
-    /* Entry gate */
     .gate{position:fixed;inset:0;display:grid;place-items:center;
       background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92));z-index:10;}
     .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;
@@ -25,7 +25,6 @@
       border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer;}
     .btn-primary:hover{filter:brightness(1.15);}
 
-    /* Brand */
     .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9;}
     .brandimg{width:32px;height:32px;object-fit:contain;border-radius:8px;background:#000;
       box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
@@ -35,14 +34,12 @@
   </style>
 </head>
 <body>
-  <!-- Branding -->
   <div class="topright">
     <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
     <div class="brand">VLIFE</div>
   </div>
   <div class="badge">Hybrid VR MVP · 360° Links</div>
 
-  <!-- Entry -->
   <div class="gate" id="gate">
     <div class="gate-inner">
       <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
@@ -53,19 +50,15 @@
     </div>
   </div>
 
-  <!-- Scene -->
   <a-scene renderer="alpha:true antialias:true" background="color:#000">
     <!-- Camera rig -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls wasd-controls-enabled="false" position="0 1.6 0"
                 cursor="fuse:true; fuseTimeout:900; rayOrigin:entity"
                 raycaster="objects: .clickable; far: 100; interval: 0">
-        <!-- Gaze cursor -->
-        <a-entity position="0 0 -1"
-          geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-          material="shader:flat; opacity:0.9"></a-entity>
+        <a-entity position="0 0 -1" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
+                  material="shader:flat; opacity:0.9"></a-entity>
 
-        <!-- Skins toggle orb (left side so it never hides behind the panel) -->
         <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
           <a-entity geometry="primitive:sphere; radius:0.12"
                     material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
@@ -73,12 +66,11 @@
             text="value:Skins; align:center; width:1.4; color:#ffd700; side:double"></a-entity>
         </a-entity>
 
-        <!-- Look-down Reset (appears after ~1.5s looking down) -->
         <a-entity id="resetGroup" position="0 -0.9 -0.7" visible="false">
           <a-entity id="resetOrb" class="clickable"
             geometry="primitive:sphere; radius:0.18"
             material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.6; opacity:0.95"
-            animation__glow="property=material.emissiveIntensity; dir=alternate; dur=1600; from:0.4; to:1; loop:true">
+            animation__glow="property=material.emissiveIntensity; dir=alternate; dur:1600; from:0.4; to:1; loop:true">
           </a-entity>
           <a-entity id="resetLabel" position="0 0.34 0"
             billboard-label
@@ -87,16 +79,16 @@
         </a-entity>
       </a-entity>
 
-      <!-- Controller lasers for Quest -->
       <a-entity laser-controls="hand: right"></a-entity>
       <a-entity laser-controls="hand: left"></a-entity>
     </a-entity>
 
-    <!-- World -->
     <a-entity id="photoScene">
-      <a-sky id="sky" color="#0b0d13"></a-sky>
+      <!-- Dual skies for crossfade -->
+      <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
+      <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
-      <!-- Centered skins panel (nudged out so its cone is smaller) -->
+      <!-- Skin panel -->
       <a-entity id="skinPanel" position="0 1.55 -2.7" rotation="0 0 0" visible="false">
         <a-entity geometry="primitive:plane; width:1.8; height:1.02"
                   material="color:#10131a; opacity:0.95"></a-entity>
@@ -105,7 +97,6 @@
         <a-entity id="skinStatus" position="0 0.32 0.01"
           text="value:; align:center; width:2.2; color:#cfd3dc"></a-entity>
 
-        <!-- Buttons grid -->
         <a-entity id="btn0" position="-0.55 0.10 0.02"></a-entity>
         <a-entity id="btn1" position="0 0.10 0.02"></a-entity>
         <a-entity id="btn2" position="0.55 0.10 0.02"></a-entity>
@@ -114,11 +105,9 @@
         <a-entity id="btn5" position="0.55 -0.30 0.02"></a-entity>
       </a-entity>
 
-      <!-- Orb ring -->
       <a-entity id="orbRing"></a-entity>
     </a-entity>
 
-    <!-- Lights -->
     <a-entity id="keyLight" light="type:point; intensity:0.8; distance:12" position="0 3 0"></a-entity>
     <a-entity id="ambLight" light="type:ambient; intensity:0.4; color:#ffffff"></a-entity>
   </a-scene>
@@ -165,10 +154,11 @@
       }
     });
 
-    /* ---------- Helpers ---------- */
+    /* ---------- Helpers & State ---------- */
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
-    const sky  = $('#sky');
+    const skyA = $('#skyA');
+    const skyB = $('#skyB');
     const keyLight = $('#keyLight');
     const ambLight = $('#ambLight');
     const skinPanel = $('#skinPanel');
@@ -176,14 +166,13 @@
     const orbRing = $('#orbRing');
     const skinStatus = $('#skinStatus');
 
-    // Fallback data (used if JSON missing)
     const DEFAULT_SKINS = [
-      { name:'Night Sky', img:'assets/nightsky.jpg',    fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.80 },
-      { name:'Lake & Forest', img:'assets/lake_forest.jpg', fallback:'#1b2a24', ambient:'#cfead7', ambInt:0.45, keyInt:0.85 },
-      { name:'City', img:'assets/city.jpg', fallback:'#1e2024', ambient:'#d0d3da', ambInt:0.42, keyInt:0.90 },
-      { name:'Village', img:'assets/village.jpg', fallback:'#2a2a1f', ambient:'#ffe8c2', ambInt:0.50, keyInt:0.80 },
-      { name:'Balloons', img:'assets/balloons.jpg', fallback:'#172235', ambient:'#cfe2ff', ambInt:0.48, keyInt:0.85 },
-      { name:'Graphite', img:'', fallback:'#111316', ambient:'#d0d0d0', ambInt:0.38, keyInt:0.90 }
+      { name:'Night Sky', img:'assets/nightsky.jpg',    fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.80, audio:{src:'assets/night.mp3',   volume:0.55} },
+      { name:'Lake & Forest', img:'assets/lake_forest.jpg', fallback:'#1b2a24', ambient:'#cfead7', ambInt:0.45, keyInt:0.85, audio:{src:'assets/lake.mp3',    volume:0.50} },
+      { name:'City', img:'assets/city.jpg', fallback:'#1e2024', ambient:'#d0d3da', ambInt:0.42, keyInt:0.90, audio:{src:'assets/city.mp3',    volume:0.55} },
+      { name:'Village', img:'assets/village.jpg', fallback:'#2a2a1f', ambient:'#ffe8c2', ambInt:0.50, keyInt:0.80, audio:{src:'assets/village.mp3', volume:0.50} },
+      { name:'Balloons', img:'assets/balloons.jpg', fallback:'#172235', ambient:'#cfe2ff', ambInt:0.48, keyInt:0.85, audio:{src:'assets/balloons.mp3',volume:0.55} },
+      { name:'Graphite', img:'', fallback:'#111316', ambient:'#d0d0d0', ambInt:0.38, keyInt:0.90, audio:{src:'', volume:0.0} }
     ];
     const DEFAULT_LINKS = [
       {title:'360Cities', url:'https://www.360cities.net/'},
@@ -193,45 +182,119 @@
       {title:'Meta Quest TV', url:'https://www.meta.com/quest/tv/'},
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
+    const DEFAULT_TRANSITIONS = { skyMs: 1200, audioMs: 1200 };
 
     let SKINS = DEFAULT_SKINS;
     let LINKS = DEFAULT_LINKS;
+    let TRANS = DEFAULT_TRANSITIONS;
     let skinIndex = 0;
 
-    async function loadJSON(url){
-      try{
-        const res = await fetch(url, {cache:'no-store'});
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        return await res.json();
-      }catch(e){ return null; }
-    }
+    // Two audio elements for crossfade
+    let audioA = new Audio(); audioA.loop = true; audioA.preload = 'auto';
+    let audioB = new Audio(); audioB.loop = true; audioB.preload = 'auto';
+    let usingA = true; // which one is currently foreground
 
+    async function loadJSON(url){
+      try{ const res = await fetch(url, {cache:'no-store'}); if(!res.ok) throw 0; return await res.json(); }
+      catch{ return null; }
+    }
     async function loadData(){
       const media = await loadJSON('assets/media.json');
-      if(media && Array.isArray(media.skins)) SKINS = media.skins;
-
+      if (media?.skins) SKINS = media.skins;
+      if (media?.transitions) TRANS = {...DEFAULT_TRANSITIONS, ...media.transitions};
       const scenes = await loadJSON('assets/scenes.json');
-      if(scenes && Array.isArray(scenes.links)) LINKS = scenes.links;
+      if (scenes?.links) LINKS = scenes.links;
     }
 
     async function imageExists(url){
       try{ const res = await fetch(url, {method:'HEAD', cache:'no-store'}); return res.ok; }
-      catch(_){ return false; }
+      catch{ return false; }
     }
 
-    async function applySkin(i){
+    function lerp(a,b,t){ return a + (b-a)*t; }
+
+    // --- Crossfade SKY (dual <a-sky>)
+    async function fadeToSkin(i){
       const s = SKINS[i % SKINS.length];
+      const skyMs = TRANS.skyMs;
       skinIndex = i % SKINS.length;
+
+      // Lights immediately (or you can animate these too)
       ambLight.setAttribute('light', `type:ambient; intensity:${s.ambInt}; color:${s.ambient}`);
       keyLight.setAttribute('light', `type:point; intensity:${s.keyInt}; distance:12; color:#ffffff`);
+
+      // Prepare target sky
+      const front = usingA ? skyB : skyA;   // the one that will fade IN
+      const back  = usingA ? skyA : skyB;   // the one that will fade OUT
+
       if (s.img && await imageExists(s.img)){
-        sky.removeAttribute('color'); sky.setAttribute('src', s.img); sky.setAttribute('rotation', '0 -90 0');
+        front.removeAttribute('color');
+        front.setAttribute('src', s.img);
+        front.setAttribute('rotation','0 -90 0');
         skinStatus.setAttribute('text', `value:Using 360 image: ${s.name}; color:#a8f0b0; align:center; width:2.6`);
       } else {
-        sky.removeAttribute('src'); sky.setAttribute('color', s.fallback || '#10131a');
+        front.removeAttribute('src');
+        front.setAttribute('color', s.fallback || '#10131a');
         skinStatus.setAttribute('text', `value:Image not found, using color: ${s.name}; color:#ffcc88; align:center; width:2.6`);
       }
-      highlightSkinButton(skinIndex);
+
+      // Start crossfade
+      front.setAttribute('visible', true);
+      const start = performance.now();
+      function step(t){
+        const k = Math.min(1, (t - start) / skyMs);
+        const fo = k;         // fade-in opacity
+        const bo = 1 - k;     // fade-out opacity
+        front.setAttribute('material', `opacity:${fo}; transparent:true`);
+        back .setAttribute('material', `opacity:${bo}; transparent:true`);
+        if (k < 1) requestAnimationFrame(step);
+        else {
+          back.setAttribute('visible', false);
+          usingA = !usingA;  // swap roles
+        }
+      }
+      requestAnimationFrame(step);
+
+      // Audio crossfade
+      crossfadeAudio(s.audio?.src || '', s.audio?.volume ?? 0, TRANS.audioMs);
+    }
+
+    // --- Crossfade AUDIO (two <audio> tags)
+    function crossfadeAudio(newSrc, targetVol, ms){
+      const fadeOut = usingA ? audioA : audioB;
+      const fadeIn  = usingA ? audioB : audioA;
+
+      // ensure playback (after user gesture on Enter)
+      try { fadeOut.play().catch(()=>{}); fadeIn.play().catch(()=>{}); } catch {}
+
+      // load new source into the fadeIn channel if changed
+      if (newSrc && fadeIn.src !== location.origin + '/' + newSrc && fadeIn.src !== newSrc){
+        fadeIn.src = newSrc;
+      }
+      if (!newSrc){ fadeIn.removeAttribute?.('src'); fadeIn.src=''; }
+
+      // start fadeIn if it has a source
+      if (newSrc) {
+        fadeIn.volume = 0;
+        fadeIn.play().catch(()=>{});
+      }
+
+      const startVolOut = fadeOut.volume || 0;
+      const endVolOut   = 0;
+      const endVolIn    = targetVol;
+
+      const t0 = performance.now();
+      function step(t){
+        const k = Math.min(1, (t - t0) / ms);
+        fadeOut.volume = lerp(startVolOut, endVolOut, k);
+        fadeIn.volume  = lerp(0, endVolIn, k);
+        if (k < 1) requestAnimationFrame(step);
+        else {
+          fadeOut.pause(); // silence + pause the old track
+          // keep fadeIn playing at its target volume
+        }
+      }
+      requestAnimationFrame(step);
     }
 
     function buildSkinPanel(){
@@ -242,45 +305,40 @@
         const bg = document.createElement('a-entity');
         bg.setAttribute('geometry','primitive:plane; width:0.62; height:0.24');
         bg.setAttribute('material','color:#161a22; opacity:0.95');
-        bg.setAttribute('class','clickable');
-        bg.addEventListener('click', ()=>applySkin(idx));
-        bg.addEventListener('pointerdown', ()=>applySkin(idx));
-        bg.addEventListener('touchend', ()=>applySkin(idx), {passive:true});
+        bg.classList.add('clickable');
+        const choose = ()=>fadeToSkin(idx);
+        bg.addEventListener('click', choose);
+        bg.addEventListener('pointerdown', choose);
+        bg.addEventListener('touchend', choose, {passive:true});
         const label = document.createElement('a-entity');
         label.setAttribute('position','0 0 0.01');
         label.setAttribute('billboard-label','');
         label.setAttribute('text',`value:${(SKINS[idx]||{}).name||''}; align:center; width:1.8; color:#dfe3ea; side:double`);
         slot.appendChild(bg); slot.appendChild(label);
-        slot.dataset.bgId = `${id}-bg`; bg.setAttribute('id', slot.dataset.bgId);
         slot.setAttribute('event-set__enter','_event:mouseenter; scale:1.07 1.07 1.07');
         slot.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
       });
       highlightSkinButton(skinIndex);
     }
-
     function highlightSkinButton(activeIdx){
       ['btn0','btn1','btn2','btn3','btn4','btn5'].forEach((id, idx)=>{
         const slot = document.getElementById(id);
-        const bg = document.getElementById(slot.dataset.bgId);
-        if (!bg) return;
+        if (!slot) return;
         if (idx === activeIdx){
-          bg.setAttribute('material','color:#2b2f3a; opacity:0.98');
           slot.setAttribute('animation__pulse','property=scale; dir=alternate; dur:900; to:1.05 1.05 1.05; loop:true');
         } else {
-          bg.setAttribute('material','color:#161a22; opacity:0.95');
           slot.removeAttribute('animation__pulse');
           slot.setAttribute('scale','1 1 1');
         }
       });
     }
 
-    // fuse-safe opener
+    // links ring (centered 110° gap; edge-hug placement)
     function openURL(url){
       const a = document.createElement('a');
       a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.style.display = 'none';
       document.body.appendChild(a); a.click(); a.remove();
     }
-
     function makeOrb(title, url){
       const group = document.createElement('a-entity');
       const orb = document.createElement('a-entity');
@@ -302,67 +360,58 @@
       group.appendChild(orb); group.appendChild(label);
       return group;
     }
-
-    // Ring with centered 110° front gap; first/last orbs near gap edges (no big empty space)
     function buildOrbRing(containerId, items, radius = 4.0, y = 1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
       const n = items.length;
-
-      const FRONT_GAP_DEG = 110;                     // front window for panel
-      const HALF_GAP = THREE.MathUtils.degToRad(FRONT_GAP_DEG / 2);
-      const span = (Math.PI * 2) - (HALF_GAP * 2);   // usable arc outside the gap
-      const EDGE = THREE.MathUtils.degToRad(8);      // margin from each gap edge
-
-      if (n === 1) {                                 // single-orb guard
+      const FRONT_GAP_DEG = 110, HALF_GAP = THREE.MathUtils.degToRad(FRONT_GAP_DEG / 2);
+      const span = (Math.PI * 2) - (HALF_GAP * 2);
+      const EDGE = THREE.MathUtils.degToRad(8);
+      if (n === 1) {
         const g = makeOrb(items[0].title, items[0].url);
         g.setAttribute('position', `0 ${y} ${-radius}`);
         g.setAttribute('rotation', `0 180 0`);
-        ring.appendChild(g);
-        return;
+        ring.appendChild(g); return;
       }
-
       const step = (span - 2 * EDGE) / (n - 1);
       for (let i = 0; i < n; i++) {
-        // angles distributed from left edge (-span/2+EDGE) to right edge (+span/2-EDGE)
         const t = -span / 2 + EDGE + i * step;
-        const x = Math.cos(t) * radius;
-        const z = -Math.sin(t) * radius;
+        const x = Math.cos(t) * radius, z = -Math.sin(t) * radius;
         const yawDeg = (Math.atan2(-x, -z) * 180 / Math.PI);
-
-        const group = makeOrb(items[i].title, items[i].url);
-        group.setAttribute('position', `${x} ${y} ${z}`);
-        group.setAttribute('rotation', `0 ${yawDeg} 0`);
-        ring.appendChild(group);
+        const g = makeOrb(items[i].title, items[i].url);
+        g.setAttribute('position', `${x} ${y} ${z}`);
+        g.setAttribute('rotation', `0 ${yawDeg} 0`);
+        ring.appendChild(g);
       }
     }
 
     /* ---------- Wire-up ---------- */
-    document.getElementById('enterBtn').addEventListener('click', async ()=>{
-      gate.style.display = 'none';
-
-      await loadData();                // load media.json + scenes.json
+    async function init(){
+      await loadData();
       buildSkinPanel();
-      await applySkin(skinIndex);
+      // initial skin (sets lights + fades sky/audio in place)
+      await fadeToSkin(skinIndex);
       buildOrbRing('orbRing', LINKS);
-
-      // Look-down watcher
       document.getElementById('camera').setAttribute('lookdown-reset','hold:1500; thresholdY:-0.3');
-
-      // Show toggle and open panel (ring remains clickable)
       skinsToggle.setAttribute('visible', true);
       skinPanel.setAttribute('visible', true);
+    }
+
+    document.getElementById('enterBtn').addEventListener('click', ()=>{
+      gate.style.display = 'none';
+      // start audio context by playing silent start to satisfy gesture policies
+      try { audioA.muted = true; audioA.play().finally(()=>{ audioA.pause(); audioA.muted=false; }); } catch {}
+      try { audioB.muted = true; audioB.play().finally(()=>{ audioB.pause(); audioB.muted=false; }); } catch {}
+      init();
     });
 
-    // Toggle panel (ring stays clickable)
     skinsToggle.addEventListener('click', ()=>{
       skinPanel.setAttribute('visible', !skinPanel.getAttribute('visible'));
     });
 
-    // Reset: soft rebuild
-    document.getElementById('resetOrb').addEventListener('click', async ()=>{
+    document.getElementById('resetOrb')?.addEventListener('click', async ()=>{
       buildOrbRing('orbRing', LINKS);
-      await applySkin(skinIndex);
+      await fadeToSkin(skinIndex);
     });
   </script>
 </body>
