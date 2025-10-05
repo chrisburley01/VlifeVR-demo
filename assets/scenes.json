@@ -1,10 +1,10 @@
-// Replace the whole enterBtn click block with this
-$('#enterBtn').addEventListener('click', () => {
-  const tour = manifest?.youtube?.url;
-  if (tour) {
-    try { window.open(tour, '_blank', 'noopener'); } catch (e) { /* popup blocked is fine */ }
-  }
-  // Always proceed into the experience
-  gate.style.display = 'none';
-  startPlayback();
-});
+{
+  "links": [
+    { "title": "360Cities",            "url": "https://www.360cities.net/" },
+    { "title": "YouTube VR Channel",   "url": "https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ" },
+    { "title": "YouTube 360 Playlist", "url": "https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O" },
+    { "title": "Vimeo 360",            "url": "https://vimeo.com/channels/360videos" },
+    { "title": "Meta Quest TV",        "url": "https://www.meta.com/quest/tv/" },
+    { "title": "AirPano",              "url": "https://www.airpano.com/" }
+  ]
+}
