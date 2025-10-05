@@ -1,100 +1,23 @@
 {
-  "videos": [],
-  "photos": [
-    {
-      "id": "scene1",
-      "title": "Warehouse Entrance",
-      "file": "SAM_100_0332.jpg",
-      "hotspots": [
-        {
-          "type": "info",
-          "text": "Welcome to Vlife VR! This is the warehouse entrance scene. Look around or tap the gold orb for more.",
-          "yaw": 0,
-          "pitch": -5,
-          "radius": 2.5,
-          "autoHide": 5000
-        },
-        {
-          "type": "link",
-          "target": "SAM_100_0333.jpg",
-          "yaw": 30,
-          "pitch": -2,
-          "radius": 2.3
-        }
-      ]
-    },
-    {
-      "id": "scene2",
-      "title": "Inside Warehouse",
-      "file": "SAM_100_0333.jpg",
-      "hotspots": [
-        {
-          "type": "info",
-          "text": "You are now inside the warehouse — move deeper or return to entrance.",
-          "yaw": 10,
-          "pitch": -3,
-          "radius": 2.5,
-          "autoHide": 4000
-        },
-        {
-          "type": "link",
-          "target": "SAM_100_0334.jpg",
-          "yaw": -25,
-          "pitch": -4,
-          "radius": 2.4
-        },
-        {
-          "type": "link",
-          "target": "SAM_100_0332.jpg",
-          "yaw": 180,
-          "pitch": 0,
-          "radius": 2.5
-        }
-      ]
-    },
-    {
-      "id": "scene3",
-      "title": "Packing Zone",
-      "file": "SAM_100_0334.jpg",
-      "hotspots": [
-        {
-          "type": "info",
-          "text": "This is the packing zone — efficiency meets automation.",
-          "yaw": -15,
-          "pitch": 0,
-          "radius": 2.4,
-          "autoHide": 4000
-        },
-        {
-          "type": "link",
-          "target": "SAM_100_0337.jpg",
-          "yaw": 45,
-          "pitch": -3,
-          "radius": 2.5
-        }
-      ]
-    },
-    {
-      "id": "scene4",
-      "title": "Loading Bay",
-      "file": "SAM_100_0337.jpg",
-      "hotspots": [
-        {
-          "type": "info",
-          "text": "Final loading bay — trucks ready for dispatch!",
-          "yaw": 0,
-          "pitch": -5,
-          "radius": 2.5,
-          "autoHide": 4000
-        },
-        {
-          "type": "link",
-          "target": "SAM_100_0332.jpg",
-          "yaw": -160,
-          "pitch": 0,
-          "radius": 2.3
-        }
-      ]
-    }
-  ]
+  "youtube": {
+    "url": ""
+  },
+  "video": {
+    "src": "assets/your-video.mp4",
+    "skipTimes": [30, 60],
+    "primaryJumpSec": 30
+  },
+  "photo": {
+    "src": "assets/your-photo.jpg"
+  },
+  "linkOut": {
+    "url": "https://chrisburley01.github.io/"
+  },
+  "orbRing": {
+    "count": 10,
+    "radius": 3.2,
+    "y": 1.2,
+    "linkBase": "https://vlife.example/learn",
+    "jumpEvery": 12
+  }
 }
