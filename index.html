@@ -39,6 +39,7 @@
   </div>  <div class="menu" id="menu">
     <img src="assets/Vlifelogo_1_.png" style="width:140px;height:auto;filter:drop-shadow(0 0 15px rgba(255,215,0,.2));">
     <h1>Select Experience</h1>
+    <button id="startBtn">Start Tour ▶</button>
     <div id="videoGroup" class="row"></div>
     <div id="photoGroup" class="row"></div>
   </div><button id="backBtn" class="backBtn">← Back to Menu</button>
@@ -215,6 +216,22 @@
     document.getElementById('midBtn').onclick = ()=>{
       const v=document.getElementById('dynamicVideo'); if (v){ v.currentTime=30; v.play(); }};
 
+    function wireStartButton(){
+      const btn = document.getElementById('startBtn');
+      if (!btn) return;
+      if (MEDIA.photos && MEDIA.photos.length){
+        btn.style.display = 'inline-block';
+        btn.onclick = ()=> playMedia('photo', MEDIA.photos[0]);
+      } else if (MEDIA.videos && MEDIA.videos.length){
+        btn.style.display = 'inline-block';
+        btn.onclick = ()=> playMedia('video', MEDIA.videos[0]);
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+
     loadMenu();
+    // After menu loads, enable Start Tour
+    setTimeout(wireStartButton, 50);
   </script></body>
 </html>
