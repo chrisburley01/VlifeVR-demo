@@ -1,10 +1,14 @@
 {
   "videos": [
-    {"title": "Warehouse Tour", "file": "warehouse.mp4"},
-    {"title": "Luxury Yacht", "file": "yacht.mp4"}
+    {
+      "title": "Sample 360 Video",
+      "file": "your-video.mp4"
+    }
   ],
   "photos": [
-    {"title": "Mountain Cabin", "file": "cabin.jpg"},
-    {"title": "Beach Sunset", "file": "beach.jpg"}
+    {
+      "title": "Warehouse Interior",
+      "file": "SAM_100_0227.jpg"
+    }
   ]
 }
