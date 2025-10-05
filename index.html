@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,15 +12,7 @@
     :root { --gold:#ffd700; --bg:#0b0b0f; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
-    /* Overlays */
-    .hud { position:fixed; inset:auto 16px 16px 16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; z-index:9; }
-    .btn { border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)); color:var(--text);
-           padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);}
-    .btn:hover{ border-color:var(--gold); color:var(--gold);}
-    .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45);
-             padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9;}
-
-    /* Entry gate */
+    /* Overlay and gate */
     .gate { position:fixed; inset:0; display:grid; place-items:center;
             background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.05),rgba(0,0,0,.9)); z-index:10;}
     .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px;
@@ -29,40 +22,38 @@
                  filter:drop-shadow(0 8px 24px rgba(255,215,0,.18));}
     .gate h1 { margin:6px 0 8px; font-size:22px;}
     .gate p { margin:0 0 16px; color:#c8c8d2;}
-    .btn-primary { background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;}
+    .btn-primary { background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;
+                   border-radius:12px; padding:10px 18px; font-weight:600; cursor:pointer;}
+    .btn-primary:hover { filter:brightness(1.15); }
 
-    /* Brand top-right */
     .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9;}
     .brandimg { width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000;
                 box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
     .brand { color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4);}
+    .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45);
+             padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9;}
   </style>
 </head>
 <body>
-  <!-- Top branding -->
+  <!-- Top -->
   <div class="topright">
     <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
     <div class="brand">VLIFE</div>
   </div>
-  <div class="badge">Hybrid VR MVP · A-Frame · 360° ready</div>
+  <div class="badge">Hybrid VR MVP · A-Frame · Interactive Links</div>
 
-  <!-- Entry overlay -->
+  <!-- Entry gate -->
   <div class="gate" id="gate">
     <div class="gate-inner">
       <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
       <h1>Enter Vlife</h1>
-      <p>Immersive 360° experience.<br>Works in browser, mobile, and Meta Quest.<br>For best quality, use a headset.</p>
-      <button class="btn btn-primary" id="enterBtn">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around. Gaze at gold orbs to interact.</p>
+      <p>Immersive 360° experience.<br>Works on browser, mobile, and Meta Quest.<br>For best quality, use a headset.</p>
+      <button class="btn-primary" id="enterBtn">Enter Experience</button>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around and gaze at gold orbs to interact.</p>
     </div>
   </div>
 
-  <!-- HUD -->
-  <div class="hud">
-    <button class="btn" id="scenePhotoBtn">Scene: Sky</button>
-  </div>
-
-  <!-- VR scene -->
+  <!-- VR Scene -->
   <a-scene renderer="alpha:true antialias:true" background="color:#000">
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls position="0 1.6 0"
@@ -74,31 +65,30 @@
       </a-entity>
     </a-entity>
 
-    <!-- Default photo scene -->
     <a-entity id="photoScene">
-      <a-sky color="#10131a"></a-sky>
+      <a-sky color="#0c0f15"></a-sky>
       <a-entity position="0 1.6 -2">
-        <a-entity geometry="primitive:plane; width:1.8; height:.9" material="color:#14151a; opacity:0.95"></a-entity>
+        <a-entity geometry="primitive:plane; width:1.8; height:.9"
+                  material="color:#14151a; opacity:0.95"></a-entity>
         <a-entity position="0 0 0.01"
-          text="value: Welcome to Vlife — hybrid VR demo. Click orbs to open links.; align:center; width:2.4; color:#ffd700"></a-entity>
+          text="value: Welcome to Vlife — click orbs to explore links.; align:center; width:2.4; color:#ffd700"></a-entity>
       </a-entity>
       <a-entity id="orbRing"></a-entity>
     </a-entity>
 
-    <a-entity light="type:point; intensity:0.6; distance:12" position="1 2 -2"></a-entity>
-    <a-entity light="type:ambient; intensity:0.35"></a-entity>
+    <a-entity light="type:point; intensity:0.7; distance:10" position="0 3 0"></a-entity>
+    <a-entity light="type:ambient; intensity:0.4"></a-entity>
   </a-scene>
 
   <script>
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
 
-    // simple set of default orbs (links)
     const links = [
-      {title:'Vlife Hub', url:'https://chrisburley01.github.io/'},
+      {title:'Walkers Transport', url:'https://www.walkers-transport.co.uk/'},
       {title:'YouTube', url:'https://youtube.com'},
       {title:'GitHub', url:'https://github.com/chrisburley01'},
-      {title:'Walkers', url:'https://www.walkers-transport.co.uk'},
+      {title:'Vlife Hub', url:'https://chrisburley01.github.io/'},
       {title:'WhatsApp', url:'https://wa.me/447464498838'},
       {title:'LinkedIn', url:'https://www.linkedin.com/in/chris-burley/'}
     ];
@@ -111,20 +101,28 @@
         const angle = (i/n)*Math.PI*2;
         const x = Math.cos(angle)*radius;
         const z = -Math.sin(angle)*radius;
+
+        const orbGroup = document.createElement('a-entity');
+        orbGroup.setAttribute('position', `${x} ${y} ${z}`);
+        orbGroup.setAttribute('look-at', '#camera');
+
+        // Orb itself
         const orb = document.createElement('a-entity');
         orb.setAttribute('class','clickable');
-        orb.setAttribute('geometry','primitive:sphere; radius:0.22');
+        orb.setAttribute('geometry','primitive:sphere; radius:0.25');
         orb.setAttribute('material','color:#ffd700; opacity:0.92');
-        orb.setAttribute('position',`${x} ${y} ${z}`);
-        orb.setAttribute('look-at','#camera');
         orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.3 1.3 1.3');
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
-        const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0.35 0.01');
-        label.setAttribute('text',`value:${items[i].title}; align:center; width:1.6; color:#fff`);
-        orb.appendChild(label);
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
-        ring.appendChild(orb);
+
+        // Label above the orb
+        const label = document.createElement('a-entity');
+        label.setAttribute('position','0 0.45 0');
+        label.setAttribute('text',`value:${items[i].title}; align:center; width:2.2; color:#fff; wrapCount:18`);
+
+        orbGroup.appendChild(orb);
+        orbGroup.appendChild(label);
+        ring.appendChild(orbGroup);
       }
     }
 
