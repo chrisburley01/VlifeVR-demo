@@ -1,0 +1,10 @@
+{
+  "videos": [
+    {"title": "Warehouse Tour", "file": "warehouse.mp4"},
+    {"title": "Luxury Yacht", "file": "yacht.mp4"}
+  ],
+  "photos": [
+    {"title": "Mountain Cabin", "file": "cabin.jpg"},
+    {"title": "Beach Sunset", "file": "beach.jpg"}
+  ]
+}
