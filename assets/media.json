@@ -6,7 +6,8 @@
       "fallback": "#0a0d14",
       "ambient": "#aaccff",
       "ambInt": 0.40,
-      "keyInt": 0.80
+      "keyInt": 0.80,
+      "audio": { "src": "assets/night.mp3", "volume": 0.55 }
     },
     {
       "name": "Lake & Forest",
@@ -14,7 +15,8 @@
       "fallback": "#1b2a24",
       "ambient": "#cfead7",
       "ambInt": 0.45,
-      "keyInt": 0.85
+      "keyInt": 0.85,
+      "audio": { "src": "assets/lake.mp3", "volume": 0.5 }
     },
     {
       "name": "City",
@@ -22,7 +24,8 @@
       "fallback": "#1e2024",
       "ambient": "#d0d3da",
       "ambInt": 0.42,
-      "keyInt": 0.90
+      "keyInt": 0.90,
+      "audio": { "src": "assets/city.mp3", "volume": 0.55 }
     },
     {
       "name": "Village",
@@ -30,7 +33,8 @@
       "fallback": "#2a2a1f",
       "ambient": "#ffe8c2",
       "ambInt": 0.50,
-      "keyInt": 0.80
+      "keyInt": 0.80,
+      "audio": { "src": "assets/village.mp3", "volume": 0.5 }
     },
     {
       "name": "Balloons",
@@ -38,7 +42,8 @@
       "fallback": "#172235",
       "ambient": "#cfe2ff",
       "ambInt": 0.48,
-      "keyInt": 0.85
+      "keyInt": 0.85,
+      "audio": { "src": "assets/balloons.mp3", "volume": 0.55 }
     },
     {
       "name": "Graphite",
@@ -46,7 +51,12 @@
       "fallback": "#111316",
       "ambient": "#d0d0d0",
       "ambInt": 0.38,
-      "keyInt": 0.90
+      "keyInt": 0.90,
+      "audio": { "src": "", "volume": 0.0 }
     }
-  ]
+  ],
+  "transitions": {
+    "skyMs": 1200,
+    "audioMs": 1200
+  }
 }
