@@ -1,23 +1,52 @@
 {
-  "youtube": {
-    "url": ""
-  },
-  "video": {
-    "src": "assets/your-video.mp4",
-    "skipTimes": [30, 60],
-    "primaryJumpSec": 30
-  },
-  "photo": {
-    "src": "assets/your-photo.jpg"
-  },
-  "linkOut": {
-    "url": "https://chrisburley01.github.io/"
-  },
-  "orbRing": {
-    "count": 10,
-    "radius": 3.2,
-    "y": 1.2,
-    "linkBase": "https://vlife.example/learn",
-    "jumpEvery": 12
-  }
+  "skins": [
+    {
+      "name": "Night Sky",
+      "img": "assets/nightsky.jpg",
+      "fallback": "#0a0d14",
+      "ambient": "#aaccff",
+      "ambInt": 0.40,
+      "keyInt": 0.80
+    },
+    {
+      "name": "Lake & Forest",
+      "img": "assets/lake_forest.jpg",
+      "fallback": "#1b2a24",
+      "ambient": "#cfead7",
+      "ambInt": 0.45,
+      "keyInt": 0.85
+    },
+    {
+      "name": "City",
+      "img": "assets/city.jpg",
+      "fallback": "#1e2024",
+      "ambient": "#d0d3da",
+      "ambInt": 0.42,
+      "keyInt": 0.90
+    },
+    {
+      "name": "Village",
+      "img": "assets/village.jpg",
+      "fallback": "#2a2a1f",
+      "ambient": "#ffe8c2",
+      "ambInt": 0.50,
+      "keyInt": 0.80
+    },
+    {
+      "name": "Balloons",
+      "img": "assets/balloons.jpg",
+      "fallback": "#172235",
+      "ambient": "#cfe2ff",
+      "ambInt": 0.48,
+      "keyInt": 0.85
+    },
+    {
+      "name": "Graphite",
+      "img": "",
+      "fallback": "#111316",
+      "ambient": "#d0d0d0",
+      "ambInt": 0.38,
+      "keyInt": 0.90
+    }
+  ]
 }
