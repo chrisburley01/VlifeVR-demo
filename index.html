@@ -32,6 +32,13 @@
     .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.4);}
     .badge{position:fixed;top:12px;left:12px;color:#bdbdc7;font-size:12px;background:rgba(0,0,0,.45);
       padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);z-index:9;}
+
+    /* Tiny HUD for skins */
+    .hud{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:9;display:flex;gap:8px;align-items:center;}
+    .btn{border:1px solid rgba(255,255,255,.22);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+      color:var(--text);padding:8px 10px;border-radius:10px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);font-size:12px;}
+    .btn:hover{border-color:var(--gold);color:var(--gold);}
+    .skin-name{color:#d9d9e0;font-size:12px;opacity:.9;padding:6px 8px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(0,0,0,.35)}
   </style>
 </head>
 <body>
@@ -41,6 +48,13 @@
     <div class="brand">VLIFE</div>
   </div>
   <div class="badge">Hybrid VR MVP · 360° Links</div>
+
+  <!-- Skins HUD -->
+  <div class="hud" id="hud" style="display:none;">
+    <button class="btn" id="prevSkin">◀ Skin</button>
+    <div class="skin-name" id="skinName">Skin</div>
+    <button class="btn" id="nextSkin">Skin ▶</button>
+  </div>
 
   <!-- Entry -->
   <div class="gate" id="gate">
@@ -63,12 +77,25 @@
         <a-entity position="0 0 -1"
           geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
           material="shader:flat; opacity:0.9"></a-entity>
+
+        <!-- LOOK-DOWN RESET ORB (child of camera so it’s always below you) -->
+        <a-entity id="resetGroup" position="0 -0.9 -0.7">
+          <a-entity id="resetOrb" class="clickable"
+            geometry="primitive:sphere; radius:0.18"
+            material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.6; opacity:0.95"
+            animation__glow="property=material.emissiveIntensity; dir=alternate; dur=1600; from:0.4; to:1; loop:true">
+          </a-entity>
+          <a-entity id="resetLabel" position="0 0.34 0"
+            billboard-label
+            text="value:Reset / Refresh; align:center; width:2.6; color:#ffd700; side:double">
+          </a-entity>
+        </a-entity>
       </a-entity>
     </a-entity>
 
-    <!-- Sky scene -->
+    <!-- Sky & ring -->
     <a-entity id="photoScene">
-      <a-sky color="#0b0d13"></a-sky>
+      <a-sky id="sky" color="#0b0d13"></a-sky>
       <a-entity position="0 1.6 -2">
         <a-entity geometry="primitive:plane; width:1.8; height:.9"
                   material="color:#14151a; opacity:0.9"></a-entity>
@@ -78,14 +105,12 @@
       <a-entity id="orbRing"></a-entity>
     </a-entity>
 
-    <a-entity light="type:point; intensity:0.8; distance:10" position="0 3 0"></a-entity>
-    <a-entity light="type:ambient; intensity:0.4"></a-entity>
+    <a-entity id="keyLight" light="type:point; intensity:0.8; distance:10" position="0 3 0"></a-entity>
+    <a-entity id="ambLight" light="type:ambient; intensity:0.4; color:#ffffff"></a-entity>
   </a-scene>
 
   <script>
-    // ---- Robust billboard label (no mirroring / no disappearing) ----
-    // Each frame: aim at camera, apply a constant 180° Y flip via quaternion (not cumulative),
-    // clamp pitch/roll so text stays upright.
+    /* ---------- Robust billboard label (no mirroring / no disappearing) ---------- */
     AFRAME.registerComponent('billboard-label', {
       init: function () {
         this.cam = document.querySelector('#camera');
@@ -97,18 +122,20 @@
         const obj = this.el.object3D;
         const camPos = this.cam.object3D.getWorldPosition(this.tmp);
         obj.lookAt(camPos);
-        // constant Y flip to prevent mirrored canvas text in VR
-        obj.quaternion.multiplyQuaternions(obj.quaternion, this.flipQ);
-        // keep upright
-        obj.rotation.x = 0;
-        obj.rotation.z = 0;
+        obj.quaternion.multiplyQuaternions(obj.quaternion, this.flipQ); // constant Y flip
+        obj.rotation.x = 0; obj.rotation.z = 0; // upright
       }
     });
 
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
+    const hud  = $('#hud');
+    const sky  = $('#sky');
+    const keyLight = $('#keyLight');
+    const ambLight = $('#ambLight');
+    const skinNameEl = $('#skinName');
 
-    // Prioritised 360° / VR links
+    // 360° / VR links
     const links = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
@@ -118,7 +145,27 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
-    // Build ring: groups face centre; labels self-billboard with the component above
+    // Background "skins" (no assets needed). Change colors/lights per skin.
+    const skins = [
+      { name:'Deep Night',   sky:'#0a0d14', ambient:'#9fbfff', ambInt:0.35, keyInt:0.8 },
+      { name:'Blue Twilight',sky:'#0f1a2b', ambient:'#9ecbff', ambInt:0.42, keyInt:0.9 },
+      { name:'Purple Nebula',sky:'#1a1024', ambient:'#ffccff', ambInt:0.45, keyInt:0.85 },
+      { name:'Soft Dawn',    sky:'#2a3442', ambient:'#ffe4b5', ambInt:0.50, keyInt:0.75 },
+      { name:'Graphite',     sky:'#111316', ambient:'#d0d0d0', ambInt:0.38, keyInt:0.9 },
+      { name:'Teal Glow',    sky:'#0e2022', ambient:'#9ef6e2', ambInt:0.48, keyInt:0.8 }
+    ];
+    let skinIndex = 0;
+
+    function applySkin(i){
+      const s = skins[i % skins.length];
+      skinIndex = i % skins.length;
+      sky.setAttribute('color', s.sky);
+      ambLight.setAttribute('light', `type:ambient; intensity:${s.ambInt}; color:${s.ambient}`);
+      keyLight.setAttribute('light', `type:point; intensity:${s.keyInt}; distance:12; color:#ffffff`);
+      skinNameEl.textContent = s.name;
+    }
+
+    // Build orbs ring with labels (uses billboard-label on text)
     function buildOrbRing(containerId, items, radius=3.1, y=1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
@@ -144,10 +191,10 @@
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
 
-        // Label — billboarded via custom component, double-sided, tiny z-offset
+        // Label
         const label = document.createElement('a-entity');
         label.setAttribute('position','0 0.52 0.01');
-        label.setAttribute('billboard-label',''); // <- key piece
+        label.setAttribute('billboard-label',''); // <- key (stable in VR)
         label.setAttribute('text',[
           `value:${items[i].title}`,
           'align:center',
@@ -165,10 +212,29 @@
       }
     }
 
-    // Enter
+    // Wire up
     document.getElementById('enterBtn').addEventListener('click', ()=>{
       gate.style.display='none';
+      hud.style.display='flex';
+      applySkin(skinIndex);
       buildOrbRing('orbRing', links);
+    });
+
+    // HUD skin controls
+    document.getElementById('prevSkin').addEventListener('click', ()=>{
+      applySkin((skinIndex - 1 + skins.length) % skins.length);
+    });
+    document.getElementById('nextSkin').addEventListener('click', ()=>{
+      applySkin((skinIndex + 1) % skins.length);
+    });
+
+    // Reset / Refresh (look down at the golden orb under your feet)
+    document.getElementById('resetOrb').addEventListener('click', ()=>{
+      // Soft reset: rebuild ring + reapply current skin without full page reload
+      buildOrbRing('orbRing', links);
+      applySkin(skinIndex);
+      // If you prefer a hard refresh instead, uncomment:
+      // window.location.reload();
     });
   </script>
 </body>
