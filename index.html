@@ -9,14 +9,29 @@
   <style>
     :root { --gold:#ffd700; --bg:#000; --text:#eee; }
     body { margin:0; background:#000; color:var(--text); font-family:system-ui; overflow:hidden; }
-    .menu { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; text-align:center; z-index:10; }
+
+    /* Menu */
+    .menu { position:fixed; inset:0; background:rgba(0,0,0,0.9);
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
+            text-align:center; z-index:10; }
     .menu img { width:120px; }
-    button { background:rgba(255,255,255,0.1); color:var(--text); border:1px solid rgba(255,255,255,0.2); padding:10px 16px; border-radius:10px; font-size:16px; cursor:pointer; }
+    .menu h1 { margin:0; }
+    button { background:rgba(255,255,255,0.1); color:var(--text); border:1px solid rgba(255,255,255,0.2);
+             padding:10px 16px; border-radius:10px; font-size:16px; cursor:pointer; }
     button:hover { border-color:var(--gold); color:var(--gold); }
-    .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.95); color:var(--text); display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px; z-index:11; }
-    .overlay h2 { color:var(--gold); margin-bottom:10px; }
-    .overlay button { margin-top:20px; }
-    #backBtn { position:fixed; top:12px; left:12px; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:6px 10px; cursor:pointer; z-index:9; display:none; }
+
+    /* How overlay */
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.95); color:var(--text);
+               display:none; align-items:center; justify-content:center; z-index:11; }
+    .overlay .box { max-width:680px; margin:0 18px; padding:22px;
+                    background:rgba(20,20,24,.9); border:1px solid rgba(255,255,255,.2);
+                    border-radius:14px; text-align:center; }
+    .overlay h2 { color:var(--gold); margin-top:0; }
+
+    /* Back button (when a scene is open) */
+    #backBtn { position:fixed; top:12px; left:12px; background:rgba(0,0,0,.6); color:#fff;
+               border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:6px 10px;
+               cursor:pointer; z-index:9; display:none; }
   </style>
 </head>
 <body>
@@ -25,86 +40,14 @@
     <img src="assets/Vlifelogo_1_.png" alt="VLife Logo" />
     <h1>VLife 360° Experience</h1>
     <button id="startBtn" onclick="window.vlifeStart && window.vlifeStart()">Start Tour ▶</button>
-    <button id="howBtn" onclick="window.vlifeHow && window.vlifeHow()">How it Works</button>
+    <button id="howBtn"   onclick="window.vlifeHow && window.vlifeHow()">How it Works</button>
   </div>
 
-  <!-- How overlay -->
-  <div id="howOverlay" class="overlay">
-    <h2>How it Works</h2>
-    <p>🟡 Look around to explore in 360°.<br>
-       🟡 Tap or gaze on gold orbs for info or to move between scenes.<br>
-       🟡 Some experiences open YouTube 360° videos.<br><br>
-       Works best on Meta Quest, phones, or desktop browsers with mouse drag.</p>
-    <button onclick="document.getElementById('howOverlay').style.display='none'">Close ✖</button>
-  </div>
-
-  <button id="backBtn" onclick="backToMenu()">← Back</button>
-
-  <!-- Scene -->
-  <a-scene id="scene" renderer="antialias:true" background="color:#000">
-    <a-assets id="assetsContainer" timeout="30000"></a-assets>
-    <a-entity camera look-controls position="0 1.6 0"></a-entity>
-    <a-videosphere id="videoSphere" visible="false"></a-videosphere>
-    <a-sky id="photoSky" visible="false"></a-sky>
-  </a-scene>
-
-  <script>
-    const menu = document.getElementById('menu');
-    const videoSphere = document.getElementById('videoSphere');
-    const photoSky = document.getElementById('photoSky');
-    const assetsContainer = document.getElementById('assetsContainer');
-    const backBtn = document.getElementById('backBtn');
-    let MEDIA = { videos: [], photos: [] };
-
-    async function loadMenu() {
-      try {
-        const res = await fetch('assets/media.json', { cache: 'no-store' });
-        MEDIA = await res.json();
-        console.log('Loaded media:', MEDIA);
-      } catch (e) {
-        console.error('Error loading media.json', e);
-      }
-    }
-
-    async function playMedia(type, item) {
-      menu.style.display = 'none';
-      backBtn.style.display = 'block';
-
-      if (type === 'video' && item.youtubeId) {
-        const url = `https://www.youtube.com/watch?v=${item.youtubeId}&vr=1`;
-        window.open(url, '_blank');
-        return;
-      }
-
-      if (type === 'photo') {
-        photoSky.setAttribute('src', `assets/${item.file}`);
-        photoSky.setAttribute('visible', true);
-        videoSphere.setAttribute('visible', false);
-      }
-    }
-
-    function backToMenu() {
-      menu.style.display = 'flex';
-      backBtn.style.display = 'none';
-      photoSky.setAttribute('visible', false);
-      videoSphere.setAttribute('visible', false);
-    }
-
-    // Fallback buttons (always work)
-    window.vlifeStart = function () {
-      try {
-        if (MEDIA?.photos?.length) return playMedia('photo', MEDIA.photos[0]);
-        if (MEDIA?.videos?.length) return playMedia('video', MEDIA.videos[0]);
-        alert('No media found. Check /assets/media.json');
-      } catch (e) { console.error(e); alert('Start failed'); }
-    };
-
-    window.vlifeHow = function () {
-      const el = document.getElementById('howOverlay');
-      if (el) el.style.display = 'flex';
-    };
-
-    loadMenu();
-  </script>
-</body>
-</html>
+  <!-- How it Works overlay -->
+  <div id="howOverlay" class="overlay" style="display:none">
+    <div class="box">
+      <h2>How it Works</h2>
+      <p>🟡 Look around to explore in 360°.<br>
+         🟡 Tap or gaze on gold orbs for info or to move between scenes.<br>
+         🟡 Some experiences open YouTube 360° videos.<br><br>
+         Works best on Meta Quest, phones, or desktop browsers
