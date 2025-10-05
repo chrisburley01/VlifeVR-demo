@@ -96,7 +96,7 @@
     <a-entity id="photoScene">
       <a-sky id="sky" color="#0b0d13"></a-sky>
 
-      <!-- Centered skins panel -->
+      <!-- Centered skins panel (nudged out so its cone is smaller) -->
       <a-entity id="skinPanel" position="0 1.55 -2.7" rotation="0 0 0" visible="false">
         <a-entity geometry="primitive:plane; width:1.8; height:1.02"
                   material="color:#10131a; opacity:0.95"></a-entity>
@@ -303,19 +303,29 @@
       return group;
     }
 
-    // EVEN ring with **centered 110° front gap** (no orb behind the panel)
-    function buildOrbRing(containerId, items, radius=4.0, y=1.25) {
+    // Ring with centered 110° front gap; first/last orbs near gap edges (no big empty space)
+    function buildOrbRing(containerId, items, radius = 4.0, y = 1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
       const n = items.length;
 
-      const FRONT_GAP_DEG = 110;                 // widened & centered
+      const FRONT_GAP_DEG = 110;                     // front window for panel
       const HALF_GAP = THREE.MathUtils.degToRad(FRONT_GAP_DEG / 2);
-      const span = (Math.PI * 2) - (HALF_GAP * 2);
+      const span = (Math.PI * 2) - (HALF_GAP * 2);   // usable arc outside the gap
+      const EDGE = THREE.MathUtils.degToRad(8);      // margin from each gap edge
 
+      if (n === 1) {                                 // single-orb guard
+        const g = makeOrb(items[0].title, items[0].url);
+        g.setAttribute('position', `0 ${y} ${-radius}`);
+        g.setAttribute('rotation', `0 180 0`);
+        ring.appendChild(g);
+        return;
+      }
+
+      const step = (span - 2 * EDGE) / (n - 1);
       for (let i = 0; i < n; i++) {
-        // symmetric around forward: -span/2 .. +span/2
-        const t = -span/2 + (i + 0.5) * (span / n);
+        // angles distributed from left edge (-span/2+EDGE) to right edge (+span/2-EDGE)
+        const t = -span / 2 + EDGE + i * step;
         const x = Math.cos(t) * radius;
         const z = -Math.sin(t) * radius;
         const yawDeg = (Math.atan2(-x, -z) * 180 / Math.PI);
@@ -331,7 +341,7 @@
     document.getElementById('enterBtn').addEventListener('click', async ()=>{
       gate.style.display = 'none';
 
-      await loadData();           // ← load JSONs
+      await loadData();                // load media.json + scenes.json
       buildSkinPanel();
       await applySkin(skinIndex);
       buildOrbRing('orbRing', LINKS);
