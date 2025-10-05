@@ -1,6 +1,14 @@
 {
   "videos": [
-    { "title": "VLife YouTube 360 Demo", "youtubeId": "dQw4w9WgXcQ" }
+    {
+      "title": "VLife YouTube 360° Demo",
+      "youtubeId": "dQw4w9WgXcQ"
+    }
   ],
-  "photos": []
+  "photos": [
+    {
+      "title": "Sample 360° Scene",
+      "file": "sample.jpg"
+    }
+  ]
 }
