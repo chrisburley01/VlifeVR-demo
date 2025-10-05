@@ -3,67 +3,67 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vlife – Hybrid VR (No-Assets Demo)</title>
+  <title>Vlife – Hybrid VR Experience</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
   <style>
-    :root { --gold:#ffd700; --text:#e7e7ea; }
+    :root { --gold:#ffd700; --bg:#0b0b0f; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
+
+    /* Overlays */
     .hud { position:fixed; inset:auto 16px 16px 16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; z-index:9; }
     .btn { border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)); color:var(--text);
            padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);}
     .btn:hover{ border-color:var(--gold); color:var(--gold);}
     .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45);
              padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9;}
-    .gate { position:fixed; inset:0; display:grid; place-items:center; background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.05),rgba(0,0,0,.9)); z-index:10;}
+
+    /* Entry gate */
+    .gate { position:fixed; inset:0; display:grid; place-items:center;
+            background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.05),rgba(0,0,0,.9)); z-index:10;}
     .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px;
                   border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text);
                   box-shadow:0 16px 72px rgba(0,0,0,.6);}
+    .gate-logo { width:min(360px,70vw); height:auto; display:block; margin:0 auto 12px;
+                 filter:drop-shadow(0 8px 24px rgba(255,215,0,.18));}
     .gate h1 { margin:6px 0 8px; font-size:22px;}
     .gate p { margin:0 0 16px; color:#c8c8d2;}
     .btn-primary { background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;}
+
+    /* Brand top-right */
     .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9;}
+    .brandimg { width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000;
+                box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
     .brand { color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4);}
-    .warn { color:#ffcccc; display:none; margin-top:8px; font-size:12px; }
   </style>
 </head>
 <body>
-  <!-- Top -->
+  <!-- Top branding -->
   <div class="topright">
-    <img src="assets/Vlifelogo_1_.png" alt="" style="width:32px;height:32px;border-radius:8px;object-fit:contain;background:#000;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset"
-         onerror="this.style.display='none'">
+    <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
     <div class="brand">VLIFE</div>
   </div>
-  <div class="badge">Hybrid VR MVP · Works with no media</div>
+  <div class="badge">Hybrid VR MVP · A-Frame · 360° ready</div>
 
-  <!-- Gate -->
+  <!-- Entry overlay -->
   <div class="gate" id="gate">
     <div class="gate-inner">
+      <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
       <h1>Enter Vlife</h1>
-      <p>No assets detected — loading demo scene with interactive orbs and links.</p>
+      <p>Immersive 360° experience.<br>Works in browser, mobile, and Meta Quest.<br>For best quality, use a headset.</p>
       <button class="btn btn-primary" id="enterBtn">Enter Experience</button>
-      <p class="warn" id="autoWarn">If nothing moves, tap ▶ Play (mobile autoplay rules).</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around. Gaze at gold orbs to interact.</p>
     </div>
   </div>
 
-  <!-- HUD (video buttons hide automatically when no video) -->
-  <div class="hud" id="hud">
-    <button class="btn" id="playBtn">▶ Play</button>
-    <button class="btn" id="pauseBtn">⏸ Pause</button>
-    <button class="btn" id="rewindBtn">↺ 0:00</button>
-    <button class="btn" id="skip1Btn">⇥ 0:30</button>
-    <button class="btn" id="skip2Btn">⇥ 1:00</button>
-    <button class="btn" id="sceneVideoBtn">Scene: Video</button>
+  <!-- HUD -->
+  <div class="hud">
     <button class="btn" id="scenePhotoBtn">Scene: Sky</button>
   </div>
 
-  <!-- Scene -->
+  <!-- VR scene -->
   <a-scene renderer="alpha:true antialias:true" background="color:#000">
-    <a-assets timeout="15000">
-      <video id="vrVideo" preload="auto" playsinline webkit-playsinline muted loop></video>
-    </a-assets>
-
-    <!-- Camera -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls position="0 1.6 0"
                 cursor="fuse:true; fuseTimeout:900"
@@ -74,39 +74,13 @@
       </a-entity>
     </a-entity>
 
-    <!-- Video scene (hidden if no video) -->
-    <a-entity id="videoScene" visible="false">
-      <a-videosphere id="sphereVideo" src="#vrVideo" rotation="0 -90 0"></a-videosphere>
-      <a-entity id="hsInfo" class="clickable"
-                geometry="primitive:sphere; radius:0.35"
-                material="color:#ffd700; opacity:0.92"
-                position="2 1.2 -3"
-                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
-                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
-      <a-entity id="hsJump" class="clickable"
-                geometry="primitive:sphere; radius:0.28"
-                material="color:#ffd700; opacity:0.92"
-                position="-1 1 -2.5"
-                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
-                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
-      <a-entity id="hsLink" class="clickable"
-                geometry="primitive:sphere; radius:0.28"
-                material="color:#ffd700; opacity:0.92"
-                position="0.3 0.8 -1.8"
-                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
-                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
-      <a-entity id="orbRingVideo"></a-entity>
-    </a-entity>
-
-    <!-- Sky / Photo scene (default) -->
-    <a-entity id="photoScene" visible="true">
-      <!-- simple gradient sky using color; no asset needed -->
+    <!-- Default photo scene -->
+    <a-entity id="photoScene">
       <a-sky color="#10131a"></a-sky>
       <a-entity position="0 1.6 -2">
-        <a-entity geometry="primitive:plane; width:1.9; height:1"
-                  material="color:#14151a; opacity:0.95"></a-entity>
+        <a-entity geometry="primitive:plane; width:1.8; height:.9" material="color:#14151a; opacity:0.95"></a-entity>
         <a-entity position="0 0 0.01"
-          text="value: Demo mode – no media needed. Click gold orbs to open sites.; align:center; width:2.6; color:#ffd700"></a-entity>
+          text="value: Welcome to Vlife — hybrid VR demo. Click orbs to open links.; align:center; width:2.4; color:#ffd700"></a-entity>
       </a-entity>
       <a-entity id="orbRing"></a-entity>
     </a-entity>
@@ -117,62 +91,17 @@
 
   <script>
     const $ = s => document.querySelector(s);
-
     const gate = $('#gate');
-    const autoWarn = $('#autoWarn');
-    const videoEl = $('#vrVideo');
 
-    // Default "no-assets" manifest (overridden if scenes.json exists)
-    let manifest = {
-      youtube: { url: "" },
-      video: null, // no video by default
-      linkOut: { url: "https://chrisburley01.github.io/" },
-      orbRing: {
-        count: 8, radius: 3.0, y: 1.2,
-        links: [
-          {title:"Vlife Hub", url:"https://chrisburley01.github.io/"},
-          {title:"YouTube", url:"https://www.youtube.com/"},
-          {title:"GitHub", url:"https://github.com/chrisburley01"},
-          {title:"Walkers", url:"https://www.walkers-transport.co.uk/"},
-          {title:"WhatsApp", url:"https://wa.me/447464498838"},
-          {title:"LinkedIn", url:"https://www.linkedin.com/in/chris-burley/"},
-          {title:"APN", url:"https://www.apln.com/"},
-          {title:"Email", url:"mailto:cb@walkers-transport.co.uk"}
-        ]
-      },
-      videoSkipTimes: [30,60],
-      primaryJumpSec: 30
-    };
-
-    // Try to load assets/scenes.json; if not found, keep defaults
-    async function loadManifest() {
-      try {
-        const res = await fetch('assets/scenes.json', {cache:'no-store'});
-        if (res.ok) {
-          const j = await res.json();
-          manifest = {...manifest, ...j};
-        }
-      } catch(_) { /* offline or missing file is fine */ }
-    }
-
-    function fmtTime(s){const m=Math.floor(s/60);const sec=String(Math.floor(s%60)).padStart(2,'0');return `${m}:${sec}`;}
-
-    async function startPlayback() {
-      if (!manifest.video?.src) return; // nothing to play
-      try { videoEl.muted = true; await videoEl.play(); autoWarn.style.display = 'none'; }
-      catch { autoWarn.style.display = 'block'; }
-    }
-
-    function showVideo() {
-      const hasVideo = !!manifest.video?.src;
-      if (!hasVideo) return;
-      document.getElementById('videoScene').setAttribute('visible', true);
-      document.getElementById('photoScene').setAttribute('visible', false);
-    }
-    function showPhoto() {
-      document.getElementById('videoScene').setAttribute('visible', false);
-      document.getElementById('photoScene').setAttribute('visible', true);
-    }
+    // simple set of default orbs (links)
+    const links = [
+      {title:'Vlife Hub', url:'https://chrisburley01.github.io/'},
+      {title:'YouTube', url:'https://youtube.com'},
+      {title:'GitHub', url:'https://github.com/chrisburley01'},
+      {title:'Walkers', url:'https://www.walkers-transport.co.uk'},
+      {title:'WhatsApp', url:'https://wa.me/447464498838'},
+      {title:'LinkedIn', url:'https://www.linkedin.com/in/chris-burley/'}
+    ];
 
     function buildOrbRing(containerId, items, radius=3, y=1.2) {
       const ring = document.getElementById(containerId);
@@ -190,73 +119,18 @@
         orb.setAttribute('look-at','#camera');
         orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.3 1.3 1.3');
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
-        // label
         const label = document.createElement('a-entity');
         label.setAttribute('position','0 0.35 0.01');
         label.setAttribute('text',`value:${items[i].title}; align:center; width:1.6; color:#fff`);
         orb.appendChild(label);
-        // click
-        orb.addEventListener('click', ()=> {
-          const url = items[i].url;
-          if (!url) return;
-          window.open(url,'_blank','noopener');
-        });
+        orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
         ring.appendChild(orb);
       }
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadManifest();
-
-      // ENTER always proceeds (and opens tour if present)
-      document.getElementById('enterBtn').addEventListener('click', ()=>{
-        const tour = manifest?.youtube?.url;
-        if (tour) { try{ window.open(tour,'_blank','noopener'); }catch(e){} }
-        gate.style.display='none';
-        startPlayback();
-      });
-
-      // HUD bindings
-      document.getElementById('playBtn').addEventListener('click',()=>videoEl.play());
-      document.getElementById('pauseBtn').addEventListener('click',()=>videoEl.pause());
-      document.getElementById('rewindBtn').addEventListener('click',()=>{ videoEl.currentTime=0; videoEl.play(); });
-
-      const [t1,t2] = manifest.videoSkipTimes || [30,60];
-      document.getElementById('skip1Btn').textContent = `⇥ ${fmtTime(t1)}`;
-      document.getElementById('skip2Btn').textContent = `⇥ ${fmtTime(t2)}`;
-      document.getElementById('skip1Btn').addEventListener('click',()=>{ videoEl.currentTime=t1; videoEl.play(); });
-      document.getElementById('skip2Btn').addEventListener('click',()=>{ videoEl.currentTime=t2; videoEl.play(); });
-
-      document.getElementById('sceneVideoBtn').addEventListener('click',showVideo);
-      document.getElementById('scenePhotoBtn').addEventListener('click',showPhoto);
-
-      // If we have a video path in scenes.json, wire it; else hide video UI
-      const hasVideo = !!manifest.video?.src;
-      if (hasVideo) {
-        videoEl.src = manifest.video.src;
-        document.getElementById('videoScene').setAttribute('visible', true);
-        document.getElementById('photoScene').setAttribute('visible', false);
-      } else {
-        // hide video-specific buttons if no video
-        ['playBtn','pauseBtn','rewindBtn','skip1Btn','skip2Btn','sceneVideoBtn'].forEach(id=>{
-          const el = document.getElementById(id); if (el) el.style.display='none';
-        });
-        document.getElementById('scenePhotoBtn').textContent = 'Scene: Sky (active)';
-      }
-
-      // Build link orbs for demo
-      const links = manifest.orbRing?.links || [];
-      const count = manifest.orbRing?.count || links.length || 8;
-      const items = links.length ? links : Array.from({length:count}, (_,i)=>({title:`Link ${i+1}`, url: manifest.linkOut?.url}));
-      buildOrbRing('orbRing', items, manifest.orbRing?.radius || 3.0, manifest.orbRing?.y || 1.2);
-
-      // Video scene ring too (if desired later)
-      buildOrbRing('orbRingVideo', items, 3.2, 1.2);
-
-      // Info & link hotspots in video scene
-      document.getElementById('hsInfo').addEventListener('click',()=>alert('Vlife: Hybrid VR. Drop media later; this demo works without it.'));
-      document.getElementById('hsJump').addEventListener('click',()=>{ videoEl.currentTime = (manifest.primaryJumpSec||30); videoEl.play(); });
-      document.getElementById('hsLink').addEventListener('click',()=>{ const u = manifest.linkOut?.url || 'https://chrisburley01.github.io/'; window.open(u,'_blank','noopener'); });
+    $('#enterBtn').addEventListener('click', ()=>{
+      gate.style.display='none';
+      buildOrbRing('orbRing', links);
     });
   </script>
 </body>
