@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +12,7 @@
     :root { --gold:#ffd700; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
+    /* Entry gate */
     .gate{position:fixed;inset:0;display:grid;place-items:center;
       background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92));z-index:10;}
     .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;
@@ -24,6 +26,7 @@
       border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer;}
     .btn-primary:hover{filter:brightness(1.15);}
 
+    /* Brand */
     .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9;}
     .brandimg{width:32px;height:32px;object-fit:contain;border-radius:8px;background:#000;
       box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
@@ -72,7 +75,7 @@
           </a-entity>
         </a-entity>
 
-        <!-- Skins toggle orb (moved left so it’s never “behind” the panel) -->
+        <!-- Skins toggle orb -->
         <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
           <a-entity geometry="primitive:sphere; radius:0.12"
                     material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
@@ -86,14 +89,12 @@
     <a-entity id="photoScene">
       <a-sky id="sky" color="#0b0d13"></a-sky>
 
-      <!-- CENTERED skins panel -->
-      <a-entity id="skinPanel" position="0 1.55 -2.35" rotation="0 0 0" visible="false">
+      <!-- Centered skin panel -->
+      <a-entity id="skinPanel" position="0 1.55 -2.5" rotation="0 0 0" visible="false">
         <a-entity geometry="primitive:plane; width:1.8; height:1.02"
                   material="color:#10131a; opacity:0.95"></a-entity>
         <a-entity position="0 0.44 0.01"
           text="value:Choose Background; align:center; width:2.6; color:#ffd700"></a-entity>
-
-        <!-- status line (shows "image used" or "fallback color") -->
         <a-entity id="skinStatus" position="0 0.32 0.01"
           text="value:; align:center; width:2.2; color:#cfd3dc"></a-entity>
 
@@ -106,7 +107,7 @@
         <a-entity id="btn5" position="0.55 -0.30 0.02"></a-entity>
       </a-entity>
 
-      <!-- Ring -->
+      <!-- Orb ring -->
       <a-entity id="orbRing"></a-entity>
     </a-entity>
 
@@ -115,7 +116,7 @@
   </a-scene>
 
   <script>
-    /* ---------- Components ---------- */
+    /* Billboard label */
     AFRAME.registerComponent('billboard-label', {
       init: function () {
         this.cam = document.querySelector('#camera');
@@ -132,6 +133,7 @@
       }
     });
 
+    /* Look-down reset detector */
     AFRAME.registerComponent('lookdown-reset', {
       schema: { hold: {type:'int', default:1500}, thresholdY: {type:'number', default:-0.3}},
       init: function () {
@@ -156,7 +158,6 @@
       }
     });
 
-    /* ---------- App logic ---------- */
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
     const sky  = $('#sky');
@@ -167,7 +168,6 @@
     const orbRing = $('#orbRing');
     const skinStatus = $('#skinStatus');
 
-    // Links
     const links = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
@@ -177,185 +177,81 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
-    // Skins
     const skins = [
-      { name:'Night Sky',     img:'assets/nightsky.jpg',    fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.8 },
+      { name:'Night Sky', img:'assets/nightsky.jpg', fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.8 },
       { name:'Lake & Forest', img:'assets/lake_forest.jpg', fallback:'#1b2a24', ambient:'#cfead7', ambInt:0.45, keyInt:0.85 },
-      { name:'City',          img:'assets/city.jpg',        fallback:'#1e2024', ambient:'#d0d3da', ambInt:0.42, keyInt:0.9 },
-      { name:'Village',       img:'assets/village.jpg',     fallback:'#2a2a1f', ambient:'#ffe8c2', ambInt:0.50, keyInt:0.8 },
-      { name:'Balloons',      img:'assets/balloons.jpg',    fallback:'#172235', ambient:'#cfe2ff', ambInt:0.48, keyInt:0.85 },
-      { name:'Graphite',      img:'',                       fallback:'#111316', ambient:'#d0d0d0', ambInt:0.38, keyInt:0.9 }
+      { name:'City', img:'assets/city.jpg', fallback:'#1e2024', ambient:'#d0d3da', ambInt:0.42, keyInt:0.9 },
+      { name:'Village', img:'assets/village.jpg', fallback:'#2a2a1f', ambient:'#ffe8c2', ambInt:0.50, keyInt:0.8 },
+      { name:'Balloons', img:'assets/balloons.jpg', fallback:'#172235', ambient:'#cfe2ff', ambInt:0.48, keyInt:0.85 },
+      { name:'Graphite', img:'', fallback:'#111316', ambient:'#d0d0d0', ambInt:0.38, keyInt:0.9 }
     ];
     let skinIndex = 0;
 
-    async function imageExists(url){
-      try{ const res = await fetch(url, {method:'HEAD', cache:'no-store'}); return res.ok; }
-      catch(_){ return false; }
-    }
+    async function imageExists(url){try{const r=await fetch(url,{method:'HEAD'});return r.ok;}catch{return false;}}
 
     async function applySkin(i){
-      const s = skins[i % skins.length];
-      skinIndex = i % skins.length;
-
-      ambLight.setAttribute('light', `type:ambient; intensity:${s.ambInt}; color:${s.ambient}`);
-      keyLight.setAttribute('light', `type:point; intensity:${s.keyInt}; distance:12; color:#ffffff`);
-
-      if (s.img && await imageExists(s.img)){
-        sky.removeAttribute('color');
-        sky.setAttribute('src', s.img);
-        sky.setAttribute('rotation', '0 -90 0');
-        skinStatus.setAttribute('text', 'value:Using 360 image: ' + s.name + '; color:#a8f0b0; align:center; width:2.6');
+      const s = skins[i%skins.length]; skinIndex=i%skins.length;
+      ambLight.setAttribute('light',`type:ambient; intensity:${s.ambInt}; color:${s.ambient}`);
+      keyLight.setAttribute('light',`type:point; intensity:${s.keyInt}; distance:12; color:#fff`);
+      if(s.img && await imageExists(s.img)){
+        sky.removeAttribute('color'); sky.setAttribute('src',s.img); sky.setAttribute('rotation','0 -90 0');
+        skinStatus.setAttribute('text',`value:Using 360 image: ${s.name}; color:#a8f0b0; align:center; width:2.6`);
       } else {
-        sky.removeAttribute('src');
-        sky.setAttribute('color', s.fallback || '#10131a');
-        skinStatus.setAttribute('text', 'value:Image not found, using color: ' + s.name + '; color:#ffcc88; align:center; width:2.6');
+        sky.removeAttribute('src'); sky.setAttribute('color',s.fallback||'#10131a');
+        skinStatus.setAttribute('text',`value:Image not found, using color: ${s.name}; color:#ffcc88; align:center; width:2.6`);
       }
       highlightSkinButton(skinIndex);
     }
 
     function buildSkinPanel(){
-      const ids = ['btn0','btn1','btn2','btn3','btn4','btn5'];
-      ids.forEach((id, idx)=>{
-        const slot = document.getElementById(id);
-        slot.innerHTML = '';
-
-        const bg = document.createElement('a-entity');
+      const ids=['btn0','btn1','btn2','btn3','btn4','btn5'];
+      ids.forEach((id,idx)=>{
+        const slot=document.getElementById(id);slot.innerHTML='';
+        const bg=document.createElement('a-entity');
         bg.setAttribute('geometry','primitive:plane; width:0.62; height:0.24');
         bg.setAttribute('material','color:#161a22; opacity:0.95');
-        bg.setAttribute('class','clickable');                 // click target
+        bg.classList.add('clickable');
         bg.addEventListener('click',()=>applySkin(idx));
-        bg.addEventListener('pointerdown',()=>applySkin(idx));
-
-        const label = document.createElement('a-entity');
+        const label=document.createElement('a-entity');
         label.setAttribute('position','0 0 0.01');
         label.setAttribute('billboard-label','');
         label.setAttribute('text',`value:${skins[idx].name}; align:center; width:1.8; color:#dfe3ea; side:double`);
-
-        slot.setAttribute('event-set__enter','_event:mouseenter; scale:1.07 1.07 1.07');
-        slot.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
-        slot.appendChild(bg);
-        slot.appendChild(label);
-        slot.dataset.bgId = `${id}-bg`;
-        bg.setAttribute('id', slot.dataset.bgId);
+        slot.appendChild(bg);slot.appendChild(label);
+        slot.dataset.bgId=`${id}-bg`;bg.id=slot.dataset.bgId;
       });
       highlightSkinButton(skinIndex);
     }
 
-    function highlightSkinButton(activeIdx){
-      ['btn0','btn1','btn2','btn3','btn4','btn5'].forEach((id, idx)=>{
-        const slot = document.getElementById(id);
-        const bg = document.getElementById(slot.dataset.bgId);
-        if (!bg) return;
-        if (idx === activeIdx){
-          bg.setAttribute('material','color:#2b2f3a; opacity:0.98');
-          slot.setAttribute('animation__pulse','property=scale; dir=alternate; dur:900; to:1.05 1.05 1.05; loop:true');
-        } else {
-          bg.setAttribute('material','color:#161a22; opacity:0.95');
-          slot.removeAttribute('animation__pulse');
-          slot.setAttribute('scale','1 1 1');
-        }
+    function highlightSkinButton(aIdx){
+      ['btn0','btn1','btn2','btn3','btn4','btn5'].forEach((id,idx)=>{
+        const slot=document.getElementById(id);const bg=document.getElementById(slot.dataset.bgId);
+        if(!bg)return;
+        if(idx===aIdx){bg.setAttribute('material','color:#2b2f3a; opacity:0.98');
+          slot.setAttribute('animation__pulse','property=scale;dir=alternate;dur:900;to:1.05 1.05 1.05;loop:true');
+        }else{bg.setAttribute('material','color:#161a22; opacity:0.95');
+          slot.removeAttribute('animation__pulse');slot.setAttribute('scale','1 1 1');}
       });
     }
 
-    // Enable/disable orb clicks when panel opens/closes (prevents click-through)
-    function setRingClickable(enabled){
-      document.querySelectorAll('#orbRing a-entity[geometry]').forEach(el=>{
-        if (enabled) el.classList.add('clickable');
-        else el.classList.remove('clickable');
-      });
-    }
+    function setRingClickable(e){document.querySelectorAll('#orbRing a-entity[geometry]').forEach(el=>{e?el.classList.add('clickable'):el.classList.remove('clickable');});}
 
-    // Build ring with a FRONT GAP for the panel
-    function buildOrbRing(containerId, items, radius=4.0, y=1.25) {
-      const ring = document.getElementById(containerId);
-      ring.innerHTML = '';
-      const n = items.length;
-
-      const gapHalf = THREE.MathUtils.degToRad(25); // ±25° front gap
-      const start = gapHalf;
-      const span  = (Math.PI * 2) - (gapHalf * 2);
-
-      for (let i = 0; i < n; i++) {
-        const t = start + (i / n) * span;
-        const x = Math.cos(t) * radius;
-        const z = -Math.sin(t) * radius;
-        const yawDeg = (Math.atan2(0 - x, 0 - z) * 180 / Math.PI);
-
-        const group = document.createElement('a-entity');
-        group.setAttribute('position', `${x} ${y} ${z}`);
-        group.setAttribute('rotation', `0 ${yawDeg} 0`);
-
-        const orb = document.createElement('a-entity');
+    /* Even ring placement with 60° front gap */
+    function buildOrbRing(containerId,items,radius=4.0,y=1.25){
+      const ring=document.getElementById(containerId);ring.innerHTML='';const n=items.length;
+      const GAP_DEG=60,HALF_GAP=THREE.MathUtils.degToRad(GAP_DEG/2),ROT=THREE.MathUtils.degToRad(10);
+      const span=(Math.PI*2)-(HALF_GAP*2);
+      for(let i=0;i<n;i++){
+        const t=HALF_GAP+(i+0.5)*(span/n)+ROT;
+        const x=Math.cos(t)*radius,z=-Math.sin(t)*radius,yaw=(Math.atan2(0-x,0-z)*180/Math.PI);
+        const g=document.createElement('a-entity');g.setAttribute('position',`${x} ${y} ${z}`);g.setAttribute('rotation',`0 ${yaw} 0`);
+        const orb=document.createElement('a-entity');
         orb.setAttribute('geometry','primitive:sphere; radius:0.25');
         orb.setAttribute('material','color:#ffd700; emissive:#ffd700; emissiveIntensity:0.55; opacity:0.95');
         orb.classList.add('clickable');
-        orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.3 1.3 1.3');
-        orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
-        orb.setAttribute('animation__glow','property=material.emissiveIntensity; dir=alternate; dur=2000; from:0.35; to:1; loop:true');
-
-        const url = items[i].url;
-        const openLink = () => {
-          const win = window.open(url, '_blank', 'noopener,noreferrer');
-          if (!win) window.location.href = url;
-        };
-        // Broad event support: fuse/click/touch/controller
-        orb.addEventListener('click', openLink);
-        orb.addEventListener('pointerdown', openLink);
-        orb.addEventListener('mousedown', openLink);
-        orb.addEventListener('mouseup', openLink);
-        orb.addEventListener('touchend', openLink, {passive:true});
-
-        const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0.52 0.01');
-        label.setAttribute('billboard-label','');
-        label.setAttribute('text',[
-          `value:${items[i].title}`,
-          'align:center',
-          'anchor:center',
-          'width:3.0',
-          'wrapCount:28',
-          'color:#ffd700',
-          'side:double'
-        ].join('; '));
-
-        group.appendChild(orb);
-        group.appendChild(label);
-        ring.appendChild(group);
-      }
-    }
-
-    // Enter
-    document.getElementById('enterBtn').addEventListener('click', async ()=>{
-      gate.style.display='none';
-      buildSkinPanel();
-      await applySkin(skinIndex);
-      buildOrbRing('orbRing', links);
-
-      document.querySelector('#camera').setAttribute('lookdown-reset','hold:1500; thresholdY:-0.3');
-
-      skinsToggle.setAttribute('visible', true);
-      skinPanel.setAttribute('visible', true);
-      setRingClickable(false);
-    });
-
-    // Toggle panel (and ring clickability)
-    skinsToggle.addEventListener('click', ()=>{
-      const wasVisible = skinPanel.getAttribute('visible');
-      const nowVisible = !wasVisible;
-      skinPanel.setAttribute('visible', nowVisible);
-      setRingClickable(!nowVisible);
-    });
-
-    // Reset click -> soft rebuild
-    document.getElementById('resetOrb').addEventListener('click', async ()=>{
-      buildOrbRing('orbRing', links);
-      await applySkin(skinIndex);
-    });
-
-    // Keyboard fallback to show reset orb
-    window.addEventListener('keydown', (e)=>{
-      if (e.key.toLowerCase() === 'r') document.getElementById('resetGroup').setAttribute('visible', true);
-    });
-  </script>
-</body>
-</html>
+        orb.setAttribute('animation__glow','property=material.emissiveIntensity;dir=alternate;dur:2000;from:0.35;to:1;loop:true');
+        const url=items[i].url;
+        const open=()=>{const w=window.open(url,'_blank','noopener,noreferrer');if(!w)location.href=url;};
+        ['click','pointerdown','mousedown','mouseup','touchend'].forEach(ev=>orb.addEventListener(ev,open,{passive:true}));
+        const lab=document.createElement('a-entity');
+        lab.setAttribute('position','0 0.52 0.01');lab.setAttribute('billboard-label','');
+        lab.setAttribute('text',`value:${items[i].title}; align:center; width:3; color:#ffd700
