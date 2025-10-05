@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,13 +58,15 @@
         <a-entity position="0 0 -1" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
                   material="shader:flat; opacity:0.9"></a-entity>
 
+        <!-- Skins toggle -->
         <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
           <a-entity geometry="primitive:sphere; radius:0.12"
                     material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
           <a-entity position="0 0.28 0" billboard-label
-            text="value:Skins; align:center; width:1.4; color:#ffd700; side:double"></a-entity>
+            text="value:Skins; align:center; width:1.6; color:#ffd700; side:double; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
         </a-entity>
 
+        <!-- Look-down Reset -->
         <a-entity id="resetGroup" position="0 -0.9 -0.7" visible="false">
           <a-entity id="resetOrb" class="clickable"
             geometry="primitive:sphere; radius:0.18"
@@ -74,8 +75,7 @@
           </a-entity>
           <a-entity id="resetLabel" position="0 0.34 0"
             billboard-label
-            text="value:Reset / Refresh; align:center; width:2.6; color:#ffd700; side:double">
-          </a-entity>
+            text="value:Reset / Refresh; align:center; width:2.8; color:#ffd700; side:double; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
         </a-entity>
       </a-entity>
 
@@ -88,14 +88,14 @@
       <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
       <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
-      <!-- Skin panel -->
-      <a-entity id="skinPanel" position="0 1.55 -2.7" rotation="0 0 0" visible="false">
+      <!-- Skin panel (faces camera yaw) -->
+      <a-entity id="skinPanel" position="0 1.55 -2.7" face-camera-y visible="false">
         <a-entity geometry="primitive:plane; width:1.8; height:1.02"
                   material="color:#10131a; opacity:0.95"></a-entity>
-        <a-entity position="0 0.44 0.01"
-          text="value:Choose Background; align:center; width:2.6; color:#ffd700"></a-entity>
-        <a-entity id="skinStatus" position="0 0.32 0.01"
-          text="value:; align:center; width:2.2; color:#cfd3dc"></a-entity>
+        <a-entity position="0 0.44 0.02"
+          text="value:Choose Background; align:center; width:3.0; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+        <a-entity id="skinStatus" position="0 0.32 0.02"
+          text="value:; align:center; width:2.6; color:#cfd3dc; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
         <a-entity id="btn0" position="-0.55 0.10 0.02"></a-entity>
         <a-entity id="btn1" position="0 0.10 0.02"></a-entity>
@@ -114,11 +114,30 @@
 
   <script>
     /* ---------- Components ---------- */
+
+    // Face only on Y (panel stays front-and-center relative to your yaw; avoids diagonal peeking)
+    AFRAME.registerComponent('face-camera-y', {
+      init(){ this.cam = document.getElementById('camera'); this.v = new THREE.Vector3(); },
+      tick(){
+        if(!this.cam) return;
+        const my = this.el.object3D, cam = this.cam.object3D;
+        // copy camera yaw
+        const e = new THREE.Euler().setFromQuaternion(cam.quaternion, 'YXZ');
+        my.rotation.set(0, e.y, 0);
+      }
+    });
+
+    // Billboard text that keeps upright and depth-safe
     AFRAME.registerComponent('billboard-label', {
       init: function () {
         this.cam = document.querySelector('#camera');
         this.tmp = new THREE.Vector3();
         this.flipQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+        // ensure it draws on top to avoid missing letters due to z-fighting
+        this.el.addEventListener('object3dset', ()=>{
+          const m = this.el.getObject3D('mesh');
+          if (m && m.material) { m.material.depthTest = false; m.renderOrder = 999; }
+        });
       },
       tick: function () {
         if (!this.cam) return;
@@ -130,10 +149,11 @@
       }
     });
 
+    // Look-down reset (unchanged)
     AFRAME.registerComponent('lookdown-reset', {
       schema: { hold: {type:'int', default:1500}, thresholdY: {type:'number', default:-0.3}},
       init: function () {
-        this.cam = this.el;
+        this.cam = document.getElementById('camera');
         this.dir = new THREE.Vector3();
         this.downMs = 0;
         this.resetGroup = document.querySelector('#resetGroup');
@@ -166,6 +186,7 @@
     const orbRing = $('#orbRing');
     const skinStatus = $('#skinStatus');
 
+    // defaults (kept the same as your JSON)
     const DEFAULT_SKINS = [
       { name:'Night Sky', img:'assets/nightsky.jpg',    fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.80, audio:{src:'assets/night.mp3',   volume:0.55} },
       { name:'Lake & Forest', img:'assets/lake_forest.jpg', fallback:'#1b2a24', ambient:'#cfead7', ambInt:0.45, keyInt:0.85, audio:{src:'assets/lake.mp3',    volume:0.50} },
@@ -189,13 +210,13 @@
     let TRANS = DEFAULT_TRANSITIONS;
     let skinIndex = 0;
 
-    // Two audio elements for crossfade
+    // audio for ambient (same as previous upgrade)
     let audioA = new Audio(); audioA.loop = true; audioA.preload = 'auto';
     let audioB = new Audio(); audioB.loop = true; audioB.preload = 'auto';
-    let usingA = true; // which one is currently foreground
+    let usingA = true;
 
     async function loadJSON(url){
-      try{ const res = await fetch(url, {cache:'no-store'}); if(!res.ok) throw 0; return await res.json(); }
+      try{ const r = await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }
       catch{ return null; }
     }
     async function loadData(){
@@ -210,98 +231,67 @@
       try{ const res = await fetch(url, {method:'HEAD', cache:'no-store'}); return res.ok; }
       catch{ return false; }
     }
-
     function lerp(a,b,t){ return a + (b-a)*t; }
 
-    // --- Crossfade SKY (dual <a-sky>)
+    // SKY crossfade
     async function fadeToSkin(i){
       const s = SKINS[i % SKINS.length];
       const skyMs = TRANS.skyMs;
       skinIndex = i % SKINS.length;
-
-      // Lights immediately (or you can animate these too)
       ambLight.setAttribute('light', `type:ambient; intensity:${s.ambInt}; color:${s.ambient}`);
       keyLight.setAttribute('light', `type:point; intensity:${s.keyInt}; distance:12; color:#ffffff`);
 
-      // Prepare target sky
-      const front = usingA ? skyB : skyA;   // the one that will fade IN
-      const back  = usingA ? skyA : skyB;   // the one that will fade OUT
+      const front = usingA ? skyB : skyA;
+      const back  = usingA ? skyA : skyB;
 
       if (s.img && await imageExists(s.img)){
         front.removeAttribute('color');
         front.setAttribute('src', s.img);
         front.setAttribute('rotation','0 -90 0');
-        skinStatus.setAttribute('text', `value:Using 360 image: ${s.name}; color:#a8f0b0; align:center; width:2.6`);
+        skinStatus.setAttribute('text', `value:Using 360 image: ${s.name}; color:#a8f0b0; align:center; width:3.0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
       } else {
         front.removeAttribute('src');
         front.setAttribute('color', s.fallback || '#10131a');
-        skinStatus.setAttribute('text', `value:Image not found, using color: ${s.name}; color:#ffcc88; align:center; width:2.6`);
+        skinStatus.setAttribute('text', `value:Image not found, using color: ${s.name}; color:#ffcc88; align:center; width:3.0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
       }
 
-      // Start crossfade
       front.setAttribute('visible', true);
       const start = performance.now();
       function step(t){
         const k = Math.min(1, (t - start) / skyMs);
-        const fo = k;         // fade-in opacity
-        const bo = 1 - k;     // fade-out opacity
-        front.setAttribute('material', `opacity:${fo}; transparent:true`);
-        back .setAttribute('material', `opacity:${bo}; transparent:true`);
+        front.setAttribute('material', `opacity:${k}; transparent:true`);
+        back .setAttribute('material', `opacity:${1-k}; transparent:true`);
         if (k < 1) requestAnimationFrame(step);
-        else {
-          back.setAttribute('visible', false);
-          usingA = !usingA;  // swap roles
-        }
+        else { back.setAttribute('visible', false); usingA = !usingA; }
       }
       requestAnimationFrame(step);
 
-      // Audio crossfade
       crossfadeAudio(s.audio?.src || '', s.audio?.volume ?? 0, TRANS.audioMs);
     }
 
-    // --- Crossfade AUDIO (two <audio> tags)
+    // AUDIO crossfade
     function crossfadeAudio(newSrc, targetVol, ms){
       const fadeOut = usingA ? audioA : audioB;
       const fadeIn  = usingA ? audioB : audioA;
-
-      // ensure playback (after user gesture on Enter)
       try { fadeOut.play().catch(()=>{}); fadeIn.play().catch(()=>{}); } catch {}
-
-      // load new source into the fadeIn channel if changed
-      if (newSrc && fadeIn.src !== location.origin + '/' + newSrc && fadeIn.src !== newSrc){
-        fadeIn.src = newSrc;
-      }
-      if (!newSrc){ fadeIn.removeAttribute?.('src'); fadeIn.src=''; }
-
-      // start fadeIn if it has a source
-      if (newSrc) {
-        fadeIn.volume = 0;
-        fadeIn.play().catch(()=>{});
-      }
-
-      const startVolOut = fadeOut.volume || 0;
-      const endVolOut   = 0;
-      const endVolIn    = targetVol;
-
+      if (newSrc) { if (fadeIn.src !== newSrc) fadeIn.src = newSrc; fadeIn.volume = 0; fadeIn.play().catch(()=>{}); }
+      else { fadeIn.pause(); fadeIn.src=''; fadeIn.volume=0; }
+      const startVolOut = fadeOut.volume||0;
       const t0 = performance.now();
       function step(t){
         const k = Math.min(1, (t - t0) / ms);
-        fadeOut.volume = lerp(startVolOut, endVolOut, k);
-        fadeIn.volume  = lerp(0, endVolIn, k);
-        if (k < 1) requestAnimationFrame(step);
-        else {
-          fadeOut.pause(); // silence + pause the old track
-          // keep fadeIn playing at its target volume
-        }
+        fadeOut.volume = lerp(startVolOut, 0, k);
+        fadeIn.volume  = lerp(0, targetVol, k);
+        if (k < 1) requestAnimationFrame(step); else { fadeOut.pause(); }
       }
       requestAnimationFrame(step);
     }
 
+    // Build skins panel
     function buildSkinPanel(){
       const ids = ['btn0','btn1','btn2','btn3','btn4','btn5'];
       ids.forEach((id, idx)=>{
-        const slot = document.getElementById(id);
-        slot.innerHTML = '';
+        const slot = document.getElementById(id); slot.innerHTML = '';
         const bg = document.createElement('a-entity');
         bg.setAttribute('geometry','primitive:plane; width:0.62; height:0.24');
         bg.setAttribute('material','color:#161a22; opacity:0.95');
@@ -311,29 +301,16 @@
         bg.addEventListener('pointerdown', choose);
         bg.addEventListener('touchend', choose, {passive:true});
         const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0 0.01');
+        label.setAttribute('position','0 0 0.02');
         label.setAttribute('billboard-label','');
-        label.setAttribute('text',`value:${(SKINS[idx]||{}).name||''}; align:center; width:1.8; color:#dfe3ea; side:double`);
+        label.setAttribute('text',`value:${(SKINS[idx]||{}).name||''}; align:center; width:2.2; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
         slot.appendChild(bg); slot.appendChild(label);
         slot.setAttribute('event-set__enter','_event:mouseenter; scale:1.07 1.07 1.07');
         slot.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
       });
-      highlightSkinButton(skinIndex);
-    }
-    function highlightSkinButton(activeIdx){
-      ['btn0','btn1','btn2','btn3','btn4','btn5'].forEach((id, idx)=>{
-        const slot = document.getElementById(id);
-        if (!slot) return;
-        if (idx === activeIdx){
-          slot.setAttribute('animation__pulse','property=scale; dir=alternate; dur:900; to:1.05 1.05 1.05; loop:true');
-        } else {
-          slot.removeAttribute('animation__pulse');
-          slot.setAttribute('scale','1 1 1');
-        }
-      });
     }
 
-    // links ring (centered 110° gap; edge-hug placement)
+    // Links ring
     function openURL(url){
       const a = document.createElement('a');
       a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.style.display = 'none';
@@ -342,16 +319,16 @@
     function makeOrb(title, url){
       const group = document.createElement('a-entity');
       const orb = document.createElement('a-entity');
-      orb.classList.add('clickable', 'orb');
+      orb.classList.add('clickable','orb');
       orb.setAttribute('geometry','primitive:sphere; radius:0.25');
       orb.setAttribute('material','color:#ffd700; metalness:0.7; roughness:0.25; emissive:#6a5200; emissiveIntensity:0.35; opacity:0.97');
       orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.2 1.2 1.2');
       orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
       orb.setAttribute('animation__glow','property=material.emissiveIntensity; dir=alternate; dur:2000; from:0.3; to:0.9; loop:true');
       const label = document.createElement('a-entity');
-      label.setAttribute('position','0 0.52 0.01');
+      label.setAttribute('position','0 0.52 0.02');
       label.setAttribute('billboard-label','');
-      label.setAttribute('text',`value:${title}; align:center; width:3.0; color:#ffd700; side:double`);
+      label.setAttribute('text',`value:${title}; align:center; width:3.4; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
       const go = () => openURL(url);
       orb.addEventListener('click', go);
       orb.addEventListener('pointerup', go, {passive:true});
@@ -360,23 +337,33 @@
       group.appendChild(orb); group.appendChild(label);
       return group;
     }
-    function buildOrbRing(containerId, items, radius = 4.0, y = 1.25) {
+
+    // Build ring with a gap centered on current camera yaw.
+    // No left/right empty arc, and nothing behind/near the panel.
+    function buildOrbRingAroundView(containerId, items, radius = 4.3, y = 1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
       const n = items.length;
-      const FRONT_GAP_DEG = 110, HALF_GAP = THREE.MathUtils.degToRad(FRONT_GAP_DEG / 2);
-      const span = (Math.PI * 2) - (HALF_GAP * 2);
-      const EDGE = THREE.MathUtils.degToRad(8);
-      if (n === 1) {
-        const g = makeOrb(items[0].title, items[0].url);
-        g.setAttribute('position', `0 ${y} ${-radius}`);
-        g.setAttribute('rotation', `0 180 0`);
-        ring.appendChild(g); return;
-      }
-      const step = (span - 2 * EDGE) / (n - 1);
+      if (!n) return;
+
+      // Camera yaw in radians (center the gap on where you're looking)
+      const cam = document.getElementById('camera').object3D;
+      const e = new THREE.Euler().setFromQuaternion(cam.quaternion, 'YXZ');
+      const yaw = e.y; // -pi..pi
+
+      const FRONT_GAP_DEG = 120; // a bit wider for comfort
+      const HALF_GAP = THREE.MathUtils.degToRad(FRONT_GAP_DEG / 2);
+      const EDGE = THREE.MathUtils.degToRad(6);     // reduced margin to remove big spacing
+      const usable = (Math.PI * 2) - (HALF_GAP * 2);
+      const step = n>1 ? (usable - 2*EDGE) / (n - 1) : 0;
+
+      // Left edge of usable arc relative to forward yaw
+      // Domain for t: [-usable/2 + EDGE, +usable/2 - EDGE]
       for (let i = 0; i < n; i++) {
-        const t = -span / 2 + EDGE + i * step;
-        const x = Math.cos(t) * radius, z = -Math.sin(t) * radius;
+        const tRel = -usable/2 + EDGE + i * step;     // relative to forward
+        const t = yaw + tRel;                          // rotate to face current view
+        const x = Math.cos(t) * radius;
+        const z = -Math.sin(t) * radius;
         const yawDeg = (Math.atan2(-x, -z) * 180 / Math.PI);
         const g = makeOrb(items[i].title, items[i].url);
         g.setAttribute('position', `${x} ${y} ${z}`);
@@ -389,29 +376,48 @@
     async function init(){
       await loadData();
       buildSkinPanel();
-      // initial skin (sets lights + fades sky/audio in place)
       await fadeToSkin(skinIndex);
-      buildOrbRing('orbRing', LINKS);
+
+      // Build ring centered on current view
+      buildOrbRingAroundView('orbRing', (window.LINKS||DEFAULT_LINKS));
       document.getElementById('camera').setAttribute('lookdown-reset','hold:1500; thresholdY:-0.3');
+
       skinsToggle.setAttribute('visible', true);
       skinPanel.setAttribute('visible', true);
     }
 
+    // Recenter ring whenever you open skins or hit reset (so the gap tracks your current view)
+    function rebuildRingNow(){
+      buildOrbRingAroundView('orbRing', (window.LINKS||DEFAULT_LINKS));
+    }
+
     document.getElementById('enterBtn').addEventListener('click', ()=>{
       gate.style.display = 'none';
-      // start audio context by playing silent start to satisfy gesture policies
-      try { audioA.muted = true; audioA.play().finally(()=>{ audioA.pause(); audioA.muted=false; }); } catch {}
-      try { audioB.muted = true; audioB.play().finally(()=>{ audioB.pause(); audioB.muted=false; }); } catch {}
+      // warm audio gesture
+      try { [audioA,audioB].forEach(a=>{ a.muted=true; a.play().finally(()=>{a.pause(); a.currentTime=0; a.muted=false;}); }); } catch {}
       init();
     });
 
     skinsToggle.addEventListener('click', ()=>{
-      skinPanel.setAttribute('visible', !skinPanel.getAttribute('visible'));
+      const show = !skinPanel.getAttribute('visible');
+      skinPanel.setAttribute('visible', show);
+      rebuildRingNow();
     });
 
     document.getElementById('resetOrb')?.addEventListener('click', async ()=>{
-      buildOrbRing('orbRing', LINKS);
+      rebuildRingNow();
       await fadeToSkin(skinIndex);
+    });
+
+    // Also recenter ring if user presses "C"
+    window.addEventListener('keydown', (e)=>{
+      if ((e.key||'').toLowerCase()==='c') rebuildRingNow();
+    });
+
+    // expose LINKS for buildRing (after JSON load)
+    window.addEventListener('load', async ()=>{
+      const scenes = await fetch('assets/scenes.json').then(r=>r.ok?r.json():null).catch(()=>null);
+      if (scenes?.links) window.LINKS = scenes.links; else window.LINKS = DEFAULT_LINKS;
     });
   </script>
 </body>
