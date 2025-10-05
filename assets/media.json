@@ -1,8 +1,28 @@
 {
   "videos": [
-    { "title": "YouTube Demo", "youtubeId": "XXXXXXXXXXX" }
+    {
+      "title": "Angel Falls 8K 360°",
+      "youtubeId": "abc123DEF45"
+    },
+    {
+      "title": "Elephants in Africa 360°",
+      "youtubeId": "zyx987WVU65"
+    }
   ],
   "photos": [
-    { "title": "Warehouse Interior", "file": "SAM_100_0332.jpg" }
+    {
+      "id": "scene1",
+      "title": "Warehouse Entrance",
+      "file": "SAM_100_0332.jpg",
+      "hotspots": [
+        {
+          "type": "info",
+          "text": "Welcome to the warehouse entrance — tap gold orbs for navigation.",
+          "yaw": 0,
+          "pitch": -10,
+          "radius": 2.2
+        }
+      ]
+    }
   ]
 }
