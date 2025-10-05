@@ -8,28 +8,30 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
   <style>
-    :root { --gold:#ffd700; --bg:#0b0b0f; --text:#e7e7ea; }
+    :root { --gold:#ffd700; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
     /* Gate */
-    .gate { position:fixed; inset:0; display:grid; place-items:center;
-            background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92)); z-index:10;}
-    .gate-inner{ max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px;
-                 border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text);
-                 box-shadow:0 16px 72px rgba(0,0,0,.6);}
-    .gate-logo{ width:min(360px,70vw); height:auto; display:block; margin:0 auto 12px;
-                filter:drop-shadow(0 8px 24px rgba(255,215,0,.25)); animation:pulse 5s ease-in-out infinite;}
-    @keyframes pulse{0%,100%{filter:drop-shadow(0 0 15px rgba(255,215,0,.3));}50%{filter:drop-shadow(0 0 35px rgba(255,215,0,.7));}}
-    .btn-primary{ background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;
-                  border-radius:12px; padding:10px 18px; font-weight:600; cursor:pointer;}
-    .btn-primary:hover{ filter:brightness(1.15); }
+    .gate{position:fixed;inset:0;display:grid;place-items:center;
+      background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92));z-index:10;}
+    .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;
+      border:1px solid rgba(255,255,255,.15);border-radius:16px;text-align:center;color:var(--text);
+      box-shadow:0 16px 72px rgba(0,0,0,.6);}
+    .gate-logo{width:min(360px,70vw);height:auto;display:block;margin:0 auto 12px;
+      filter:drop-shadow(0 8px 24px rgba(255,215,0,.25));animation:pulse 5s ease-in-out infinite;}
+    @keyframes pulse{0%,100%{filter:drop-shadow(0 0 15px rgba(255,215,0,.3));}
+      50%{filter:drop-shadow(0 0 35px rgba(255,215,0,.7));}}
+    .btn-primary{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#2b2500;border:none;
+      border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer;}
+    .btn-primary:hover{filter:brightness(1.15);}
 
     /* Brand */
-    .topright{ position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9;}
-    .brandimg{ width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000; box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
-    .brand{ color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4);}
-    .badge{ position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45);
-            padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9;}
+    .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9;}
+    .brandimg{width:32px;height:32px;object-fit:contain;border-radius:8px;background:#000;
+      box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
+    .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.4);}
+    .badge{position:fixed;top:12px;left:12px;color:#bdbdc7;font-size:12px;background:rgba(0,0,0,.45);
+      padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);z-index:9;}
   </style>
 </head>
 <body>
@@ -66,9 +68,10 @@
     <a-entity id="photoScene">
       <a-sky color="#0b0d13"></a-sky>
       <a-entity position="0 1.6 -2">
-        <a-entity geometry="primitive:plane; width:1.8; height:.9" material="color:#14151a; opacity:0.9"></a-entity>
+        <a-entity geometry="primitive:plane; width:1.8; height:.9"
+                  material="color:#14151a; opacity:0.9"></a-entity>
         <a-entity position="0 0 0.01"
-          text="value: Explore 360° — click the gold orbs.; align:center; width:2.6; color:#ffd700"></a-entity>
+          text="value: Explore 360° — click gold orbs to visit VR platforms.; align:center; width:2.8; color:#ffd700"></a-entity>
       </a-entity>
       <a-entity id="orbRing"></a-entity>
     </a-entity>
@@ -81,13 +84,13 @@
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
 
-    // Prioritised 360° links (as requested)
+    // Updated 360° video & VR platform links
     const links = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
       {title:'YouTube 360 Playlist', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'},
       {title:'Vimeo 360', url:'https://vimeo.com/channels/360videos'},
-      {title:'Veer VR', url:'https://veer.tv/'},
+      {title:'Meta Quest TV', url:'https://www.meta.com/quest/tv/'},
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
@@ -114,17 +117,16 @@
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
 
-        // Label (always face camera, double-sided, gold glow)
+        // Label (always face camera, glowing)
         const label = document.createElement('a-entity');
         label.setAttribute('position','0 0.52 0');
-        label.setAttribute('look-at','#camera'); // extra safety so text always faces camera
-        label.setAttribute('text', [
+        label.setAttribute('look-at','#camera');
+        label.setAttribute('text',[
           `value:${items[i].title}`,
           'align:center',
-          'width:2.6',
+          'width:2.8',
           'color:#ffd700',
           'wrapCount:24',
-          'baseline:top',
           'side:double'
         ].join('; '));
         label.setAttribute('animation__color','property=components.text.material.color; type=color; from:#ffd700; to:#fff5a8; dir=alternate; dur=1800; loop:true');
