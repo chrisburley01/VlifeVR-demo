@@ -8,29 +8,34 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
   <style>
-    :root { --gold: #ffd700; --bg:#0b0b0f; --panel:#15161a; --text:#e7e7ea; }
-    body { margin:0; background:#000; font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    :root { --gold:#ffd700; --bg:#0b0b0f; --text:#e7e7ea; }
+    body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
-    /* UI */
+    /* Overlays */
     .hud { position:fixed; inset:auto 16px 16px 16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; z-index:9; }
-    .btn { border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); color:var(--text); padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; backdrop-filter: blur(6px); }
-    .btn:hover{ border-color:var(--gold); color:var(--gold); }
-    .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45); padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9; }
+    .btn { border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)); color:var(--text);
+           padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);}
+    .btn:hover{ border-color:var(--gold); color:var(--gold);}
+    .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45);
+             padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9;}
+    .note { position:fixed; bottom:12px; left:12px; color:#9ea0aa; font-size:12px; opacity:.85; z-index:9;}
 
-    /* Intro screen */
-    .gate { position:fixed; inset:0; display:grid; place-items:center; background: radial-gradient(1200px 600px at 50% 100%, rgba(255,215,0,.05), rgba(0,0,0,.9)); z-index:10; }
-    .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px; border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text); box-shadow:0 16px 72px rgba(0,0,0,.6); }
-    .gate h1 { margin:6px 0 8px; font-size:22px; letter-spacing:.3px; }
-    .gate p { margin:0 0 16px; color:#c8c8d2; }
-    .gate .btn-primary { background:linear-gradient(180deg, #ffe58a, #e7c138); color:#2b2500; border:none; }
-    .gate-logo { width:min(360px, 70vw); height:auto; display:block; margin:0 auto 12px; filter: drop-shadow(0 8px 24px rgba(255,215,0,.18)); }
+    /* Entry gate */
+    .gate { position:fixed; inset:0; display:grid; place-items:center;
+            background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.05),rgba(0,0,0,.9)); z-index:10;}
+    .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px;
+                  border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text);
+                  box-shadow:0 16px 72px rgba(0,0,0,.6);}
+    .gate-logo { width:min(360px,70vw); height:auto; display:block; margin:0 auto 12px; filter:drop-shadow(0 8px 24px rgba(255,215,0,.18));}
+    .gate h1 { margin:6px 0 8px; font-size:22px;}
+    .gate p { margin:0 0 16px; color:#c8c8d2;}
+    .btn-primary { background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;}
 
-    /* Branding top-right */
-    .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9; }
-    .brandimg { width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000; box-shadow:0 0 0 1px rgba(255,255,255,.25) inset; }
-    .brand { color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4); }
-
-    .note { position:fixed; bottom:12px; left:12px; color:#9ea0aa; font-size:12px; opacity:.85; z-index:9; }
+    /* Brand top-right */
+    .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9;}
+    .brandimg { width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000;
+                box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
+    .brand { color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4);}
   </style>
 </head>
 <body>
@@ -48,7 +53,7 @@
       <h1>Enter Vlife</h1>
       <p>Immersive 360° experience. Works in browser, mobile, and Meta Quest. For best quality, use a headset.</p>
       <button class="btn btn-primary" id="enterBtn">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Tip: Look around. Gaze at gold orbs to interact. Use the HUD to pause, jump, or switch scenes.</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around. Gaze at gold orbs to interact. Use HUD to pause or jump.</p>
     </div>
   </div>
 
@@ -64,14 +69,13 @@
   </div>
   <div class="note">Replace <strong>assets/your-video.mp4</strong> with your Insta360 X4 export.</div>
 
-  <!-- VR Scene -->
-  <a-scene renderer="alpha:true antialias:true colorManagement:true" background="color: #000">
+  <!-- VR scene -->
+  <a-scene renderer="alpha:true antialias:true" background="color:#000">
     <a-assets timeout="30000">
       <video id="vrVideo" src="assets/your-video.mp4" preload="auto" crossOrigin="anonymous" playsinline webkit-playsinline muted loop></video>
-      <img id="photoSky" src="assets/SAM_100_0227.jpg" crossorigin="anonymous" />
+      <img id="photoSky" src="assets/your-photo.jpg" crossorigin="anonymous" />
     </a-assets>
 
-    <!-- Camera -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls position="0 1.6 0">
         <a-entity cursor="fuse:true; fuseTimeout:900" position="0 0 -1"
@@ -80,37 +84,28 @@
       </a-entity>
     </a-entity>
 
-    <!-- Video scene -->
+    <!-- Video sphere -->
     <a-entity id="videoScene">
       <a-videosphere id="sphereVideo" src="#vrVideo" rotation="0 -90 0"></a-videosphere>
-      <a-entity id="hsInfo" geometry="primitive:sphere; radius:0.35"
-        material="color:#ffd700; opacity:0.92" position="2 1.2 -3"></a-entity>
-      <a-entity id="infoPanel" visible="false"
-        geometry="primitive:plane; width:1.9; height:1"
-        material="color:#14151a; opacity:0.95" position="0 1.6 -2.2">
+      <a-entity id="hsInfo" geometry="primitive:sphere; radius:0.35" material="color:#ffd700; opacity:0.92" position="2 1.2 -3"></a-entity>
+      <a-entity id="infoPanel" visible="false" geometry="primitive:plane; width:1.9; height:1" material="color:#14151a; opacity:0.95" position="0 1.6 -2.2">
         <a-entity position="0 0 0.01"
           text="value: Welcome to Vlife — Hybrid VR.; align:center; width:2.8; color:#ffd700"></a-entity>
         <a-entity position="0 -0.28 0.01"
           text="value: Click hotspots to reveal data, jump timeline, or switch scenes.; align:center; width:2.6; color:#d8d8df"></a-entity>
       </a-entity>
-      <a-entity id="hsJump" geometry="primitive:sphere; radius:0.28"
-        material="color:#ffd700; opacity:0.92" position="-1 1 -2.5" data-jump="30"></a-entity>
-      <a-entity id="hsLink" geometry="primitive:sphere; radius:0.28"
-        material="color:#ffd700; opacity:0.92" position="0.3 0.8 -1.8"
-        data-link="https://chrisburley01.github.io/"></a-entity>
+      <a-entity id="hsJump" geometry="primitive:sphere; radius:0.28" material="color:#ffd700; opacity:0.92" position="-1 1 -2.5" data-jump="30"></a-entity>
+      <a-entity id="hsLink" geometry="primitive:sphere; radius:0.28" material="color:#ffd700; opacity:0.92" position="0.3 0.8 -1.8" data-link="https://chrisburley01.github.io/"></a-entity>
     </a-entity>
 
-    <!-- Photo scene -->
+    <!-- Photo sphere -->
     <a-entity id="photoScene" visible="false">
       <a-sky id="spherePhoto" src="#photoSky" rotation="0 -90 0"></a-sky>
       <a-entity position="0 1.6 -2">
-        <a-entity geometry="primitive:plane; width:1.8; height:.9"
-          material="color:#14151a; opacity:0.95"></a-entity>
-        <a-entity position="0 0 0.01"
-          text="value: Scene B (360° Photo). Click orb to go back.; align:center; width:2.4; color:#ffd700"></a-entity>
+        <a-entity geometry="primitive:plane; width:1.8; height:.9" material="color:#14151a; opacity:0.95"></a-entity>
+        <a-entity position="0 0 0.01" text="value: Scene B (360° Photo). Click orb to go back.; align:center; width:2.4; color:#ffd700"></a-entity>
       </a-entity>
-      <a-entity id="hsBack" geometry="primitive:sphere; radius:0.32"
-        material="color:#ffd700; opacity:0.92" position="0 1 -2.2" data-scene="video"></a-entity>
+      <a-entity id="hsBack" geometry="primitive:sphere; radius:0.32" material="color:#ffd700; opacity:0.92" position="0 1 -2.2"></a-entity>
     </a-entity>
 
     <a-entity light="type:point; intensity:0.6; distance:12" position="1 2 -2"></a-entity>
@@ -118,49 +113,32 @@
   </a-scene>
 
   <script>
-    const $ = (s) => document.querySelector(s);
-    const videoEl = $('#vrVideo');
-    const gate = $('#gate');
-    const infoPanel = $('#infoPanel');
+    const $ = (s)=>document.querySelector(s);
+    const videoEl=$('#vrVideo');
+    const gate=$('#gate');
+    const infoPanel=$('#infoPanel');
 
-    const startPlayback = async () => {
-      try { videoEl.muted = true; await videoEl.play(); } 
-      catch (e) { console.warn('Autoplay blocked', e); }
-    };
+    // Autoplay muted for reliability
+    const startPlayback=async()=>{try{videoEl.muted=true;await videoEl.play();}catch(e){console.warn('Autoplay blocked',e);}};
 
-    $('#enterBtn').addEventListener('click', async () => {
-      gate.style.display = 'none';
-      await startPlayback();
-      setTimeout(() => { videoEl.muted = false; }, 400);
-    });
+    $('#enterBtn').addEventListener('click',async()=>{gate.style.display='none';await startPlayback();});
 
-    $('#playBtn').addEventListener('click', () => videoEl.play());
-    $('#pauseBtn').addEventListener('click', () => videoEl.pause());
-    $('#rewindBtn').addEventListener('click', () => { videoEl.currentTime = 0; videoEl.play(); });
-    $('#midBtn').addEventListener('click', () => { videoEl.currentTime = 30; videoEl.play(); });
-    $('#endBtn').addEventListener('click', () => { videoEl.currentTime = 60; videoEl.play(); });
+    // HUD
+    $('#playBtn').addEventListener('click',()=>videoEl.play());
+    $('#pauseBtn').addEventListener('click',()=>videoEl.pause());
+    $('#rewindBtn').addEventListener('click',()=>{videoEl.currentTime=0;videoEl.play();});
+    $('#midBtn').addEventListener('click',()=>{videoEl.currentTime=30;videoEl.play();});
+    $('#endBtn').addEventListener('click',()=>{videoEl.currentTime=60;videoEl.play();});
 
-    $('#sceneA').addEventListener('click', () => {
-      document.getElementById('videoScene').setAttribute('visible', true);
-      document.getElementById('photoScene').setAttribute('visible', false);
-    });
-    $('#sceneB').addEventListener('click', () => {
-      document.getElementById('videoScene').setAttribute('visible', false);
-      document.getElementById('photoScene').setAttribute('visible', true);
-    });
+    // Scene toggle
+    $('#sceneA').addEventListener('click',()=>{document.getElementById('videoScene').setAttribute('visible',true);document.getElementById('photoScene').setAttribute('visible',false);});
+    $('#sceneB').addEventListener('click',()=>{document.getElementById('videoScene').setAttribute('visible',false);document.getElementById('photoScene').setAttribute('visible',true);});
 
-    $('#hsInfo').addEventListener('click', () => {
-      const vis = infoPanel.getAttribute('visible');
-      infoPanel.setAttribute('visible', !vis);
-    });
-    $('#hsJump').addEventListener('click', () => {
-      videoEl.currentTime = 30; videoEl.play();
-    });
-    $('#hsLink').addEventListener('click', () => window.open('https://chrisburley01.github.io/', '_blank'));
-    $('#hsBack').addEventListener('click', () => {
-      document.getElementById('videoScene').setAttribute('visible', true);
-      document.getElementById('photoScene').setAttribute('visible', false);
-    });
+    // Hotspots
+    $('#hsInfo').addEventListener('click',()=>{const v=infoPanel.getAttribute('visible');infoPanel.setAttribute('visible',!v);});
+    $('#hsJump').addEventListener('click',()=>{videoEl.currentTime=30;videoEl.play();});
+    $('#hsLink').addEventListener('click',()=>window.open('https://chrisburley01.github.io/','_blank'));
+    $('#hsBack').addEventListener('click',()=>{document.getElementById('videoScene').setAttribute('visible',true);document.getElementById('photoScene').setAttribute('visible',false);});
 
     startPlayback();
   </script>
