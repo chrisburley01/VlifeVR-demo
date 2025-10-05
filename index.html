@@ -29,6 +29,12 @@
 
 /* In‑scene labels */
 .panel { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:rgba(10,10,14,.8); color:#fff; padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.15); max-width:min(680px,90vw); display:none; z-index:9; }
+  /* How-it-works modal */
+.howOverlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:20}
+.howBox{width:min(820px,92vw);max-height:86vh;overflow:auto;background:rgba(16,16,22,.9);border:1px solid rgba(255,255,255,.18);border-radius:16px;color:#e7e7ea;padding:20px 22px;box-shadow:0 24px 120px rgba(0,0,0,.6)}
+.howBox h2{margin:0 0 8px;color:var(--gold)}
+.howBox ol{margin:8px 0 0 18px}
+.howClose{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer}
 
   </style>
 </head>
@@ -39,9 +45,24 @@
   </div>  <div class="menu" id="menu">
     <img src="assets/Vlifelogo_1_.png" style="width:140px;height:auto;filter:drop-shadow(0 0 15px rgba(255,215,0,.2));">
     <h1>Select Experience</h1>
-    <button id="startBtn">Start Tour ▶</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button id="startBtn">Start Tour ▶</button>
+      <button id="howBtn">How it works</button>
+    </div>
     <div id="videoGroup" class="row"></div>
     <div id="photoGroup" class="row"></div>
+  </div>  <!-- How it works overlay -->  <div class="howOverlay" id="howOverlay">
+    <div class="howBox">
+      <button class="howClose" id="howClose">✕ Close</button>
+      <h2>How it works</h2>
+      <ol>
+        <li><strong>Pick a scene</strong> from the menu (photo, local video, or YouTube 360).</li>
+        <li>The scene opens in an immersive sphere. <strong>Look around</strong> by moving your phone/dragging.</li>
+        <li><strong>Gold orbs</strong> are interactive hotspots: tap/gaze to show info or jump to another scene.</li>
+        <li>Yellow guide orbs are placed evenly around you to mark a <strong>full 360° ring</strong> for orientation.</li>
+        <li><strong>Back to Menu</strong> returns you to the list. Works on desktop, mobile, and Quest browser.</li>
+      </ol>
+    </div>
   </div><button id="backBtn" class="backBtn">← Back to Menu</button>
 
   <div class="hud">
@@ -64,6 +85,9 @@
 <!-- Hotspot holder -->
 <a-entity id="hotspots"></a-entity>
 
+<!-- Decorative / guide ring of yellow orbs -->
+<a-entity id="ringOrbs"></a-entity>
+
 <a-entity light="type:ambient; intensity:0.4"></a-entity>
 
   </a-scene>  <script>
@@ -75,6 +99,7 @@
     const assetsContainer = document.getElementById('assetsContainer');
     const infoPanel = document.getElementById('infoPanel');
     const hotspotsRoot = document.getElementById('hotspots');
+    const ringRoot = document.getElementById('ringOrbs');
 
     const deg2rad = (d)=> d * Math.PI / 180;
     // Convert yaw (0 forward, +right), pitch (+up) and radius to XYZ in A-Frame (forward is -Z)
@@ -151,12 +176,14 @@
         videoSphere.setAttribute('visible', true);
         photoSky.setAttribute('visible', false);
         attachHotspots(item.hotspots || defaultHotspots());
+        attachRingOrbs(24, 0, 2.7);
       }
       if (type==='photo'){
         photoSky.setAttribute('src', `assets/${item.file}`);
         photoSky.setAttribute('visible', true);
         videoSphere.setAttribute('visible', false);
         attachHotspots(item.hotspots || defaultHotspots());
+        attachRingOrbs(24, 0, 2.7);
       }
     }
 
@@ -189,6 +216,7 @@
 
     function clearHotspots(){
       while (hotspotsRoot.firstChild) hotspotsRoot.removeChild(hotspotsRoot.firstChild);
+      while (ringRoot.firstChild) ringRoot.removeChild(ringRoot.firstChild);
     }
 
     function handleHotspot(h){
@@ -222,6 +250,20 @@
       ];
     }
 
+    // Create an evenly spaced ring of yellow orbs around the viewer
+    function attachRingOrbs(count=24, pitch=0, radius=2.7){
+      for (let i=0;i<count;i++){
+        const yaw = i * (360 / count);
+        const orb = document.createElement('a-entity');
+        orb.setAttribute('geometry','primitive:sphere; radius:0.12');
+        orb.setAttribute('material','color:#ffd700; opacity:0.85; emissive:#6f5a00; emissiveIntensity:0.35');
+        orb.setAttribute('position', posFromYawPitchR(yaw, pitch, radius));
+        ringRoot.appendChild(orb);
+      }
+    }
+      ];
+    }
+
     // HUD controls
     document.getElementById('playBtn').onclick = ()=>{
       const v=document.getElementById('dynamicVideo'); if (v) v.play(); };
@@ -249,6 +291,13 @@
     loadMenu();
     // After menu loads, enable Start Tour
     setTimeout(wireStartButton, 50);
+
+    // How it works modal wiring
+    const howBtn = document.getElementById('howBtn');
+    const howOverlay = document.getElementById('howOverlay');
+    const howClose = document.getElementById('howClose');
+    if (howBtn){ howBtn.addEventListener('click', ()=> howOverlay.style.display='flex'); }
+    if (howClose){ howClose.addEventListener('click', ()=> howOverlay.style.display='none'); }
 
     // Tip: To add a YouTube video, put an entry in assets/media.json like:
     // { "title": "My VR Clip", "youtubeId": "VIDEO_ID_HERE" }
