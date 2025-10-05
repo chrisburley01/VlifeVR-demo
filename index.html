@@ -211,3 +211,106 @@
       AFRAME.scenes[0].querySelector('#photoScene').setAttribute('visible', false);
     }
     function showPhoto() {
+      AFRAME.scenes[0].querySelector('#videoScene').setAttribute('visible', false);
+      AFRAME.scenes[0].querySelector('#photoScene').setAttribute('visible', true);
+    }
+
+    // Orb ring builder (even spacing around user)
+    function buildOrbRing({ count=0, radius=3, y=1.2, linkBase="#", jumpEvery=10 }={}) {
+      const ring = $('#orbRing');
+      ring.innerHTML = '';
+      if (!count || count < 1) return;
+
+      for (let i=0;i<count;i++){
+        const angle = (i / count) * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const z = -Math.sin(angle) * radius; // face inward
+        const orb = document.createElement('a-entity');
+        orb.setAttribute('class','clickable');
+        orb.setAttribute('geometry','primitive:sphere; radius:0.22');
+        orb.setAttribute('material','color:#ffd700; opacity:0.92');
+        orb.setAttribute('position',`${x} ${y} ${z}`);
+        orb.setAttribute('look-at','#camera');
+        orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.3 1.3 1.3');
+        orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
+
+        // Example behaviour: alternate jump vs link
+        if (i % 2 === 0) {
+          orb.dataset.jump = String((i+1) * jumpEvery);
+        } else {
+          orb.dataset.link = linkBase;
+        }
+
+        ring.appendChild(orb);
+      }
+    }
+
+    // DOM bindings
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadManifest();
+
+      $('#enterBtn').addEventListener('click', () => {
+        if (manifest?.youtube?.url) {
+          // Optional YouTube entry (tour / trailer)
+          window.open(manifest.youtube.url, '_blank', 'noopener');
+        } else {
+          gate.style.display = 'none';
+          startPlayback();
+        }
+      });
+
+      // HUD
+      $('#playBtn').addEventListener('click',()=>videoEl.play());
+      $('#pauseBtn').addEventListener('click',()=>videoEl.pause());
+      $('#rewindBtn').addEventListener('click',()=>{videoEl.currentTime=0;videoEl.play();});
+
+      const [t1, t2] = (manifest.video?.skipTimes || [30, 60]);
+      skip1Btn.addEventListener('click',()=>{videoEl.currentTime=t1;videoEl.play();});
+      skip2Btn.addEventListener('click',()=>{videoEl.currentTime=t2;videoEl.play();});
+
+      $('#sceneVideoBtn').addEventListener('click',showVideo);
+      $('#scenePhotoBtn').addEventListener('click',showPhoto);
+
+      // Primary hotspots
+      $('#hsInfo').addEventListener('click',()=>{
+        const v = infoPanel.getAttribute('visible');
+        infoPanel.setAttribute('visible', !v);
+      });
+
+      $('#hsJump').addEventListener('click',()=>{
+        const t = (manifest.video?.primaryJumpSec ?? 30);
+        videoEl.currentTime = t; videoEl.play();
+      });
+
+      $('#hsLink').addEventListener('click',()=>{
+        const u = manifest?.linkOut?.url || 'https://chrisburley01.github.io/';
+        window.open(u,'_blank','noopener');
+      });
+
+      $('#hsBack').addEventListener('click',showVideo);
+
+      // Delegated clicks for auto-made orb ring
+      $('#orbRing').addEventListener('click',(e)=>{
+        const t = e.target;
+        if (!t || !t.dataset) return;
+        if (t.dataset.jump) {
+          const sec = parseFloat(t.dataset.jump)||0;
+          videoEl.currentTime = sec; videoEl.play();
+        } else if (t.dataset.link) {
+          window.open(t.dataset.link,'_blank','noopener');
+        }
+      });
+
+      // Keyboard helpers (desktop)
+      window.addEventListener('keydown',(ev)=>{
+        if (ev.code==='Space'){ ev.preventDefault(); videoEl.paused?videoEl.play():videoEl.pause(); }
+        if (ev.code==='ArrowRight'){ videoEl.currentTime += 5; }
+        if (ev.code==='ArrowLeft'){ videoEl.currentTime = Math.max(0, videoEl.currentTime - 5); }
+      });
+
+      // Try to start playback immediately (muted); user may still need to press ▶ on mobile
+      startPlayback();
+    });
+  </script>
+</body>
+</html>
