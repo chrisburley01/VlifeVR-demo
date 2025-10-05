@@ -1,29 +1,201 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Vlife VR Experience</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  </head>
-  <body>
-    <a-scene>
-      <!-- 360° Video -->
-      <a-videosphere src="your-video.mp4" rotation="0 -90 0"></a-videosphere>
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vlife – Hybrid VR Experience (MVP)</title>
+  <!-- A-Frame core -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- Event-set helper for quick interactions -->
+  <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
+  <style>
+    :root { --gold: #ffd700; --bg:#0b0b0f; --panel:#15161a; --text:#e7e7ea; }
+    body { margin:0; background:#000; font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    /* On-screen UI (2D overlay) */
+    .hud { position:fixed; inset:auto 16px 16px 16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; z-index:9; }
+    .btn { appearance:none; border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); color:var(--text); padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; backdrop-filter: blur(6px); }
+    .btn:hover{ border-color:var(--gold); color:var(--gold); }
+    .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45); padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); }
+    .gate { position:fixed; inset:0; display:grid; place-items:center; background: radial-gradient(1200px 600px at 50% 100%, rgba(255,215,0,.05), rgba(0,0,0,.9)); z-index:10; }
+    .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.7); padding:20px; border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text); box-shadow:0 16px 72px rgba(0,0,0,.6); }
+    .gate h1 { margin:0 0 8px; font-size:22px; letter-spacing:.3px; }
+    .gate p { margin:0 0 16px; color:#c8c8d2; }
+    .gate .btn-primary { background:linear-gradient(180deg, #ffe58a, #e7c138); color:#2b2500; border:none; }
+    .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9; }
+    .logo { width:28px; height:28px; border-radius:8px; background:radial-gradient(circle at 30% 30%, #fff8cc, #be9a16 55%, #2b2500 100%); border:1px solid rgba(255,255,255,.3); box-shadow:0 4px 18px rgba(255,215,0,.3) inset; }
+    .brand { color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4); }
+    .note { position:fixed; bottom:12px; left:12px; color:#9ea0aa; font-size:12px; opacity:.85; }
+  </style>
+</head>
+<body>
+  <!-- SIMPLE BRAND BADGE -->
+  <div class="topright"><div class="logo"></div><div class="brand">VLIFE</div></div>
+  <div class="badge">Hybrid VR MVP · A‑Frame · 360° video</div>  <!-- TAP/CLICK GATE (autoplay policies require user gesture on many devices) -->  <div class="gate" id="gate">
+    <div class="gate-inner">
+      <h1>Enter Vlife</h1>
+      <p>Immersive 360° experience. Works in browser, mobile, and Meta Quest. For best quality, use a headset.</p>
+      <button class="btn btn-primary" id="enterBtn">Enter Experience</button>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Tip: Look around. Gaze at gold orbs to interact. Use the HUD to pause, jump, or switch scenes.</p>
+    </div>
+  </div>  <!-- 2D HUD CONTROLS -->  <div class="hud">
+    <button class="btn" id="playBtn">▶ Play</button>
+    <button class="btn" id="pauseBtn">⏸ Pause</button>
+    <button class="btn" id="rewindBtn">↺ Jump 0:00</button>
+    <button class="btn" id="midBtn">⇥ Jump 0:30</button>
+    <button class="btn" id="endBtn">⇥ Jump 1:00</button>
+    <button class="btn" id="sceneA">Scene A</button>
+    <button class="btn" id="sceneB">Scene B</button>
+  </div>
+  <div class="note">Replace <strong>assets/your-video.mp4</strong> with your Insta360 X4 export. Optional: swap to <strong>assets/your-photo.jpg</strong> for Scene B.</div>  <!-- A‑FRAME SCENE -->  <a-scene renderer="alpha:true antialias:true colorManagement:true" background="color: #000">
+    <!-- ASSETS: 360° VIDEO + (OPTIONAL) 360° PHOTO SKY -->
+    <a-assets timeout="30000">
+      <!-- IMPORTANT: place your 8K equirectangular video in /assets and name it your-video.mp4 or change the src below -->
+      <video id="vrVideo" src="assets/your-video.mp4" preload="auto" crossOrigin="anonymous" playsinline webkit-playsinline muted loop></video>
+      <!-- Optional 360 photo (equirectangular JPG) for an alt scene -->
+      <img id="photoSky" src="assets/your-photo.jpg" crossorigin="anonymous" />
+    </a-assets><!-- CAMERA RIG with cursor (works for gaze + controllers) -->
+<a-entity id="rig">
+  <a-entity id="camera" camera look-controls position="0 1.6 0">
+    <a-entity cursor="fuse:true; fuseTimeout:900" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015" material="shader: flat; opacity: 0.9"></a-entity>
+  </a-entity>
+</a-entity>
 
-      <!-- Hotspot Example -->
-      <a-entity id="infoHotspot" geometry="primitive: sphere; radius: 0.5"
-                material="color: gold; opacity: 0.8"
-                position="2 1 -3"
-                event-set__click="_event: click; _target: #infoPanel; visible: true">
-      </a-entity>
+<!-- VIDEOSPHERE SCENE (default) -->
+<a-entity id="videoScene">
+  <a-videosphere id="sphereVideo" src="#vrVideo" rotation="0 -90 0"></a-videosphere>
 
-      <!-- Info Panel -->
-      <a-plane id="infoPanel" visible="false" color="#222" position="0 1.5 -2" width="2" height="1">
-        <a-text value="Welcome to Vlife VR — click here to explore more!" align="center" color="#FFD700"></a-text>
-      </a-plane>
+  <!-- HOTSPOT: Info orb opens a floating panel -->
+  <a-entity id="hsInfo" geometry="primitive:sphere; radius:0.35" material="color:#ffd700; opacity:0.92; metalness:0.2; roughness:0.1; emissive:#695400; emissiveIntensity:0.3" position="2 1.2 -3"
+            class="interactable"></a-entity>
+  <a-entity id="infoPanel" visible="false" geometry="primitive: plane; width: 1.9; height:1" material="color:#14151a; opacity:0.95" position="0 1.6 -2.2">
+    <a-entity geometry="primitive: plane; width:1.9; height:1" material="color:#14151a; opacity:0.95"></a-entity>
+    <a-entity position="0 0 0.01" text="value: Welcome to Vlife — Hybrid VR.; align:center; width:2.8; color:#ffd700"></a-entity>
+    <a-entity position="0 -0.28 0.01" text="value: Click hotspots to reveal data, jump timeline, or switch scenes.; align:center; width:2.6; color:#d8d8df"></a-entity>
+  </a-entity>
 
-      <!-- Camera -->
-      <a-entity camera look-controls></a-entity>
-    </a-scene>
-  </body>
+  <!-- HOTSPOT: Timeline jump (e.g., jump to 30s) -->
+  <a-entity id="hsJump" geometry="primitive:sphere; radius:0.28" material="color:#ffd700; opacity:0.92" position="-1 1.0 -2.5" class="interactable" data-jump="30"></a-entity>
+
+  <!-- HOTSPOT: External link (opens new tab for docs/booking/etc.) -->
+  <a-entity id="hsLink" geometry="primitive:sphere; radius:0.28" material="color:#ffd700; opacity:0.92" position="0.3 0.8 -1.8" class="interactable" data-link="https://chrisburley01.github.io/"></a-entity>
+</a-entity>
+
+<!-- PHOTO SKY SCENE (alternate) -->
+<a-entity id="photoScene" visible="false">
+  <a-sky id="spherePhoto" src="#photoSky" rotation="0 -90 0"></a-sky>
+  <a-entity position="0 1.6 -2">
+    <a-entity geometry="primitive: plane; width: 1.8; height: .9" material="color:#14151a; opacity:0.95"></a-entity>
+    <a-entity position="0 0 0.01" text="value: Scene B (360° Photo). Click orb to go back.; align:center; width:2.4; color:#ffd700"></a-entity>
+  </a-entity>
+  <a-entity id="hsBack" geometry="primitive:sphere; radius:0.32" material="color:#ffd700; opacity:0.92" position="0.0 1.0 -2.2" class="interactable" data-scene="video"></a-entity>
+</a-entity>
+
+<!-- Subtle lighting glint on orbs -->
+<a-entity light="type: point; intensity: 0.6; distance: 12" position="1 2 -2"></a-entity>
+<a-entity light="type: ambient; intensity: 0.35"></a-entity>
+
+  </a-scene>  <script>
+    // ---------- Utilities ----------
+    const $ = (sel) => document.querySelector(sel);
+    const videoEl = $('#vrVideo');
+    const gate = $('#gate');
+
+    // Scenes
+    const videoScene = document.getElementById('videoScene');
+    const photoScene = document.getElementById('photoScene');
+
+    // Hotspots & Panels
+    const hsInfo = document.getElementById('hsInfo');
+    const infoPanel = document.getElementById('infoPanel');
+    const hsJump = document.getElementById('hsJump');
+    const hsLink = document.getElementById('hsLink');
+    const hsBack = document.getElementById('hsBack');
+
+    // HUD buttons
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const midBtn = document.getElementById('midBtn');
+    const endBtn = document.getElementById('endBtn');
+    const sceneA = document.getElementById('sceneA');
+    const sceneB = document.getElementById('sceneB');
+
+    // Ensure video is ready
+    videoEl.addEventListener('loadeddata', () => {
+      console.log('[Vlife] Video loaded:', videoEl.src, videoEl.videoWidth + 'x' + videoEl.videoHeight);
+    });
+
+    // Autoplay handling: must be muted to autoplay. We start muted then allow unmute on first user gesture.
+    const startPlayback = async () => {
+      try {
+        videoEl.muted = true; // required for autoplay on many devices
+        await videoEl.play();
+        console.log('[Vlife] Autoplay started (muted).');
+      } catch (e) {
+        console.warn('[Vlife] Autoplay blocked, user gesture required.', e);
+      }
+    };
+
+    // Gate enter: user gesture → play and hide overlay
+    document.getElementById('enterBtn').addEventListener('click', async () => {
+      gate.style.display = 'none';
+      // Try to start, then unmute after a tiny delay to maintain playback
+      await startPlayback();
+      setTimeout(() => { videoEl.muted = false; }, 350);
+    });
+
+    // HUD controls
+    playBtn.addEventListener('click', () => videoEl.play());
+    pauseBtn.addEventListener('click', () => videoEl.pause());
+    rewindBtn.addEventListener('click', () => { videoEl.currentTime = 0; videoEl.play(); });
+    midBtn.addEventListener('click', () => { videoEl.currentTime = 30; videoEl.play(); });
+    endBtn.addEventListener('click', () => { videoEl.currentTime = 60; videoEl.play(); });
+
+    // Scene switching
+    const showVideoScene = () => { videoScene.setAttribute('visible', true); photoScene.setAttribute('visible', false); };
+    const showPhotoScene = () => { videoScene.setAttribute('visible', false); photoScene.setAttribute('visible', true); };
+    sceneA.addEventListener('click', showVideoScene);
+    sceneB.addEventListener('click', showPhotoScene);
+
+    // Hotspot interactions (gaze or click)
+    const registerGazeClick = (el, handler) => {
+      el.addEventListener('click', handler);
+      // fallback for VR gaze (cursor with fuse triggers 'click' already)
+    };
+
+    registerGazeClick(hsInfo, () => {
+      const vis = infoPanel.getAttribute('visible');
+      infoPanel.setAttribute('visible', !vis);
+    });
+
+    registerGazeClick(hsJump, () => {
+      const secs = parseFloat(hsJump.dataset.jump || '30');
+      videoEl.currentTime = secs; videoEl.play();
+    });
+
+    registerGazeClick(hsLink, () => {
+      const url = hsLink.dataset.link || 'https://example.com';
+      window.open(url, '_blank');
+    });
+
+    registerGazeClick(hsBack, () => {
+      showVideoScene();
+    });
+
+    // Start loading early; actual play happens on Enter
+    startPlayback();
+
+    // Basic analytics hooks (replace with real endpoint later)
+    const logEvent = (name, data={}) => console.log('[Vlife Analytics]', name, data);
+    ['play','pause','ended','timeupdate'].forEach(ev => videoEl.addEventListener(ev, () => logEvent('video_' + ev, {t: videoEl.currentTime})));
+
+    // Quality switching stub (add more sources & swap src)
+    // Example:
+    // function setQuality(level){
+    //   const map = { high: 'assets/your-video-8k.mp4', med: 'assets/your-video-5k.mp4' };
+    //   const wasPlaying = !videoEl.paused;
+    //   videoEl.src = map[level];
+    //   videoEl.load();
+    //   if (wasPlaying) videoEl.play();
+    // }
+  </script></body>
 </html>
