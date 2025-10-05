@@ -49,7 +49,7 @@
       <h1>Enter Vlife</h1>
       <p>Immersive 360° exploration.<br>Desktop, mobile & Meta Quest compatible.</p>
       <button class="btn-primary" id="enterBtn" type="button">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around and click gold orbs to open 360° video sites.</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look at a gold orb until the ring fills to open it.</p>
     </div>
   </div>
 
@@ -65,6 +65,14 @@
           geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
           material="shader:flat; opacity:0.9"></a-entity>
 
+        <!-- Skins toggle orb (left side so it never hides behind panel) -->
+        <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
+          <a-entity geometry="primitive:sphere; radius:0.12"
+                    material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
+          <a-entity position="0 0.28 0" billboard-label
+            text="value:Skins; align:center; width:1.4; color:#ffd700; side:double"></a-entity>
+        </a-entity>
+
         <!-- Look-down Reset (appears after ~1.5s looking down) -->
         <a-entity id="resetGroup" position="0 -0.9 -0.7" visible="false">
           <a-entity id="resetOrb" class="clickable"
@@ -77,15 +85,8 @@
             text="value:Reset / Refresh; align:center; width:2.6; color:#ffd700; side:double">
           </a-entity>
         </a-entity>
-
-        <!-- Skins toggle orb (kept on left so it never hides behind panel) -->
-        <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
-          <a-entity geometry="primitive:sphere; radius:0.12"
-                    material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
-          <a-entity position="0 0.28 0" billboard-label
-            text="value:Skins; align:center; width:1.4; color:#ffd700; side:double"></a-entity>
-        </a-entity>
       </a-entity>
+
       <!-- Controller lasers for Quest -->
       <a-entity laser-controls="hand: right"></a-entity>
       <a-entity laser-controls="hand: left"></a-entity>
@@ -123,8 +124,9 @@
   </a-scene>
 
   <script>
-    /* ---------- Components (unchanged, stable) ---------- */
+    /* ---------- Components ---------- */
 
+    // VR-safe billboard labels
     AFRAME.registerComponent('billboard-label', {
       init: function () {
         this.cam = document.querySelector('#camera');
@@ -141,6 +143,7 @@
       }
     });
 
+    // Look-down reset
     AFRAME.registerComponent('lookdown-reset', {
       schema: { hold: {type:'int', default:1500}, thresholdY: {type:'number', default:-0.3}},
       init: function () {
@@ -176,7 +179,6 @@
     const orbRing = $('#orbRing');
     const skinStatus = $('#skinStatus');
 
-    // External links (unchanged)
     const links = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
@@ -186,7 +188,6 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
-    // Background skins (unchanged)
     const skins = [
       { name:'Night Sky',     img:'assets/nightsky.jpg',    fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.8 },
       { name:'Lake & Forest', img:'assets/lake_forest.jpg', fallback:'#1b2a24', ambient:'#cfead7', ambInt:0.45, keyInt:0.85 },
@@ -269,47 +270,43 @@
       });
     }
 
-    // Only toggle clickability on the real orb mesh (class .orb)
-    function setRingClickable(enabled){
-      document.querySelectorAll('#orbRing .orb').forEach(el=>{
-        if (enabled) el.classList.add('clickable');
-        else el.classList.remove('clickable');
-      });
-    }
-
-    // Hidden <a> fallback opener (reliable in Quest/WebXR)
+    // Open a URL in a way browsers accept as a user gesture (works with fuse)
     function openURL(url){
       const a = document.createElement('a');
-      a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
       a.style.display = 'none';
       document.body.appendChild(a);
-      a.click();
+      a.click();      // user-gesture equivalent for most browsers
       a.remove();
     }
 
-    // Build orb group (minimal visual polish, no risky extras)
+    // Orb factory: adds 'click' handler (fuse triggers 'click')
     function makeOrb(title, url){
       const group = document.createElement('a-entity');
 
+      // Click target mesh
       const orb = document.createElement('a-entity');
-      orb.classList.add('orb','clickable');
+      orb.classList.add('clickable', 'orb');
       orb.setAttribute('geometry','primitive:sphere; radius:0.25');
       orb.setAttribute('material','color:#ffd700; metalness:0.7; roughness:0.25; emissive:#6a5200; emissiveIntensity:0.35; opacity:0.97');
       orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.2 1.2 1.2');
       orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
       orb.setAttribute('animation__glow','property=material.emissiveIntensity; dir=alternate; dur:2000; from:0.3; to:0.9; loop:true');
 
+      // Label (non-clickable)
       const label = document.createElement('a-entity');
       label.setAttribute('position','0 0.52 0.01');
       label.setAttribute('billboard-label','');
       label.setAttribute('text',`value:${title}; align:center; width:3.0; color:#ffd700; side:double`);
 
-      // Multi-event open with hidden <a> fallback
-      const go = ()=>openURL(url);
-      ['click','pointerup','mouseup','touchend'].forEach(ev=>{
-        orb.addEventListener(ev, go, {passive:true});
-        group.addEventListener(ev, go, {passive:true});
-      });
+      // IMPORTANT: fuse → 'click' event; also listen to pointer/touch just in case
+      const go = () => openURL(url);
+      orb.addEventListener('click', go);           // gaze fuse fires this
+      orb.addEventListener('pointerup', go, {passive:true});
+      orb.addEventListener('mouseup', go, {passive:true});
+      orb.addEventListener('touchend', go, {passive:true});
 
       group.appendChild(orb);
       group.appendChild(label);
@@ -322,13 +319,13 @@
       ring.innerHTML = '';
       const n = items.length;
 
-      const FRONT_GAP_DEG = 80;                              // <<< widened gap
+      const FRONT_GAP_DEG = 80;
       const HALF_GAP = THREE.MathUtils.degToRad(FRONT_GAP_DEG / 2);
-      const ROT = THREE.MathUtils.degToRad(10);              // small rotation so no orb hugs edge
+      const ROT = THREE.MathUtils.degToRad(10);
       const span = (Math.PI * 2) - (HALF_GAP * 2);
 
       for (let i = 0; i < n; i++) {
-        const t = HALF_GAP + (i + 0.5) * (span / n) + ROT;   // +0.5 centers items in segments
+        const t = HALF_GAP + (i + 0.5) * (span / n) + ROT;
         const x = Math.cos(t) * radius;
         const z = -Math.sin(t) * radius;
         const yawDeg = (Math.atan2(0 - x, 0 - z) * 180 / Math.PI);
@@ -341,12 +338,9 @@
     }
 
     /* ---------- Wire-up ---------- */
-
     document.getElementById('enterBtn').addEventListener('click', async ()=>{
-      // Hide gate
       gate.style.display = 'none';
 
-      // Build UI + scene
       buildSkinPanel();
       await applySkin(skinIndex);
       buildOrbRing('orbRing', links);
@@ -354,29 +348,29 @@
       // Start look-down watcher (on camera)
       document.getElementById('camera').setAttribute('lookdown-reset','hold:1500; thresholdY:-0.3');
 
-      // Show toggle and open panel initially; disable ring clicks while open
+      // Show toggle and open panel
       skinsToggle.setAttribute('visible', true);
       skinPanel.setAttribute('visible', true);
-      setRingClickable(false);
+
+      // NOTE: ring stays clickable even while panel is visible
     });
 
-    // Toggle panel (and ring clickability)
+    // Toggle panel only (ring stays clickable now)
     skinsToggle.addEventListener('click', ()=>{
-      const showing = !skinPanel.getAttribute('visible');
-      skinPanel.setAttribute('visible', showing);
-      setRingClickable(!showing);
+      skinPanel.setAttribute('visible', !skinPanel.getAttribute('visible'));
     });
 
-    // Reset: soft rebuild
+    // Reset rebuild
     document.getElementById('resetOrb').addEventListener('click', async ()=>{
       buildOrbRing('orbRing', links);
       await applySkin(skinIndex);
     });
 
-    // Keyboard fallback to show reset orb
+    // Debug helper (optional): press "L" to log what the cursor is hitting
     window.addEventListener('keydown', (e)=>{
-      if (e.key && e.key.toLowerCase() === 'r') {
-        document.getElementById('resetGroup').setAttribute('visible', true);
+      if ((e.key||'').toLowerCase()==='l'){
+        const r = document.querySelector('[raycaster]').components.raycaster;
+        console.log('Raycaster intersected:', r.intersections.map(i=>i.object.el));
       }
     });
   </script>
