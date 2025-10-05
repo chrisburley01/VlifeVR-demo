@@ -13,7 +13,7 @@
     /* Menu */
     .menu { position:fixed; inset:0; background:rgba(0,0,0,0.9);
             display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
-            text-align:center; z-index:10; }
+            text-align:center; z-index:10; pointer-events:auto; }
     .menu img { width:120px; }
     .menu h1 { margin:0; }
     button { background:rgba(255,255,255,0.1); color:var(--text); border:1px solid rgba(255,255,255,0.2);
@@ -32,11 +32,14 @@
     #backBtn { position:fixed; top:12px; left:12px; background:rgba(0,0,0,.6); color:#fff;
                border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:6px 10px;
                cursor:pointer; z-index:9; display:none; }
+
+    /* Safety: ensure buttons are clickable above the canvas */
+    .ui-top { position:relative; z-index:12; }
   </style>
 </head>
 <body>
   <!-- Menu -->
-  <div id="menu" class="menu">
+  <div id="menu" class="menu ui-top">
     <img src="assets/Vlifelogo_1_.png" alt="VLife Logo" />
     <h1>VLife 360° Experience</h1>
     <button id="startBtn" onclick="window.vlifeStart && window.vlifeStart()">Start Tour ▶</button>
@@ -44,10 +47,124 @@
   </div>
 
   <!-- How it Works overlay -->
-  <div id="howOverlay" class="overlay" style="display:none">
+  <div id="howOverlay" class="overlay ui-top" style="display:none">
     <div class="box">
       <h2>How it Works</h2>
       <p>🟡 Look around to explore in 360°.<br>
          🟡 Tap or gaze on gold orbs for info or to move between scenes.<br>
          🟡 Some experiences open YouTube 360° videos.<br><br>
-         Works best on Meta Quest, phones, or desktop browsers
+         Works best on Meta Quest, phones, or desktop browsers with mouse drag.</p>
+      <button id="howCloseBtn">Close ✖</button>
+    </div>
+  </div>
+
+  <button id="backBtn" class="ui-top" onclick="backToMenu()">← Back</button>
+
+  <!-- VR Scene -->
+  <a-scene id="scene" renderer="antialias:true" background="color:#000">
+    <a-assets id="assetsContainer" timeout="30000"></a-assets>
+    <a-entity camera look-controls position="0 1.6 0"></a-entity>
+    <a-videosphere id="videoSphere" visible="false"></a-videosphere>
+    <a-sky id="photoSky" visible="false"></a-sky>
+  </a-scene>
+
+  <script>
+    const menu = document.getElementById('menu');
+    const videoSphere = document.getElementById('videoSphere');
+    const photoSky = document.getElementById('photoSky');
+    const assetsContainer = document.getElementById('assetsContainer');
+    const backBtn = document.getElementById('backBtn');
+    let MEDIA = { videos: [], photos: [] };
+    let afCanvas = null;
+
+    // Ensure the WebGL canvas doesn't swallow clicks when UI is up
+    function setCanvasPointer(enabled) {
+      if (!afCanvas) {
+        afCanvas = document.querySelector('canvas.a-canvas');
+      }
+      if (afCanvas) {
+        afCanvas.style.pointerEvents = enabled ? 'auto' : 'none';
+      }
+    }
+
+    // Load JSON (no cache)
+    async function loadMenu() {
+      try {
+        const res = await fetch('assets/media.json', { cache: 'no-store' });
+        MEDIA = await res.json();
+        console.log('Loaded media:', MEDIA);
+      } catch (e) {
+        console.error('Error loading media.json', e);
+        MEDIA = { videos: [], photos: [] };
+      }
+    }
+
+    // Open a media item
+    async function playMedia(type, item) {
+      menu.style.display = 'none';
+      backBtn.style.display = 'block';
+      setCanvasPointer(true); // now scene can capture drags/taps
+
+      // YouTube item
+      if (type === 'video' && item.youtubeId) {
+        const url = `https://www.youtube.com/watch?v=${item.youtubeId}&vr=1`;
+        window.open(url, '_blank'); // Best UX on Quest/phones
+        return;
+      }
+
+      // Local 360 photo
+      if (type === 'photo' && item.file) {
+        photoSky.setAttribute('src', `assets/${item.file}`);
+        photoSky.setAttribute('visible', true);
+        videoSphere.setAttribute('visible', false);
+      }
+    }
+
+    // Back to menu
+    function backToMenu() {
+      menu.style.display = 'flex';
+      backBtn.style.display = 'none';
+      photoSky.setAttribute('visible', false);
+      videoSphere.setAttribute('visible', false);
+      setCanvasPointer(false); // block canvas so UI gets clicks
+    }
+
+    // ---- How overlay helpers & wiring ----
+    function openHow() {
+      const o = document.getElementById('howOverlay');
+      if (!o) return;
+      o.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      setCanvasPointer(false); // UI on top, block canvas
+    }
+    function closeHow() {
+      const o = document.getElementById('howOverlay');
+      if (!o) return;
+      o.style.display = 'none';
+      document.body.style.overflow = '';
+      // keep menu visible state as-is; if still on menu, keep canvas blocked
+      if (menu.style.display !== 'none') setCanvasPointer(false);
+    }
+
+    // Fallbacks so buttons always work
+    window.vlifeStart = function () {
+      try {
+        if (MEDIA?.photos?.length) return playMedia('photo', MEDIA.photos[0]);
+        if (MEDIA?.videos?.length) return playMedia('video', MEDIA.videos[0]);
+        alert('No media found. Check /assets/media.json');
+      } catch (e) { console.error(e); alert('Start failed'); }
+    };
+    window.vlifeHow = openHow;
+
+    // Extra ways to close
+    document.getElementById('howCloseBtn')?.addEventListener('click', closeHow);
+    document.getElementById('howOverlay')?.addEventListener('click', (e) => { if (e.target.id === 'howOverlay') closeHow(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHow(); });
+    window.addEventListener('popstate', closeHow);
+
+    // Initial state: show menu and block canvas clicks
+    setCanvasPointer(false);
+    loadMenu();
+  </script>
+</body>
+</html>
