@@ -83,9 +83,9 @@
   </a-scene>
 
   <script>
-    // ---- Robust billboard label (no mirroring) ----
-    // Faces the camera each frame, flips 180° around Y via quaternion multiply (constant, not cumulative),
-    // and keeps the label upright (x/z = 0). Works consistently in VR.
+    // ---- Robust billboard label (no mirroring / no disappearing) ----
+    // Each frame: aim at camera, apply a constant 180° Y flip via quaternion (not cumulative),
+    // clamp pitch/roll so text stays upright.
     AFRAME.registerComponent('billboard-label', {
       init: function () {
         this.cam = document.querySelector('#camera');
@@ -97,9 +97,9 @@
         const obj = this.el.object3D;
         const camPos = this.cam.object3D.getWorldPosition(this.tmp);
         obj.lookAt(camPos);
-        // Apply one fixed 180° flip to counter text mirroring
+        // constant Y flip to prevent mirrored canvas text in VR
         obj.quaternion.multiplyQuaternions(obj.quaternion, this.flipQ);
-        // Keep upright (no pitch/roll drift)
+        // keep upright
         obj.rotation.x = 0;
         obj.rotation.z = 0;
       }
@@ -118,7 +118,7 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
-    // Build ring: each group pre-rotated to face centre; label self-billboards with the component above
+    // Build ring: groups face centre; labels self-billboard with the component above
     function buildOrbRing(containerId, items, radius=3.1, y=1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
@@ -127,7 +127,7 @@
       for (let i=0;i<n;i++){
         const t = (i/n)*Math.PI*2;
         const x = Math.cos(t)*radius;
-        const z = -Math.sin(t)*radius;           // inward ring (A-Frame forward = -Z)
+        const z = -Math.sin(t)*radius;                         // inward ring (A-Frame forward = -Z)
         const yawDeg = (Math.atan2(0 - x, 0 - z) * 180 / Math.PI); // face centre
 
         const group = document.createElement('a-entity');
@@ -144,10 +144,10 @@
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
 
-        // Label — billboarded via custom component (no look-at attr), double-sided, tiny z offset
+        // Label — billboarded via custom component, double-sided, tiny z-offset
         const label = document.createElement('a-entity');
         label.setAttribute('position','0 0.52 0.01');
-        label.setAttribute('billboard-label',''); // <-- our component
+        label.setAttribute('billboard-label',''); // <- key piece
         label.setAttribute('text',[
           `value:${items[i].title}`,
           'align:center',
@@ -166,7 +166,7 @@
     }
 
     // Enter
-    $('#enterBtn').addEventListener('click', ()=>{
+    document.getElementById('enterBtn').addEventListener('click', ()=>{
       gate.style.display='none';
       buildOrbRing('orbRing', links);
     });
