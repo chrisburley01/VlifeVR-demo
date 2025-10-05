@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,20 +11,22 @@
     :root { --gold:#ffd700; --bg:#0b0b0f; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
-    /* Overlay and gate */
+    /* Gate styling */
     .gate { position:fixed; inset:0; display:grid; place-items:center;
-            background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.05),rgba(0,0,0,.9)); z-index:10;}
+            background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92)); z-index:10;}
     .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px;
                   border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text);
                   box-shadow:0 16px 72px rgba(0,0,0,.6);}
     .gate-logo { width:min(360px,70vw); height:auto; display:block; margin:0 auto 12px;
-                 filter:drop-shadow(0 8px 24px rgba(255,215,0,.18));}
+                 filter:drop-shadow(0 8px 24px rgba(255,215,0,.25)); animation:pulse 5s ease-in-out infinite; }
+    @keyframes pulse {0%,100%{filter:drop-shadow(0 0 15px rgba(255,215,0,.3));}50%{filter:drop-shadow(0 0 35px rgba(255,215,0,.7));}}
     .gate h1 { margin:6px 0 8px; font-size:22px;}
     .gate p { margin:0 0 16px; color:#c8c8d2;}
     .btn-primary { background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;
                    border-radius:12px; padding:10px 18px; font-weight:600; cursor:pointer;}
     .btn-primary:hover { filter:brightness(1.15); }
 
+    /* Brand */
     .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9;}
     .brandimg { width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000;
                 box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
@@ -35,25 +36,25 @@
   </style>
 </head>
 <body>
-  <!-- Top -->
+  <!-- Branding -->
   <div class="topright">
     <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
     <div class="brand">VLIFE</div>
   </div>
-  <div class="badge">Hybrid VR MVP · A-Frame · Interactive Links</div>
+  <div class="badge">Hybrid VR MVP · Social & 360° Links</div>
 
-  <!-- Entry gate -->
+  <!-- Entry -->
   <div class="gate" id="gate">
     <div class="gate-inner">
       <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
       <h1>Enter Vlife</h1>
-      <p>Immersive 360° experience.<br>Works on browser, mobile, and Meta Quest.<br>For best quality, use a headset.</p>
+      <p>Immersive 360° exploration.<br>Desktop, mobile & Meta Quest compatible.</p>
       <button class="btn-primary" id="enterBtn">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around and gaze at gold orbs to interact.</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around and click gold orbs to open social and VR sites.</p>
     </div>
   </div>
 
-  <!-- VR Scene -->
+  <!-- Scene -->
   <a-scene renderer="alpha:true antialias:true" background="color:#000">
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls position="0 1.6 0"
@@ -66,17 +67,17 @@
     </a-entity>
 
     <a-entity id="photoScene">
-      <a-sky color="#0c0f15"></a-sky>
+      <a-sky color="#0b0d13"></a-sky>
       <a-entity position="0 1.6 -2">
         <a-entity geometry="primitive:plane; width:1.8; height:.9"
-                  material="color:#14151a; opacity:0.95"></a-entity>
+                  material="color:#14151a; opacity:0.9"></a-entity>
         <a-entity position="0 0 0.01"
-          text="value: Welcome to Vlife — click orbs to explore links.; align:center; width:2.4; color:#ffd700"></a-entity>
+          text="value: Explore Vlife · click gold orbs to open social and 360° sites.; align:center; width:2.4; color:#ffd700"></a-entity>
       </a-entity>
       <a-entity id="orbRing"></a-entity>
     </a-entity>
 
-    <a-entity light="type:point; intensity:0.7; distance:10" position="0 3 0"></a-entity>
+    <a-entity light="type:point; intensity:0.8; distance:10" position="0 3 0"></a-entity>
     <a-entity light="type:ambient; intensity:0.4"></a-entity>
   </a-scene>
 
@@ -84,13 +85,14 @@
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
 
+    // Orb links
     const links = [
-      {title:'Walkers Transport', url:'https://www.walkers-transport.co.uk/'},
-      {title:'YouTube', url:'https://youtube.com'},
-      {title:'GitHub', url:'https://github.com/chrisburley01'},
-      {title:'Vlife Hub', url:'https://chrisburley01.github.io/'},
-      {title:'WhatsApp', url:'https://wa.me/447464498838'},
-      {title:'LinkedIn', url:'https://www.linkedin.com/in/chris-burley/'}
+      {title:'Facebook', url:'https://www.facebook.com/'},
+      {title:'Instagram', url:'https://www.instagram.com/'},
+      {title:'LinkedIn', url:'https://www.linkedin.com/in/chris-burley/'},
+      {title:'YouTube 360', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'},
+      {title:'Vimeo 360', url:'https://vimeo.com/channels/360videos'},
+      {title:'Veer VR', url:'https://veer.tv/'}
     ];
 
     function buildOrbRing(containerId, items, radius=3, y=1.2) {
@@ -106,19 +108,21 @@
         orbGroup.setAttribute('position', `${x} ${y} ${z}`);
         orbGroup.setAttribute('look-at', '#camera');
 
-        // Orb itself
+        // Gold orb
         const orb = document.createElement('a-entity');
         orb.setAttribute('class','clickable');
         orb.setAttribute('geometry','primitive:sphere; radius:0.25');
-        orb.setAttribute('material','color:#ffd700; opacity:0.92');
+        orb.setAttribute('material','color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95');
+        orb.setAttribute('animation__glow','property=material.emissiveIntensity; dir=alternate; dur=2000; from:0.3; to:1; loop:true');
         orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.3 1.3 1.3');
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
 
-        // Label above the orb
+        // Glowing label
         const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0.45 0');
-        label.setAttribute('text',`value:${items[i].title}; align:center; width:2.2; color:#fff; wrapCount:18`);
+        label.setAttribute('position','0 0.5 0');
+        label.setAttribute('text',`value:${items[i].title}; align:center; width:2.4; color:#ffd700; shader:msdf; negate:false;`);
+        label.setAttribute('animation__glow','property=components.text.material.color; type=color; from:#ffd700; to:#fff7b2; dir=alternate; dur=2000; loop:true');
 
         orbGroup.appendChild(orb);
         orbGroup.appendChild(label);
