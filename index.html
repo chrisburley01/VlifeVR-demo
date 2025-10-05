@@ -11,7 +11,6 @@
     :root { --gold:#ffd700; --text:#e7e7ea; }
     body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
 
-    /* Gate */
     .gate{position:fixed;inset:0;display:grid;place-items:center;
       background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92));z-index:10;}
     .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;
@@ -25,7 +24,6 @@
       border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer;}
     .btn-primary:hover{filter:brightness(1.15);}
 
-    /* Brand */
     .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9;}
     .brandimg{width:32px;height:32px;object-fit:contain;border-radius:8px;background:#000;
       box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
@@ -35,14 +33,12 @@
   </style>
 </head>
 <body>
-  <!-- Branding -->
   <div class="topright">
     <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
     <div class="brand">VLIFE</div>
   </div>
   <div class="badge">Hybrid VR MVP · 360° Links</div>
 
-  <!-- Entry -->
   <div class="gate" id="gate">
     <div class="gate-inner">
       <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
@@ -53,9 +49,7 @@
     </div>
   </div>
 
-  <!-- Scene -->
   <a-scene renderer="alpha:true antialias:true" background="color:#000">
-    <!-- Camera rig with cursor + raycaster -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls position="0 1.6 0"
                 cursor="fuse:true; fuseTimeout:900"
@@ -66,7 +60,6 @@
       </a-entity>
     </a-entity>
 
-    <!-- Default sky scene (no media needed) -->
     <a-entity id="photoScene">
       <a-sky color="#0b0d13"></a-sky>
       <a-entity position="0 1.6 -2">
@@ -96,21 +89,23 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
-    // Build ring of orbs with labels (labels fixed: no mirror, no cull)
+    // Build ring: compute yaw so each orb+label faces the user at the centre (0,*,0)
     function buildOrbRing(containerId, items, radius=3.1, y=1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
       const n = items.length;
 
       for (let i=0;i<n;i++){
-        const angle = (i/n)*Math.PI*2;
-        const x = Math.cos(angle)*radius;
-        const z = -Math.sin(angle)*radius; // ring faces inward
+        const theta = (i/n)*Math.PI*2;        // 0..2π
+        const x = Math.cos(theta)*radius;
+        const z = Math.sin(theta)*radius;     // use +sin for standard yaw math
 
-        // Billboard group so it faces camera
+        // Yaw to face the origin (camera at centre). atan2 returns radians.
+        const yawDeg = (Math.atan2(-x, -z) * 180 / Math.PI); // point toward (0,0)
+
         const group = document.createElement('a-entity');
-        group.setAttribute('position', `${x} ${y} ${z}`);
-        group.setAttribute('look-at', '#camera');
+        group.setAttribute('position', `${x} ${y} ${-z}`);   // -z because A-Frame -Z = forward
+        group.setAttribute('rotation', `0 ${yawDeg} 0`);     // face inward (to user)
 
         // Orb
         const orb = document.createElement('a-entity');
@@ -122,10 +117,9 @@
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
 
-        // Label: rotated 180 so it reads correctly when group faces inward
+        // Label (no billboarding, just sits above, same facing as group)
         const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0.52 0.01');    // small z offset avoids z-fighting
-        label.setAttribute('rotation','0 180 0');        // fixes mirrored text
+        label.setAttribute('position','0 0.52 0.01');   // tiny z offset toward user
         label.setAttribute('text',[
           `value:${items[i].title}`,
           'align:center',
@@ -143,7 +137,6 @@
       }
     }
 
-    // Enter
     $('#enterBtn').addEventListener('click', ()=>{
       gate.style.display='none';
       buildOrbRing('orbRing', links);
