@@ -1,27 +1,20 @@
+
 {
   "videos": [
     {
-      "title": "Angel Falls 8K 360°",
-      "youtubeId": "abc123DEF45"
-    },
-    {
-      "title": "Elephants in Africa 360°",
-      "youtubeId": "zyx987WVU65"
+      "title": "Welcome to VLife (YouTube 360°)",
+      "youtubeId": "dQw4w9WgXcQ"
     }
   ],
   "photos": [
     {
-      "id": "scene1",
-      "title": "Warehouse Entrance",
-      "file": "SAM_100_0332.jpg",
+      "title": "Sample 360° Scene",
+      "file": "SAM_100_0226.jpg",
       "hotspots": [
-        {
-          "type": "info",
-          "text": "Welcome to the warehouse entrance — tap gold orbs for navigation.",
-          "yaw": 0,
-          "pitch": -10,
-          "radius": 2.2
-        }
+        { "type": "info", "text": "Welcome to VLife VR! Look around to explore.", "yaw": 0, "pitch": -5 },
+        { "type": "info", "text": "Tap the gold orbs to reveal more.", "yaw": 90, "pitch": 10 },
+        { "type": "info", "text": "Immersive 360° photo demo.", "yaw": -90, "pitch": 0 },
+        { "type": "info", "text": "Enjoy the experience!", "yaw": 180, "pitch": 5 }
       ]
     }
   ]
