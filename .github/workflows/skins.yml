@@ -1,5 +1,3 @@
-
-
 name: Fetch 360 skins
 
 on:
@@ -18,13 +16,13 @@ jobs:
       - name: Make assets folder
         run: mkdir -p assets
 
-      - name: Download images (Wikimedia Special:FilePath)
+      - name: Download 360 background images
         run: |
-          curl -L "https://commons.wikimedia.org/wiki/Special:FilePath/360-degree%20Panorama%20of%20the%20Southern%20Sky.jpg" -o assets/nightsky.jpg
-          curl -L "https://commons.wikimedia.org/wiki/Special:FilePath/Chilliwack%20Lake%20panorama.jpg" -o assets/lake_forest.jpg
-          curl -L "https://commons.wikimedia.org/wiki/Special:FilePath/Times%20Square%20June%202013.jpg" -o assets/city.jpg
-          curl -L "https://commons.wikimedia.org/wiki/Special:FilePath/Leuzenberg%20Panorama%2001.jpg" -o assets/village.jpg
-          curl -L "https://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20panorama%20of%20Yerevan%20Downtown%20during%20Air%20Balloon%20Festival%202023.jpg" -o assets/balloons.jpg
+          curl -L "https://upload.wikimedia.org/wikipedia/commons/4/4a/360-degree_Panorama_of_the_Southern_Sky.jpg" -o assets/nightsky.jpg
+          curl -L "https://upload.wikimedia.org/wikipedia/commons/f/f9/Chilliwack_Lake_panorama.jpg" -o assets/lake_forest.jpg
+          curl -L "https://upload.wikimedia.org/wikipedia/commons/6/68/Times_Square_June_2013.jpg" -o assets/city.jpg
+          curl -L "https://upload.wikimedia.org/wikipedia/commons/f/f1/Leuzenberg_Panorama_01.jpg" -o assets/village.jpg
+          curl -L "https://upload.wikimedia.org/wikipedia/commons/3/34/Aerial_panorama_of_Yerevan_Downtown_during_Air_Balloon_Festival_2023.jpg" -o assets/balloons.jpg
 
       - name: Create ZIP
         run: |
