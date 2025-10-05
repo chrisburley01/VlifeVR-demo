@@ -1,26 +1,6 @@
 {
   "videos": [
-    {
-      "id": "yt01",
-      "title": "Welcome to VLife (YouTube 360° Example)",
-      "youtubeId": "dQw4w9WgXcQ",
-      "hotspots": [
-        { "type": "info", "text": "This is a YouTube-hosted 360° VR video.", "yaw": 0, "pitch": -5, "radius": 2.5 },
-        { "type": "url", "href": "https://www.youtube.com/@chrisburley9080", "text": "Visit Chris Burley YouTube Channel", "yaw": 90, "pitch": 5, "radius": 2.5 }
-      ]
-    }
+    { "title": "Welcome to VLife (YouTube 360°)", "youtubeId": "dQw4w9WgXcQ" }
   ],
-  "photos": [
-    {
-      "id": "p01",
-      "title": "Sample 360° Scene",
-      "file": "SAM_100_0226.jpg",
-      "hotspots": [
-        { "type": "info", "text": "Welcome to VLife VR — a 360° experience demo.", "yaw": 0, "pitch": -5, "radius": 2.2, "autoHide": 5000 },
-        { "type": "info", "text": "Look around freely — the orbs are interactive!", "yaw": 90, "pitch": 0, "radius": 2.2 },
-        { "type": "info", "text": "You can link these to other scenes, web pages, or videos.", "yaw": -90, "pitch": 10, "radius": 2.2 },
-        { "type": "url", "text": "See VLife on YouTube", "href": "https://www.youtube.com/@chrisburley9080", "yaw": 180, "pitch": 5, "radius": 2.2 }
-      ]
-    }
-  ]
+  "photos": []
 }
