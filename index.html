@@ -126,13 +126,10 @@
         MEDIA.videos.forEach((v,i)=>{
           const b=document.createElement('button');
           const title = v.title || `Video ${i+1}`;
-          // Add a YouTube label if this item uses YouTube
           if (v.youtubeId) { b.innerHTML = title + ' · <small>YouTube</small>'; }
           else { b.textContent = title; }
           b.onclick=()=>playMedia('video', v);
           vGroup.appendChild(b);
-        });
-      }`; b.onclick=()=>playMedia('video', v); vGroup.appendChild(b);
         });
       }
       if (MEDIA.photos?.length){
