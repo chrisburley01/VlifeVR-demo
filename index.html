@@ -55,6 +55,7 @@
 
   <!-- Scene -->
   <a-scene renderer="alpha:true antialias:true" background="color:#000">
+    <!-- Camera rig with cursor + raycaster -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls position="0 1.6 0"
                 cursor="fuse:true; fuseTimeout:900"
@@ -65,6 +66,7 @@
       </a-entity>
     </a-entity>
 
+    <!-- Default sky scene (no media needed) -->
     <a-entity id="photoScene">
       <a-sky color="#0b0d13"></a-sky>
       <a-entity position="0 1.6 -2">
@@ -84,7 +86,7 @@
     const $ = s => document.querySelector(s);
     const gate = $('#gate');
 
-    // Updated 360° video & VR platform links
+    // Prioritised 360° / VR links
     const links = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
@@ -94,18 +96,21 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
+    // Build ring of orbs with labels (labels fixed: no mirror, no cull)
     function buildOrbRing(containerId, items, radius=3.1, y=1.25) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
       const n = items.length;
+
       for (let i=0;i<n;i++){
         const angle = (i/n)*Math.PI*2;
         const x = Math.cos(angle)*radius;
-        const z = -Math.sin(angle)*radius;
+        const z = -Math.sin(angle)*radius; // ring faces inward
 
+        // Billboard group so it faces camera
         const group = document.createElement('a-entity');
         group.setAttribute('position', `${x} ${y} ${z}`);
-        group.setAttribute('look-at', '#camera'); // billboard whole group
+        group.setAttribute('look-at', '#camera');
 
         // Orb
         const orb = document.createElement('a-entity');
@@ -117,16 +122,17 @@
         orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
         orb.addEventListener('click',()=>window.open(items[i].url,'_blank','noopener'));
 
-        // Label (always face camera, glowing)
+        // Label: rotated 180 so it reads correctly when group faces inward
         const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0.52 0');
-        label.setAttribute('look-at','#camera');
+        label.setAttribute('position','0 0.52 0.01');    // small z offset avoids z-fighting
+        label.setAttribute('rotation','0 180 0');        // fixes mirrored text
         label.setAttribute('text',[
           `value:${items[i].title}`,
           'align:center',
-          'width:2.8',
+          'anchor:center',
+          'width:3.0',
+          'wrapCount:28',
           'color:#ffd700',
-          'wrapCount:24',
           'side:double'
         ].join('; '));
         label.setAttribute('animation__color','property=components.text.material.color; type=color; from:#ffd700; to:#fff5a8; dir=alternate; dur=1800; loop:true');
@@ -137,6 +143,7 @@
       }
     }
 
+    // Enter
     $('#enterBtn').addEventListener('click', ()=>{
       gate.style.display='none';
       buildOrbRing('orbRing', links);
