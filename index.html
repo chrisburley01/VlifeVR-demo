@@ -115,11 +115,19 @@
 
     // ===== Build Menu from media.json =====
     async function loadMenu(){
-      const res = await fetch('assets/media.json');
-      MEDIA = await res.json();
+      try{
+        const res = await fetch('assets/media.json', {cache:'no-store'});
+        MEDIA = await res.json();
+      }catch(e){
+        console.error('Failed to load media.json', e);
+        MEDIA = {videos:[], photos:[]};
+      }
 
       const vGroup = document.getElementById('videoGroup');
       const pGroup = document.getElementById('photoGroup');
+      // Reset groups to avoid duplicates on reloads
+      vGroup.innerHTML = '';
+      pGroup.innerHTML = '';
 
       if (MEDIA.videos?.length){
         const h = document.createElement('h3'); h.textContent = 'Videos'; vGroup.before(h);
@@ -131,6 +139,20 @@
           b.onclick=()=>playMedia('video', v);
           vGroup.appendChild(b);
         });
+      }
+      if (MEDIA.photos?.length){
+        const h = document.createElement('h3'); h.textContent = 'Photos'; pGroup.before(h);
+        MEDIA.photos.forEach((p,i)=>{
+          const b=document.createElement('button');
+          b.textContent = p.title || `Photo ${i+1}`;
+          b.onclick = ()=> playMedia('photo', p);
+          pGroup.appendChild(b);
+        });
+      }
+
+      // Ensure Start Tour is wired *after* media loads
+      wireStartButton();
+    });
       }
       if (MEDIA.photos?.length){
         const h = document.createElement('h3'); h.textContent = 'Photos'; pGroup.before(h);
