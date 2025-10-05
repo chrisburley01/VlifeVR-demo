@@ -3,143 +3,211 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vlife – Hybrid VR (Dynamic Menu)</title>
+  <title>Vlife – Hybrid VR Experience (MVP)</title>
   <link rel="icon" href="assets/Vlifelogo_1_.png" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
   <style>
     :root { --gold:#ffd700; --bg:#0b0b0f; --text:#e7e7ea; }
-    body { margin:0; background:#000; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial; }
-
+    body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
+    .hud { position:fixed; inset:auto 16px 16px 16px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; z-index:9; }
+    .btn { border:1px solid rgba(255,255,255,.2); background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)); color:var(--text);
+           padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);}
+    .btn:hover{ border-color:var(--gold); color:var(--gold);}
+    .badge { position:fixed; top:12px; left:12px; color:#bdbdc7; font-size:12px; background:rgba(0,0,0,.45);
+             padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.1); z-index:9;}
+    .note { position:fixed; bottom:12px; left:12px; color:#9ea0aa; font-size:12px; opacity:.85; z-index:9;}
+    .gate { position:fixed; inset:0; display:grid; place-items:center;
+            background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.05),rgba(0,0,0,.9)); z-index:10;}
+    .gate-inner { max-width:720px; margin:0 16px; background:rgba(12,12,18,.72); padding:22px;
+                  border:1px solid rgba(255,255,255,.15); border-radius:16px; text-align:center; color:var(--text);
+                  box-shadow:0 16px 72px rgba(0,0,0,.6);}
+    .gate-logo { width:min(360px,70vw); height:auto; display:block; margin:0 auto 12px; filter:drop-shadow(0 8px 24px rgba(255,215,0,.18));}
+    .gate h1 { margin:6px 0 8px; font-size:22px;}
+    .gate p { margin:0 0 16px; color:#c8c8d2;}
+    .btn-primary { background:linear-gradient(180deg,#ffe58a,#e7c138); color:#2b2500; border:none;}
     .topright { position:fixed; right:16px; top:12px; display:flex; align-items:center; gap:10px; z-index:9;}
     .brandimg { width:32px; height:32px; object-fit:contain; border-radius:8px; background:#000;
                 box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
     .brand { color:var(--gold); font-weight:800; letter-spacing:.6px; text-shadow:0 0 12px rgba(255,215,0,.4);}
-
-    .menu { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; flex-direction:column;
-            align-items:center; justify-content:center; gap:20px; color:var(--text); z-index:10; }
-    .menu h1 { color:var(--gold); margin-bottom:10px; }
-    .menu button { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:var(--text);
-                   padding:10px 16px; border-radius:12px; font-size:16px; cursor:pointer; width:220px; }
-    .menu button:hover { border-color:var(--gold); color:var(--gold); }
-
-    .backBtn { position:fixed; top:14px; left:14px; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.2);
-               color:#fff; border-radius:10px; padding:8px 12px; cursor:pointer; z-index:9; display:none; }
-
-    .badge { position:fixed; bottom:12px; left:12px; color:#9ea0aa; font-size:12px; opacity:.85; z-index:9; }
+    .warn { color:#ffb3b3; display:none; margin-top:8px; font-size:12px; }
   </style>
 </head>
 <body>
+  <!-- Top branding -->
   <div class="topright">
     <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
     <div class="brand">VLIFE</div>
   </div>
+  <div class="badge">Hybrid VR MVP · A-Frame · 360° video</div>
 
-  <div class="menu" id="menu">
-    <img src="assets/Vlifelogo_1_.png" style="width:140px;height:auto;filter:drop-shadow(0 0 15px rgba(255,215,0,.2));">
-    <h1>Select Experience</h1>
-    <div id="videoButtons"></div>
-    <div id="photoButtons"></div>
+  <!-- Entry overlay -->
+  <div class="gate" id="gate">
+    <div class="gate-inner">
+      <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
+      <h1>Enter Vlife</h1>
+      <p>Immersive 360° experience. Works in browser, mobile, and Meta Quest. For best quality, use a headset.</p>
+      <button class="btn btn-primary" id="enterBtn">Enter Experience</button>
+      <p id="ytHint" class="warn">This will open a YouTube tour in a new tab (set in <code>assets/scenes.json</code>).</p>
+      <p class="warn" id="autoWarn">If video doesn’t start, tap ▶ Play on the HUD (mobile autoplay rules).</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look around. Gaze at gold orbs to interact. Use HUD to pause or jump.</p>
+    </div>
   </div>
 
-  <button id="backBtn" class="backBtn">← Back to Menu</button>
-  <div class="badge">Hybrid VR Dynamic Menu · Vlife 2025</div>
+  <!-- HUD -->
+  <div class="hud">
+    <button class="btn" id="playBtn">▶ Play</button>
+    <button class="btn" id="pauseBtn">⏸ Pause</button>
+    <button class="btn" id="rewindBtn">↺ 0:00</button>
+    <button class="btn" id="skip1Btn">⇥</button>
+    <button class="btn" id="skip2Btn">⇥</button>
+    <button class="btn" id="sceneVideoBtn">Scene: Video</button>
+    <button class="btn" id="scenePhotoBtn">Scene: Photo</button>
+  </div>
+  <div class="note">Put your files in <strong>/assets</strong> and list them in <strong>assets/scenes.json</strong>.</div>
 
-  <a-scene id="scene" renderer="alpha:true antialias:true" background="color:#000">
-    <a-assets id="assetsContainer" timeout="30000"></a-assets>
+  <!-- VR scene -->
+  <a-scene renderer="alpha:true antialias:true" background="color:#000">
+    <a-assets timeout="30000">
+      <video id="vrVideo" preload="auto" crossOrigin="anonymous" playsinline webkit-playsinline muted loop></video>
+      <img id="photoSky" crossorigin="anonymous" />
+    </a-assets>
+
+    <!-- Camera rig with reliable gaze cursor + raycaster targetting .clickable -->
     <a-entity id="rig">
-      <a-entity camera look-controls position="0 1.6 0">
-        <a-entity cursor="fuse:true; fuseTimeout:900" position="0 0 -1"
+      <a-entity id="camera" camera look-controls position="0 1.6 0"
+                cursor="fuse:true; fuseTimeout:900"
+                raycaster="objects: .clickable">
+        <a-entity position="0 0 -1"
           geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-          material="shader:flat; color:#ffd700; opacity:0.9"></a-entity>
+          material="shader:flat; opacity:0.9"></a-entity>
       </a-entity>
     </a-entity>
 
-    <a-videosphere id="videoSphere" visible="false" rotation="0 -90 0"></a-videosphere>
-    <a-sky id="photoSky" visible="false" rotation="0 -90 0"></a-sky>
-    <a-entity light="type:ambient; intensity:0.4"></a-entity>
+    <!-- Video sphere scene -->
+    <a-entity id="videoScene">
+      <a-videosphere id="sphereVideo" src="#vrVideo" rotation="0 -90 0"></a-videosphere>
+
+      <!-- Info panel -->
+      <a-entity id="infoPanel" visible="false" geometry="primitive:plane; width:1.9; height:1"
+                material="color:#14151a; opacity:0.95" position="0 1.6 -2.2">
+        <a-entity position="0 0 0.01"
+          text="value: Welcome to Vlife — Hybrid VR.; align:center; width:2.8; color:#ffd700"></a-entity>
+        <a-entity position="0 -0.28 0.01"
+          text="value: Click hotspots to reveal data, jump timeline, or switch scenes.; align:center; width:2.6; color:#d8d8df"></a-entity>
+      </a-entity>
+
+      <!-- Primary hotspots (always present) -->
+      <a-entity id="hsInfo" class="clickable"
+                geometry="primitive:sphere; radius:0.35"
+                material="color:#ffd700; opacity:0.92"
+                position="2 1.2 -3"
+                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
+                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
+
+      <a-entity id="hsJump" class="clickable"
+                geometry="primitive:sphere; radius:0.28"
+                material="color:#ffd700; opacity:0.92"
+                position="-1 1 -2.5"
+                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
+                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
+
+      <a-entity id="hsLink" class="clickable"
+                geometry="primitive:sphere; radius:0.28"
+                material="color:#ffd700; opacity:0.92"
+                position="0.3 0.8 -1.8"
+                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
+                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
+
+      <!-- Auto-generated ring of orbs goes here -->
+      <a-entity id="orbRing"></a-entity>
+    </a-entity>
+
+    <!-- Photo sphere scene -->
+    <a-entity id="photoScene" visible="false">
+      <a-sky id="spherePhoto" src="#photoSky" rotation="0 -90 0"></a-sky>
+      <a-entity position="0 1.6 -2">
+        <a-entity geometry="primitive:plane; width:1.8; height:.9" material="color:#14151a; opacity:0.95"></a-entity>
+        <a-entity position="0 0 0.01" text="value: Scene B (360° Photo). Click orb to go back.; align:center; width:2.4; color:#ffd700"></a-entity>
+      </a-entity>
+      <a-entity id="hsBack" class="clickable"
+                geometry="primitive:sphere; radius:0.32"
+                material="color:#ffd700; opacity:0.92"
+                position="0 1 -2.2"
+                event-set__enter="_event:mouseenter; scale:1.2 1.2 1.2"
+                event-set__leave="_event:mouseleave; scale:1 1 1"></a-entity>
+    </a-entity>
+
+    <a-entity light="type:point; intensity:0.6; distance:12" position="1 2 -2"></a-entity>
+    <a-entity light="type:ambient; intensity:0.35"></a-entity>
   </a-scene>
 
   <script>
-    const menu = document.getElementById('menu');
-    const videoSphere = document.getElementById('videoSphere');
-    const photoSky = document.getElementById('photoSky');
-    const backBtn = document.getElementById('backBtn');
-    const assetsContainer = document.getElementById('assetsContainer');
+    const $   = (s)=>document.querySelector(s);
+    const $$  = (s)=>document.querySelectorAll(s);
 
-    async function loadMenu() {
+    const videoEl   = $('#vrVideo');
+    const photoSky  = $('#photoSky');
+    const gate      = $('#gate');
+    const infoPanel = $('#infoPanel');
+
+    const skip1Btn  = $('#skip1Btn');
+    const skip2Btn  = $('#skip2Btn');
+    const ytHint    = $('#ytHint');
+    const autoWarn  = $('#autoWarn');
+
+    let manifest = null;
+
+    async function loadManifest() {
+      const res = await fetch('assets/scenes.json', {cache:'no-store'});
+      if (!res.ok) throw new Error('Missing assets/scenes.json');
+      manifest = await res.json();
+
+      // Bind sources
+      if (manifest.video && manifest.video.src) {
+        videoEl.src = manifest.video.src;
+      } else {
+        console.warn('No video src set in scenes.json');
+      }
+      if (manifest.photo && manifest.photo.src) {
+        photoSky.setAttribute('src', manifest.photo.src);
+      }
+
+      // HUD skip labels
+      const [t1, t2] = (manifest.video?.skipTimes || [30, 60]);
+      skip1Btn.textContent = `⇥ ${fmtTime(t1)}`;
+      skip2Btn.textContent = `⇥ ${fmtTime(t2)}`;
+
+      // Gate button hint for YouTube
+      if (manifest.youtube && manifest.youtube.url) {
+        ytHint.style.display = 'block';
+      }
+
+      // Build full-circle orbs if provided
+      buildOrbRing(manifest.orbRing || { count: 0 });
+    }
+
+    function fmtTime(s) {
+      const m = Math.floor(s/60);
+      const sec = String(Math.floor(s%60)).padStart(2,'0');
+      return `${m}:${sec}`;
+    }
+
+    // Start playback muted for reliability
+    async function startPlayback() {
       try {
-        const res = await fetch('assets/media.json');
-        const data = await res.json();
-
-        // Videos
-        const vDiv = document.getElementById('videoButtons');
-        if (data.videos && data.videos.length > 0) {
-          const vTitle = document.createElement('h3');
-          vTitle.textContent = 'Videos';
-          vDiv.appendChild(vTitle);
-          data.videos.forEach(v => {
-            const btn = document.createElement('button');
-            btn.textContent = v.title;
-            btn.onclick = () => playMedia('video', v.file);
-            vDiv.appendChild(btn);
-          });
-        }
-
-        // Photos
-        const pDiv = document.getElementById('photoButtons');
-        if (data.photos && data.photos.length > 0) {
-          const pTitle = document.createElement('h3');
-          pTitle.textContent = 'Photos';
-          pDiv.appendChild(pTitle);
-          data.photos.forEach(p => {
-            const btn = document.createElement('button');
-            btn.textContent = p.title;
-            btn.onclick = () => playMedia('photo', p.file);
-            pDiv.appendChild(btn);
-          });
-        }
+        videoEl.muted = true;
+        await videoEl.play();
+        autoWarn.style.display = 'none';
       } catch (e) {
-        console.error('Failed to load media.json', e);
+        console.warn('Autoplay blocked', e);
+        autoWarn.style.display = 'block';
       }
     }
 
-    async function playMedia(type, file) {
-      menu.style.display = 'none';
-      backBtn.style.display = 'block';
-
-      if (type === 'video') {
-        const vid = document.createElement('video');
-        vid.setAttribute('id', 'dynamicVideo');
-        vid.setAttribute('src', `assets/${file}`);
-        vid.setAttribute('crossorigin', 'anonymous');
-        vid.setAttribute('playsinline', '');
-        vid.setAttribute('webkit-playsinline', '');
-        vid.setAttribute('muted', '');
-        vid.setAttribute('loop', '');
-        assetsContainer.appendChild(vid);
-        await vid.play();
-        videoSphere.setAttribute('src', '#dynamicVideo');
-        videoSphere.setAttribute('visible', true);
-        photoSky.setAttribute('visible', false);
-      }
-
-      if (type === 'photo') {
-        photoSky.setAttribute('src', `assets/${file}`);
-        photoSky.setAttribute('visible', true);
-        videoSphere.setAttribute('visible', false);
-      }
+    // Scene toggles
+    function showVideo() {
+      AFRAME.scenes[0].querySelector('#videoScene').setAttribute('visible', true);
+      AFRAME.scenes[0].querySelector('#photoScene').setAttribute('visible', false);
     }
-
-    backBtn.onclick = () => {
-      const vid = document.getElementById('dynamicVideo');
-      if (vid) { vid.pause(); vid.remove(); }
-      videoSphere.setAttribute('visible', false);
-      photoSky.setAttribute('visible', false);
-      menu.style.display = 'flex';
-      backBtn.style.display = 'none';
-    };
-
-    loadMenu();
-  </script>
-</body>
-</html>
+    function showPhoto() {
