@@ -1,48 +1,57 @@
 #!/usr/bin/env bash
-# VlifeVR quick deploy (jq-free)
 set -e
 
-echo "🚀 VlifeVR deploy starting…"
+echo "🚀 Starting VlifeVR deployment..."
 
-# 1) Sanity checks
-[ -f "index.html" ] || { echo "❌ Run from the repo root (index.html not found)."; exit 1; }
-[ -f "assets/media.json" ] || { echo "❌ assets/media.json missing."; exit 1; }
+# Define variables
+REPO_URL="https://github.com/chrisburley01/VlifeVR-demo.git"
+BRANCH="main"
+BUILD_DIR="."
+DEPLOY_BRANCH="gh-pages"
 
-# 2) Normalize media.json key for current HTML
-#    (If media.json uses "backgrounds", convert to "skins" so existing HTML reads it.)
-if grep -q '"backgrounds"' assets/media.json; then
-  echo "🛠  Converting media.json key: backgrounds → skins"
-  # only replace the top-level key occurrence
-  sed -i '0,/"backgrounds"[[:space:]]*:/s//"skins":/' assets/media.json
+# Confirm current directory
+echo "📂 Current directory: $(pwd)"
+
+# Check for git
+if ! command -v git &> /dev/null; then
+  echo "❌ Git not found. Please install Git first."
+  exit 1
 fi
 
-# 3) Helpful warnings about referenced files
-if grep -q 'neon_metropolis_360_equirectangular.jpg' assets/media.json && [ ! -f "assets/neon_metropolis_360_equirectangular.jpg" ]; then
-  echo "⚠️  neon_metropolis_360_equirectangular.jpg referenced but not found in /assets/"
+# Stage and commit local changes
+echo "📝 Adding all changes..."
+git add .
+
+# Use a generic commit message if none provided
+COMMIT_MSG=${1:-"Auto-deploy: update assets and HTML"}
+echo "💬 Commit message: $COMMIT_MSG"
+
+git commit -m "$COMMIT_MSG" || echo "⚠️ Nothing to commit."
+
+# Push to main
+echo "⬆️ Pushing to $BRANCH..."
+git push origin $BRANCH
+
+# Deploy using GitHub Pages
+echo "🌐 Deploying to $DEPLOY_BRANCH..."
+if git show-ref --verify --quiet refs/heads/$DEPLOY_BRANCH; then
+  git branch -D $DEPLOY_BRANCH
 fi
-if grep -q 'subway_entrance_4k.exr' assets/media.json && [ ! -f "assets/subway_entrance_4k.exr" ]; then
-  echo "⚠️  subway_entrance_4k.exr referenced but not found in /assets/"
+git checkout -b $DEPLOY_BRANCH
+
+# Optional build step (if you use dist)
+if [ -d "dist" ]; then
+  echo "🏗️ Copying dist folder for deployment..."
+  cp -r dist/* .
 fi
 
-# 4) Optional cache-bust the neon JPG reference (append ?v=timestamp if not present)
-TS=$(date +%s)
-if grep -q 'neon_metropolis_360_equirectangular.jpg' assets/media.json && ! grep -q 'neon_metropolis_360_equirectangular.jpg?v=' assets/media.json; then
-  echo "🔁 Appending cache-buster to neon image reference"
-  sed -i "s#neon_metropolis_360_equirectangular.jpg#neon_metropolis_360_equirectangular.jpg?v=${TS}#g" assets/media.json
-fi
+# Commit and push deployment
+git add .
+git commit -m "Deploy to GitHub Pages"
+git push --force origin $DEPLOY_BRANCH
 
-# 5) Pull latest, commit, push
-echo "🔄 git pull"
-git pull origin main
+# Return to main
+git checkout $BRANCH
 
-echo "📦 Staging files…"
-git add index.html assets/media.json assets/* || true
-
-echo "📝 Commit…"
-git commit -m "Deploy: update media.json / assets (EXR + 360 skins)" || echo "ℹ️ Nothing to commit."
-
-echo "⬆️  Push…"
-git push origin main
-
-echo "✅ Done. Pages will redeploy automatically."
-echo "🌐 https://chrisburley01.github.io/VlifeVR-demo/"
+echo "✅ Deployment complete! Check your site at:"
+echo "👉 https://chrisburley01.github.io/VlifeVR-demo/"
