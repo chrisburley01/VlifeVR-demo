@@ -6,7 +6,7 @@
   <title>Vlife – Hybrid VR Experience</title>
   <link rel="icon" href="assets/Vlifelogo_1_.png"/>
 
-  <!-- A-Frame core -->
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
 
@@ -103,13 +103,15 @@
 
     async function getJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch(e){ return null; } }
     let SKINS = [];
+
+    /* 6 links */
     const LINKS = [
-      {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
-      {title:'360Cities',         url:'https://www.360cities.net/'},
-      {title:'Meta Quest TV',     url:'https://www.meta.com/quest/tv/'},
-      {title:'AirPano',           url:'https://www.airpano.com/'},
-      {title:'Vimeo 360',         url:'https://vimeo.com/channels/360videos'},
-      {title:'YouTube 360 Playlist', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'}
+      {title:'YouTube VR Channel',  url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
+      {title:'360Cities',           url:'https://www.360cities.net/'},
+      {title:'Meta Quest TV',       url:'https://www.meta.com/quest/tv/'},
+      {title:'AirPano',             url:'https://www.airpano.com/'},
+      {title:'Vimeo 360',           url:'https://vimeo.com/channels/360videos'},
+      {title:'YouTube 360 Playlist',url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'}
     ];
 
     function openURL(u){ const a=document.createElement('a'); a.href=u; a.target='_blank'; a.rel='noopener'; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
@@ -129,17 +131,31 @@
       g.appendChild(orb); g.appendChild(label); return g;
     }
 
-    function buildOrbRing(containerId, items, radius=4.8, y=1.25){
-      const ring=document.getElementById(containerId); ring.innerHTML=''; const n=items.length; if(!n) return;
-      const panelYaw=$('#skinPanel').object3D.rotation.y;
-      const FRONT_GAP = THREE.MathUtils.degToRad(70); // bigger gap so none sit behind panel
-      const EDGE = THREE.MathUtils.degToRad(6);
-      const TAU=Math.PI*2, usable=TAU-2*FRONT_GAP;
-      const start=panelYaw+FRONT_GAP+EDGE, arc=usable-2*EDGE, step=n>1?arc/(n-1):0;
-      for(let i=0;i<n;i++){
-        const t=start+i*step, x=Math.cos(t)*radius, z=-Math.sin(t)*radius, yawDeg=(Math.atan2(-x,-z)*180/Math.PI);
-        const g=makeOrb(items[i].title, items[i].url);
-        g.setAttribute('position',`${x} ${y} ${z}`); g.setAttribute('rotation',`0 ${yawDeg} 0`);
+    /* NEW: robust ring layout that keeps all 6 clear of panel */
+    function buildOrbRing(containerId, items, radius = 5.0, y = 1.30) {
+      const ring = document.getElementById(containerId);
+      ring.innerHTML = '';
+      const n = items.length;
+      if (!n) return;
+
+      const panelYaw = $('#skinPanel').object3D.rotation.y;
+      const FRONT_GAP = THREE.MathUtils.degToRad(70); // no-orb zone in front
+      const EDGE      = THREE.MathUtils.degToRad(4);
+      const TAU       = Math.PI * 2;
+
+      const usable = TAU - 2 * FRONT_GAP - 2 * EDGE;
+      const step   = usable / n;
+      const start  = panelYaw + FRONT_GAP + EDGE + step / 2;
+
+      for (let i = 0; i < n; i++) {
+        const a   = start + i * step;
+        const x   = Math.cos(a) * radius;
+        const z   = -Math.sin(a) * radius;
+        const yaw = Math.atan2(-x, -z) * 180 / Math.PI;
+
+        const g = makeOrb(items[i].title, items[i].url);
+        g.setAttribute('position', `${x} ${y} ${z}`);
+        g.setAttribute('rotation', `0 ${yaw} 0`);
         ring.appendChild(g);
       }
     }
@@ -199,14 +215,7 @@
       $('#skinsToggle').setAttribute('visible', true);
       $('#skinPanel').setAttribute('visible', true);
 
-      buildOrbRing('orbRing', [
-        {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
-        {title:'360Cities',         url:'https://www.360cities.net/'},
-        {title:'Meta Quest TV',     url:'https://www.meta.com/quest/tv/'},
-        {title:'AirPano',           url:'https://www.airpano.com/'},
-        {title:'Vimeo 360',         url:'https://vimeo.com/channels/360videos'},
-        {title:'YouTube 360 Playlist', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'}
-      ]);
+      buildOrbRing('orbRing', LINKS, 5.0, 1.30);
     }
 
     $('#enterBtn').addEventListener('click', ()=>{ $('#gate').style.display='none'; init(); });
