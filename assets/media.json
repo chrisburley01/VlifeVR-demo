@@ -10,22 +10,12 @@
     },
     {
       "name": "Park Steps 360",
-      "img": "assets/vecteezy_full-seamless-spherical-360-hdri-panorama-on-old-concrete_40564140.jpg",
+      "img": "assets/Park360.jpg",
       "fallback": "#0a0a0a",
       "ambient": "#aaccff",
       "ambInt": 0.50,
-      "keyInt": 0.90
-    },
-    {
-      "name": "Night Sky",
-      "img": "",
-      "fallback": "#020212",
-      "ambient": "#aaccff",
-      "ambInt": 0.50,
-      "keyInt": 0.70
-    },
-    {
-      "name": "Lake & Forest",
-      "img": "",
-      "fallback": "#223311",
-      "ambient": "#
+      "keyInt": 0.90"
+    }
+    // ...Night Sky, Lake & Forest, City, Village...
+  ]
+}
