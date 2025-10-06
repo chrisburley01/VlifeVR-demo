@@ -9,13 +9,14 @@
       "keyInt": 0.8
     },
     {
-      "name": "Subway Entrance 4K (HDR/EXR)",
-      "img": "assets/subway_entrance_4k.exr",
-      "hdr": true,
+      "name": "Park Steps 360",
+      "img": "assets/vecteezy_full-seamless-spherical-360-hdri-panorama-on-old-concrete_40564140.jpg",
       "fallback": "#0a0a0a",
       "ambient": "#aaccff",
       "ambInt": 0.50,
       "keyInt": 0.9
     }
+
+    /* …4 more items you already had (Night Sky, City, etc.) … */
   ]
 }
