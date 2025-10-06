@@ -18,7 +18,7 @@
     },
     {
       "name": "Neon Nightclub 360",
-      "img": "assets/Neonnightclub.jpg",
+      "img": "assets/Neonnighclub.jpg",
       "fallback": "#060612",
       "ambient": "#88aaff",
       "ambInt": 0.5,
