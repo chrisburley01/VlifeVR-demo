@@ -1,1 +1,70 @@
-.
+───────────────────────────────────────────────
+VLife 360° HDR / EXR Environments – Curated Set
+───────────────────────────────────────────────
+
+📁 Folder Suggestion:
+assets/envmaps/
+
+────────────────────────────
+1️⃣  Illovo Beach Balcony
+────────────────────────────
+Source: https://polyhaven.com/a/illovo_beach_balcony
+Preview: Tropical modern balcony overlooking the ocean
+Recommended file: illovo_beach_balcony_8k.exr
+Formats: .EXR / .HDR
+Resolution: 8K (8192x4096)
+Notes: Excellent natural lighting for daylight outdoor VR
+
+────────────────────────────
+2️⃣  Hotel Rooftop Balcony
+────────────────────────────
+Source: https://polyhaven.com/a/hotel_rooftop_balcony
+Preview: City rooftop with railing, ambient night lighting
+Recommended file: hotel_rooftop_balcony_8k.hdr
+Formats: .HDR / .EXR
+Resolution: 8K
+Notes: Perfect for evening / luxury city scenes
+
+────────────────────────────
+3️⃣  Secluded Beach
+────────────────────────────
+Source: https://polyhaven.com/a/secluded_beach
+Preview: Remote sandy beach, blue sky, strong sunlight
+Recommended file: secluded_beach_8k.hdr
+Formats: .HDR / .EXR
+Resolution: 8K
+Notes: Ideal for bright sunny 360° beach environments
+
+────────────────────────────
+4️⃣  Balcony (Architectural)
+────────────────────────────
+Source: https://polyhaven.com/a/balcony
+Preview: Modern balcony space with open glass and sea view
+Recommended file: balcony_8k.exr
+Formats: .EXR / .HDR
+Resolution: 8K
+Notes: Realistic lighting for interiors and outdoor transitions
+
+────────────────────────────
+5️⃣  Studio Lighting Set (Lightmap)
+────────────────────────────
+Source: https://www.cgchannel.com/2022/10/download-25-free-studio-hdri-maps/
+Preview: Controlled light rigs – softboxes, gradients, reflections
+Recommended file: studio_02.exr
+Formats: .EXR
+Resolution: 4K–8K
+Notes: Best for controlled indoor shots / product / portrait scenes
+
+────────────────────────────
+💡 Tips
+────────────────────────────
+• Keep images equirectangular (2:1 aspect ratio)
+• Use EXR for lighting realism, HDR for quick 360 backgrounds
+• For web / Three.js: load HDR via RGBELoader and PMREMGenerator
+• For VR: sphereGeometry(500, 60, 40), invert scale.x = -1
+• Always align the brightest spot to your sun light direction
+
+────────────────────────────
+Curated for: VLife VR Environment Pack
+By: ChatGPT (GPT-5) x Chris Burley
+────────────────────────────
