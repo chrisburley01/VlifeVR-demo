@@ -6,11 +6,11 @@
   <title>Vlife – Hybrid VR Experience</title>
   <link rel="icon" href="assets/Vlifelogo_1_.png"/>
 
-  <!-- A-Frame core -->
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
 
-  <!-- three.js loaders for HDR/EXR -->
+  <!-- three.js loaders -->
   <script src="https://unpkg.com/three@0.152.2/examples/js/loaders/RGBELoader.js"></script>
   <script src="https://unpkg.com/three@0.152.2/examples/js/loaders/EXRLoader.js"></script>
 
@@ -32,7 +32,7 @@
   </div>
   <div class="badge">Hybrid VR MVP · 360° / HDR</div>
 
-  <!-- Entry gate -->
+  <!-- Entry -->
   <div class="gate" id="gate">
     <div class="gate-inner">
       <img src="assets/Vlifelogo_1_.png" alt="V LIFE" style="width:min(360px,70vw);display:block;margin:0 auto 12px"/>
@@ -43,11 +43,10 @@
     </div>
   </div>
 
-  <!-- Scene -->
   <a-scene id="scene" renderer="antialias:true physicallyCorrectLights:true" background="color:#000">
     <a-assets timeout="30000"></a-assets>
 
-    <!-- Camera + cursor + Skins toggle -->
+    <!-- camera + cursor + skins toggle -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls wasd-controls-enabled="false" position="0 1.6 0"
         cursor="fuse:true; fuseTimeout:900; rayOrigin:entity"
@@ -64,28 +63,31 @@
       </a-entity>
     </a-entity>
 
-    <!-- Two skies for crossfade (hidden when HDR is active) -->
+    <!-- two skies for crossfade (hidden when HDR active) -->
     <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
     <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
-    <!-- Skins panel -->
+    <!-- skins panel (bigger, with safe spacing) -->
     <a-entity id="skinPanel" position="0 1.55 -2.7" visible="false">
-      <a-entity geometry="primitive:plane; width:1.8; height:1.02" material="color:#10131a; opacity:0.95"></a-entity>
-      <a-entity position="0 0.44 0.02"
-        text="value:Choose Background; align:center; width:3.0; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      <a-entity id="skinStatus" position="0 0.32 0.02"
+      <a-entity geometry="primitive:plane; width:2.1; height:1.25" material="color:#10131a; opacity:0.95"></a-entity>
+
+      <a-entity position="0 0.53 0.07"
+        text="value:Choose Background; align:center; width:3.2; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+
+      <a-entity id="skinStatus" position="0 0.39 0.07"
         text="value:; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
-      <!-- 6 slots (you can add btn6/btn7 later if you want 8) -->
-      <a-entity id="btn0" position="-0.55 0.10 0.02"></a-entity>
-      <a-entity id="btn1" position="0 0.10 0.02"></a-entity>
-      <a-entity id="btn2" position="0.55 0.10 0.02"></a-entity>
-      <a-entity id="btn3" position="-0.55 -0.30 0.02"></a-entity>
-      <a-entity id="btn4" position="0 -0.30 0.02"></a-entity>
-      <a-entity id="btn5" position="0.55 -0.30 0.02"></a-entity>
+      <!-- 6 slots -->
+      <a-entity id="btn0" position="-0.70 0.10 0.09"></a-entity>
+      <a-entity id="btn1" position="0    0.10 0.09"></a-entity>
+      <a-entity id="btn2" position="0.70  0.10 0.09"></a-entity>
+
+      <a-entity id="btn3" position="-0.70 -0.35 0.09"></a-entity>
+      <a-entity id="btn4" position="0    -0.35 0.09"></a-entity>
+      <a-entity id="btn5" position="0.70  -0.35 0.09"></a-entity>
     </a-entity>
 
-    <!-- Link orbs -->
+    <!-- link orbs ring -->
     <a-entity id="orbRing"></a-entity>
 
     <a-entity id="keyLight" light="type:point; intensity:0.9; distance:12" position="0 3 0"></a-entity>
@@ -96,19 +98,17 @@
     const $ = s => document.querySelector(s);
     const sceneEl = $('#scene');
 
-    // Renderer tone mapping / encoding
+    // tone-mapping & encoding
     sceneEl.addEventListener('render-target-loaded', ()=>{
-      const r = sceneEl.renderer;
-      if (!r) return;
+      const r = sceneEl.renderer; if (!r) return;
       r.outputEncoding = THREE.sRGBEncoding;
       r.toneMapping = THREE.ACESFilmicToneMapping;
       r.toneMappingExposure = 1.0;
     });
 
-    // Data
     async function getJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch(e){ return null; } }
     let SKINS = [];
-    let LINKS = [
+    const LINKS = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
       {title:'YouTube 360 Playlist', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'},
@@ -117,38 +117,35 @@
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
 
-    // Helpers
     function openURL(u){ const a=document.createElement('a'); a.href=u; a.target='_blank'; a.rel='noopener'; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
     function makeOrb(title,url){
       const g=document.createElement('a-entity');
       const orb=document.createElement('a-entity');
-      orb.classList.add('clickable','orb');
+      orb.classList.add('clickable');
       orb.setAttribute('geometry','primitive:sphere; radius:0.25');
       orb.setAttribute('material','color:#ffd700; metalness:0.7; roughness:0.25; emissive:#6a5200; emissiveIntensity:0.35; opacity:0.97');
       orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.2 1.2 1.2');
       orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
       const label=document.createElement('a-entity');
-      label.setAttribute('position','0 0.52 0.02');
+      label.setAttribute('position','0 0.52 0.12');
       label.setAttribute('text','value:'+title+'; align:center; width:3.4; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
-      ['click','pointerup','mouseup','touchend'].forEach(ev=>orb.addEventListener(ev,()=>openURL(url),{passive:true}));
+      ['click','pointerup','mouseup','touchend'].forEach(ev=>{ orb.addEventListener(ev,()=>openURL(url),{passive:true}); label.addEventListener(ev,()=>openURL(url),{passive:true}); });
       g.appendChild(orb); g.appendChild(label); return g;
     }
-    function buildOrbRing(containerId, items, radius=4.6, y=1.25){
+    function buildOrbRing(containerId, items, radius=4.8, y=1.25){
       const ring=document.getElementById(containerId); ring.innerHTML=''; const n=items.length; if(!n) return;
-      const panelYaw=$('#skinPanel').object3D.rotation.y; const HALF=THREE.MathUtils.degToRad(60); const EDGE=THREE.MathUtils.degToRad(8);
+      const panelYaw=$('#skinPanel').object3D.rotation.y; const HALF=THREE.MathUtils.degToRad(62); const EDGE=THREE.MathUtils.degToRad(6);
       const TAU=Math.PI*2, usable=TAU-2*HALF, start=panelYaw+HALF+EDGE, arc=usable-2*EDGE, step=n>1?arc/(n-1):0;
       for(let i=0;i<n;i++){ const t=start+i*step, x=Math.cos(t)*radius, z=-Math.sin(t)*radius, yawDeg=(Math.atan2(-x,-z)*180/Math.PI);
         const g=makeOrb(items[i].title, items[i].url); g.setAttribute('position',`${x} ${y} ${z}`); g.setAttribute('rotation',`0 ${yawDeg} 0`); ring.appendChild(g); }
     }
 
-    // Lights
     function applyLights(s){
       if (!s) return;
       $('#ambLight').setAttribute('light', `type:ambient; intensity:${s.ambInt ?? 0.45}; color:${s.ambient || '#ffffff'}`);
       $('#keyLight').setAttribute('light', `type:point; intensity:${s.keyInt ?? 0.9}; distance:12; color:#ffffff`);
     }
 
-    // Image sky crossfade
     let usingA = true;
     async function setImageSky(src, name, skinObj){
       const skyA=$('#skyA'), skyB=$('#skyB');
@@ -162,21 +159,17 @@
       const fade=(t)=>{ const k=Math.min(1,(t-start)/ms); front.setAttribute('material',`opacity:${k}; transparent:true`); back.setAttribute('material',`opacity:${1-k}; transparent:true`); if(k<1) requestAnimationFrame(fade); else { back.setAttribute('visible',false); usingA=!usingA; } };
       requestAnimationFrame(fade);
       $('#skinStatus').setAttribute('text',`value:Using 360 image: ${name}; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      // sharpen sampling
       setTimeout(()=>{ const mesh=front.getObject3D('mesh'); const r=sceneEl.renderer; if(mesh&&mesh.material&&mesh.material.map&&r){ mesh.material.map.anisotropy=r.capabilities.getMaxAnisotropy(); mesh.material.map.needsUpdate=true; } }, 250);
     }
 
-    // HDR/EXR sky with fallback
     function setHDRSky(src, name, skinObj){
       const skyA=$('#skyA'), skyB=$('#skyB'); 
       skyA.setAttribute('visible',false); 
       skyB.setAttribute('visible',false);
       applyLights(skinObj);
 
-      const isEXR = /\.exr(\?|$)/i.test(src);
-      const isHDR = /\.hdr(\?|$)/i.test(src);
-      const loader = isEXR ? new THREE.EXRLoader() : new THREE.RGBELoader();
-      if (!isEXR && loader.setDataType) loader.setDataType(THREE.UnsignedByteType);
+      const loader = /\.exr(\?|$)/i.test(src) ? new THREE.EXRLoader() : new THREE.RGBELoader();
+      if (loader.setDataType) loader.setDataType(THREE.UnsignedByteType);
 
       loader.load(src, (tex)=>{
         tex.mapping = THREE.EquirectangularReflectionMapping;
@@ -192,23 +185,26 @@
       });
     }
 
-    // Build the skin selection panel (6 buttons)
     function buildSkinPanel(){
       const ids=['btn0','btn1','btn2','btn3','btn4','btn5'];
       ids.forEach((id,idx)=>{
         const slot=document.getElementById(id); slot.innerHTML='';
         if(!SKINS[idx]){ slot.setAttribute('visible', false); return; }
-        const bg=document.createElement('a-entity');
-        bg.setAttribute('geometry','primitive:plane; width:0.62; height:0.24');
-        bg.setAttribute('material','color:#161a22; opacity:0.95');
-        bg.classList.add('clickable');
         const s=SKINS[idx];
-        const choose=()=>{ s.hdr ? setHDRSky(s.img, s.name, s) : setImageSky(s.img, s.name, s); };
-        ['click','pointerdown','touchend'].forEach(ev=>bg.addEventListener(ev,choose,{passive:true}));
+
+        const card=document.createElement('a-entity');
+        card.setAttribute('geometry','primitive:plane; width:0.78; height:0.28');
+        card.setAttribute('material','color:#161a22; opacity:0.95');
+        card.classList.add('clickable');
+        const choose=()=>{ $('#skinStatus').setAttribute('text',`value:Loading: ${s.name} …; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`); s.hdr ? setHDRSky(s.img, s.name, s) : setImageSky(s.img, s.name, s); };
+        ['click','pointerdown','touchend'].forEach(ev=>card.addEventListener(ev,choose,{passive:true}));
+
         const label=document.createElement('a-entity');
-        label.setAttribute('position','0 0 0.02');
-        label.setAttribute('text',`value:${s.name}; align:center; width:2.2; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-        slot.appendChild(bg); slot.appendChild(label);
+        label.setAttribute('position','0 0 0.11');
+        label.setAttribute('text',`value:${s.name}; align:center; width:2.4; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+        ['click','pointerdown','touchend'].forEach(ev=>label.addEventListener(ev,choose,{passive:true}));
+
+        slot.appendChild(card); slot.appendChild(label);
       });
     }
 
@@ -222,15 +218,17 @@
       $('#skinsToggle').setAttribute('visible', true);
       $('#skinPanel').setAttribute('visible', true);
 
+      // 6 orbs, evenly spaced around (front gap kept clear)
       buildOrbRing('orbRing', [
         {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
         {title:'360Cities', url:'https://www.360cities.net/'},
         {title:'Meta Quest TV', url:'https://www.meta.com/quest/tv/'},
-        {title:'AirPano', url:'https://www.airpano.com/'}
+        {title:'AirPano', url:'https://www.airpano.com/'},
+        {title:'Vimeo 360', url:'https://vimeo.com/channels/360videos'},
+        {title:'YouTube 360 Playlist', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'}
       ]);
     }
 
-    // Enter & toggle
     $('#enterBtn').addEventListener('click', ()=>{ $('#gate').style.display='none'; init(); });
     $('#skinsToggle').addEventListener('click', ()=>{ const p=$('#skinPanel'); p.setAttribute('visible', !p.getAttribute('visible')); });
   </script>
