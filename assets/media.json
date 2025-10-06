@@ -1,62 +1,9 @@
 {
-  "skins": [
-    {
-      "name": "Night Sky",
-      "img": "assets/nightsky.jpg",
-      "fallback": "#0a0d14",
-      "ambient": "#aaccff",
-      "ambInt": 0.40,
-      "keyInt": 0.80,
-      "audio": { "src": "assets/night.mp3", "volume": 0.55 }
-    },
-    {
-      "name": "Lake & Forest",
-      "img": "assets/lake_forest.jpg",
-      "fallback": "#1b2a24",
-      "ambient": "#cfead7",
-      "ambInt": 0.45,
-      "keyInt": 0.85,
-      "audio": { "src": "assets/lake.mp3", "volume": 0.5 }
-    },
-    {
-      "name": "City",
-      "img": "assets/city.jpg",
-      "fallback": "#1e2024",
-      "ambient": "#d0d3da",
-      "ambInt": 0.42,
-      "keyInt": 0.90,
-      "audio": { "src": "assets/city.mp3", "volume": 0.55 }
-    },
-    {
-      "name": "Village",
-      "img": "assets/village.jpg",
-      "fallback": "#2a2a1f",
-      "ambient": "#ffe8c2",
-      "ambInt": 0.50,
-      "keyInt": 0.80,
-      "audio": { "src": "assets/village.mp3", "volume": 0.5 }
-    },
-    {
-      "name": "Balloons",
-      "img": "assets/balloons.jpg",
-      "fallback": "#172235",
-      "ambient": "#cfe2ff",
-      "ambInt": 0.48,
-      "keyInt": 0.85,
-      "audio": { "src": "assets/balloons.mp3", "volume": 0.55 }
-    },
-    {
-      "name": "Graphite",
-      "img": "",
-      "fallback": "#111316",
-      "ambient": "#d0d0d0",
-      "ambInt": 0.38,
-      "keyInt": 0.90,
-      "audio": { "src": "", "volume": 0.0 }
-    }
-  ],
-  "transitions": {
-    "skyMs": 1200,
-    "audioMs": 1200
-  }
+  "name": "Neon Metropolis 360",
+  "img": "assets/neon_metropolis_360_equirectangular.jpg",
+  "fallback": "#0a0d14",
+  "ambient": "#aaccff",
+  "ambInt": 0.45,
+  "keyInt": 0.9,
+  "audio": { "src": "assets/city.mp3", "volume": 0.5 }
 }
