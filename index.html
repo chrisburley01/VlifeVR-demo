@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Vlife – Hybrid VR Experience</title>
   <link rel="icon" href="assets/Vlifelogo_1_.png"/>
+
+  <!-- A-Frame core -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
-  <!-- three.js loader for HDR/EXR -->
+
+  <!-- three.js loaders for HDR/EXR -->
   <script src="https://unpkg.com/three@0.152.2/examples/js/loaders/RGBELoader.js"></script>
+  <script src="https://unpkg.com/three@0.152.2/examples/js/loaders/EXRLoader.js"></script>
+
   <style>
     :root{--gold:#ffd700;--text:#e7e7ea}
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
@@ -71,6 +76,7 @@
       <a-entity id="skinStatus" position="0 0.32 0.02"
         text="value:; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
+      <!-- 6 slots (you can add btn6/btn7 later if you want 8) -->
       <a-entity id="btn0" position="-0.55 0.10 0.02"></a-entity>
       <a-entity id="btn1" position="0 0.10 0.02"></a-entity>
       <a-entity id="btn2" position="0.55 0.10 0.02"></a-entity>
@@ -90,7 +96,7 @@
     const $ = s => document.querySelector(s);
     const sceneEl = $('#scene');
 
-    // Renderer color pipeline
+    // Renderer tone mapping / encoding
     sceneEl.addEventListener('render-target-loaded', ()=>{
       const r = sceneEl.renderer;
       if (!r) return;
@@ -101,7 +107,7 @@
 
     // Data
     async function getJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch(e){ return null; } }
-    let SKINS = [];   // each: {name, img, hdr?, fallback?, ambient?, ambInt, keyInt}
+    let SKINS = [];
     let LINKS = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
@@ -135,14 +141,15 @@
         const g=makeOrb(items[i].title, items[i].url); g.setAttribute('position',`${x} ${y} ${z}`); g.setAttribute('rotation',`0 ${yawDeg} 0`); ring.appendChild(g); }
     }
 
-    // Sky handling
-    let usingA = true;
+    // Lights
     function applyLights(s){
       if (!s) return;
-      const amb = $('#ambLight'); const key = $('#keyLight');
-      amb.setAttribute('light', `type:ambient; intensity:${s.ambInt ?? 0.45}; color:${s.ambient || '#ffffff'}`);
-      key.setAttribute('light', `type:point; intensity:${s.keyInt ?? 0.9}; distance:12; color:#ffffff`);
+      $('#ambLight').setAttribute('light', `type:ambient; intensity:${s.ambInt ?? 0.45}; color:${s.ambient || '#ffffff'}`);
+      $('#keyLight').setAttribute('light', `type:point; intensity:${s.keyInt ?? 0.9}; distance:12; color:#ffffff`);
     }
+
+    // Image sky crossfade
+    let usingA = true;
     async function setImageSky(src, name, skinObj){
       const skyA=$('#skyA'), skyB=$('#skyB');
       sceneEl.object3D.background = null; sceneEl.object3D.environment = null;
@@ -155,25 +162,37 @@
       const fade=(t)=>{ const k=Math.min(1,(t-start)/ms); front.setAttribute('material',`opacity:${k}; transparent:true`); back.setAttribute('material',`opacity:${1-k}; transparent:true`); if(k<1) requestAnimationFrame(fade); else { back.setAttribute('visible',false); usingA=!usingA; } };
       requestAnimationFrame(fade);
       $('#skinStatus').setAttribute('text',`value:Using 360 image: ${name}; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      // Sharpen sampling
+      // sharpen sampling
       setTimeout(()=>{ const mesh=front.getObject3D('mesh'); const r=sceneEl.renderer; if(mesh&&mesh.material&&mesh.material.map&&r){ mesh.material.map.anisotropy=r.capabilities.getMaxAnisotropy(); mesh.material.map.needsUpdate=true; } }, 250);
     }
+
+    // HDR/EXR sky with fallback
     function setHDRSky(src, name, skinObj){
-      const skyA=$('#skyA'), skyB=$('#skyB'); skyA.setAttribute('visible',false); skyB.setAttribute('visible',false);
+      const skyA=$('#skyA'), skyB=$('#skyB'); 
+      skyA.setAttribute('visible',false); 
+      skyB.setAttribute('visible',false);
       applyLights(skinObj);
-      const loader=new THREE.RGBELoader(); loader.setDataType(THREE.UnsignedByteType);
+
+      const isEXR = /\.exr(\?|$)/i.test(src);
+      const isHDR = /\.hdr(\?|$)/i.test(src);
+      const loader = isEXR ? new THREE.EXRLoader() : new THREE.RGBELoader();
+      if (!isEXR && loader.setDataType) loader.setDataType(THREE.UnsignedByteType);
+
       loader.load(src, (tex)=>{
         tex.mapping = THREE.EquirectangularReflectionMapping;
         sceneEl.object3D.environment = tex;
         sceneEl.object3D.background  = tex;
         $('#skinStatus').setAttribute('text',`value:Using HDR/EXR: ${name}; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      }, undefined, ()=>{
-        $('#skinStatus').setAttribute('text',`value:HDR load failed, falling back; align:center; width:2.6; color:#ffcc88; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-        sceneEl.object3D.background = null; sceneEl.object3D.environment = null;
-        setImageSky('', name + ' (fallback)', skinObj);
+      }, undefined, (err)=>{
+        console.warn('HDR/EXR load failed:', err);
+        $('#skinStatus').setAttribute('text',`value:HDR load failed, using fallback; align:center; width:2.6; color:#ffcc88; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+        const fb = skinObj?.jpgFallback || skinObj?.imgFallback || '';
+        if (fb) setImageSky(fb, name + ' (fallback JPG)', skinObj);
+        else    setImageSky('',  name + ' (color fallback)', skinObj);
       });
     }
 
+    // Build the skin selection panel (6 buttons)
     function buildSkinPanel(){
       const ids=['btn0','btn1','btn2','btn3','btn4','btn5'];
       ids.forEach((id,idx)=>{
@@ -194,25 +213,25 @@
     }
 
     async function init(){
-      // Load skins from media.json (supports "backgrounds" or "skins")
       const media = await getJSON('assets/media.json');
       SKINS = (media && (media.backgrounds || media.skins)) || [];
       buildSkinPanel();
 
-      // Apply first skin if available
       if (SKINS[0]) { SKINS[0].hdr ? setHDRSky(SKINS[0].img, SKINS[0].name, SKINS[0]) : setImageSky(SKINS[0].img, SKINS[0].name, SKINS[0]); }
 
-      // UI on
       $('#skinsToggle').setAttribute('visible', true);
       $('#skinPanel').setAttribute('visible', true);
 
-      // Build links ring
-      buildOrbRing('orbRing', LINKS);
+      buildOrbRing('orbRing', [
+        {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
+        {title:'360Cities', url:'https://www.360cities.net/'},
+        {title:'Meta Quest TV', url:'https://www.meta.com/quest/tv/'},
+        {title:'AirPano', url:'https://www.airpano.com/'}
+      ]);
     }
 
-    // Enter
+    // Enter & toggle
     $('#enterBtn').addEventListener('click', ()=>{ $('#gate').style.display='none'; init(); });
-    // Toggle panel
     $('#skinsToggle').addEventListener('click', ()=>{ const p=$('#skinPanel'); p.setAttribute('visible', !p.getAttribute('visible')); });
   </script>
 </body>
