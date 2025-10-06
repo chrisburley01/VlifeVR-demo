@@ -17,6 +17,14 @@
       "keyInt": 0.9
     },
     {
+      "name": "Neon Nightclub 360",
+      "img": "assets/Neonnightclub.jpg",
+      "fallback": "#060612",
+      "ambient": "#88aaff",
+      "ambInt": 0.5,
+      "keyInt": 0.9
+    },
+    {
       "name": "Night Sky",
       "img": "",
       "fallback": "#020212",
@@ -39,14 +47,6 @@
       "ambient": "#aaccff",
       "ambInt": 0.55,
       "keyInt": 0.8
-    },
-    {
-      "name": "Village",
-      "img": "",
-      "fallback": "#332211",
-      "ambient": "#ffddaa",
-      "ambInt": 0.5,
-      "keyInt": 0.7
     }
   ]
 }
