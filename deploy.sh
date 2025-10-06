@@ -1,57 +1,49 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🚀 Starting VlifeVR deployment..."
+echo "🚀 VlifeVR: Deploying to main (with sanity checks)"
 
-# Define variables
-REPO_URL="https://github.com/chrisburley01/VlifeVR-demo.git"
-BRANCH="main"
-BUILD_DIR="."
-DEPLOY_BRANCH="gh-pages"
-
-# Confirm current directory
-echo "📂 Current directory: $(pwd)"
-
-# Check for git
-if ! command -v git &> /dev/null; then
-  echo "❌ Git not found. Please install Git first."
-  exit 1
+# 1️⃣ Validate media.json if Python is available
+if command -v python3 >/dev/null 2>&1; then
+  echo "🧪 Checking assets/media.json..."
+  python3 - <<'PY'
+import json,sys
+p="assets/media.json"
+try:
+    data=json.load(open(p,"r",encoding="utf-8"))
+    skins=data.get("backgrounds") or data.get("skins") or []
+    print(f"✅ JSON OK · {len(skins)} backgrounds found")
+    if len(skins)<1: print("⚠️ No backgrounds defined")
+    for s in skins[:8]:
+        print("   →", s.get("name"))
+except Exception as e:
+    print("❌ media.json is invalid:", e); sys.exit(1)
+PY
+else
+  echo "ℹ️ Skipping JSON validation (Python not installed)"
 fi
 
-# Stage and commit local changes
-echo "📝 Adding all changes..."
-git add .
+# 2️⃣ Check critical files exist
+[ -f "index.html" ] || { echo "❌ Missing index.html — run from repo root"; exit 1; }
 
-# Use a generic commit message if none provided
-COMMIT_MSG=${1:-"Auto-deploy: update assets and HTML"}
-echo "💬 Commit message: $COMMIT_MSG"
-
-git commit -m "$COMMIT_MSG" || echo "⚠️ Nothing to commit."
-
-# Push to main
-echo "⬆️ Pushing to $BRANCH..."
-git push origin $BRANCH
-
-# Deploy using GitHub Pages
-echo "🌐 Deploying to $DEPLOY_BRANCH..."
-if git show-ref --verify --quiet refs/heads/$DEPLOY_BRANCH; then
-  git branch -D $DEPLOY_BRANCH
-fi
-git checkout -b $DEPLOY_BRANCH
-
-# Optional build step (if you use dist)
-if [ -d "dist" ]; then
-  echo "🏗️ Copying dist folder for deployment..."
-  cp -r dist/* .
+if grep -q 'subway_entrance_4k.exr' assets/media.json; then
+  if [ -f "assets/subway_entrance_4k.exr" ]; then
+    echo "✅ Found assets/subway_entrance_4k.exr"
+  else
+    echo "⚠️ media.json references subway_entrance_4k.exr but file not found"
+  fi
 fi
 
-# Commit and push deployment
-git add .
-git commit -m "Deploy to GitHub Pages"
-git push --force origin $DEPLOY_BRANCH
+# 3️⃣ Commit and push to GitHub
+echo "📝 Staging all changes..."
+git add -A
 
-# Return to main
-git checkout $BRANCH
+msg=${1:-"Deploy: update HTML/EXR support"}
+echo "💬 Commit message: $msg"
+git commit -m "$msg" || echo "ℹ️ Nothing to commit"
 
-echo "✅ Deployment complete! Check your site at:"
-echo "👉 https://chrisburley01.github.io/VlifeVR-demo/"
+echo "⬆️ Pushing to main..."
+git push origin main
+
+echo "✅ Done! GitHub Pages will rebuild automatically."
+echo "🌐 View your site: https://chrisburley01.github.io/VlifeVR-demo/"
