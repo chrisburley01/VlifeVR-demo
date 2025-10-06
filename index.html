@@ -1,188 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Vlife – Hybrid VR Experience</title>
-  <link rel="icon" href="assets/Vlifelogo_1_.png" />
+  <link rel="icon" href="assets/Vlifelogo_1_.png"/>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
+  <!-- three.js example loaders (RGBELoader for .hdr/.exr) -->
+  <script src="https://unpkg.com/three@0.152.2/examples/js/loaders/RGBELoader.js"></script>
   <style>
-    :root { --gold:#ffd700; --text:#e7e7ea; }
-    body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
-
-    .gate{position:fixed;inset:0;display:grid;place-items:center;
-      background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),rgba(0,0,0,.92));z-index:10;}
-    .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;
-      border:1px solid rgba(255,255,255,.15);border-radius:16px;text-align:center;color:var(--text);
-      box-shadow:0 16px 72px rgba(0,0,0,.6);}
-    .gate-logo{width:min(360px,70vw);height:auto;display:block;margin:0 auto 12px;
-      filter:drop-shadow(0 8px 24px rgba(255,215,0,.25));animation:pulse 5s ease-in-out infinite;}
-    @keyframes pulse{0%,100%{filter:drop-shadow(0 0 15px rgba(255,215,0,.3));}
-      50%{filter:drop-shadow(0 0 35px rgba(255,215,0,.7));}}
-    .btn-primary{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#2b2500;border:none;
-      border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer;}
-    .btn-primary:hover{filter:brightness(1.15);}
-
-    .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9;}
-    .brandimg{width:32px;height:32px;object-fit:contain;border-radius:8px;background:#000;
-      box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;}
-    .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.4);}
-    .badge{position:fixed;top:12px;left:12px;color:#bdbdc7;font-size:12px;background:rgba(0,0,0,.45);
-      padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);z-index:9;}
+    :root{--gold:#ffd700;--text:#e7e7ea}
+    body{margin:0;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),#000 70%);z-index:10}
+    .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;border:1px solid rgba(255,255,255,.15);border-radius:16px;text-align:center;color:var(--text);box-shadow:0 16px 72px rgba(0,0,0,.6)}
+    .btn-primary{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#2b2500;border:none;border-radius:12px;padding:10px 18px;font-weight:600;cursor:pointer}
+    .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9}
+    .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.4)}
+    .badge{position:fixed;top:12px;left:12px;color:#bdbdc7;font-size:12px;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);z-index:9}
   </style>
 </head>
 <body>
   <div class="topright">
-    <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
+    <img src="assets/Vlifelogo_1_.png" alt="V LIFE" style="width:32px;height:32px;border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset"/>
     <div class="brand">VLIFE</div>
   </div>
-  <div class="badge">Hybrid VR MVP · 360° Links</div>
+  <div class="badge">Hybrid VR MVP · 360° / HDR</div>
 
   <div class="gate" id="gate">
     <div class="gate-inner">
-      <img class="gate-logo" src="assets/Vlifelogo_1_.png" alt="V LIFE logo" />
+      <img src="assets/Vlifelogo_1_.png" alt="V LIFE" style="width:min(360px,70vw);display:block;margin:0 auto 12px"/>
       <h1>Enter Vlife</h1>
-      <p>Immersive 360° exploration.<br>Desktop, mobile & Meta Quest compatible.</p>
+      <p>Immersive 360° exploration · JPG/PNG skies or HDR/EXR environments.</p>
       <button class="btn-primary" id="enterBtn" type="button">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Look at a gold orb until the ring fills to open it.</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Gaze at gold orbs to open links. Use the Skins orb to switch backgrounds.</p>
     </div>
   </div>
 
-  <a-scene renderer="alpha:true antialias:true" background="color:#000">
-    <!-- Camera rig -->
+  <a-scene id="scene" renderer="antialias:true physicallyCorrectLights:true" background="color:#000">
+    <a-assets timeout="30000"></a-assets>
+
+    <!-- camera + cursor -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls wasd-controls-enabled="false" position="0 1.6 0"
                 cursor="fuse:true; fuseTimeout:900; rayOrigin:entity"
                 raycaster="objects: .clickable; far: 100; interval: 0">
         <a-entity position="0 0 -1" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
                   material="shader:flat; opacity:0.9"></a-entity>
-
         <!-- Skins toggle -->
         <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
           <a-entity geometry="primitive:sphere; radius:0.12"
                     material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
-          <a-entity position="0 0.28 0" billboard-label
-            text="value:Skins; align:center; width:1.6; color:#ffd700; side:double; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-        </a-entity>
-
-        <!-- Look-down Reset -->
-        <a-entity id="resetGroup" position="0 -0.9 -0.7" visible="false">
-          <a-entity id="resetOrb" class="clickable"
-            geometry="primitive:sphere; radius:0.18"
-            material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.6; opacity:0.95"
-            animation__glow="property=material.emissiveIntensity; dir=alternate; dur:1600; from:0.4; to:1; loop:true">
-          </a-entity>
-          <a-entity id="resetLabel" position="0 0.34 0"
-            billboard-label
-            text="value:Reset / Refresh; align:center; width:2.8; color:#ffd700; side:double; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+          <a-entity position="0 0.28 0" text="value:Skins; align:center; width:1.8; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
         </a-entity>
       </a-entity>
-
-      <a-entity laser-controls="hand: right"></a-entity>
-      <a-entity laser-controls="hand: left"></a-entity>
     </a-entity>
 
-    <a-entity id="photoScene">
-      <!-- Dual skies for crossfade -->
-      <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
-      <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
+    <!-- dual <a-sky> for image crossfade (hidden when using HDR/EXR) -->
+    <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
+    <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
-      <!-- Skin panel (always faces your yaw) -->
-      <a-entity id="skinPanel" position="0 1.55 -2.7" face-camera-y visible="false">
-        <a-entity geometry="primitive:plane; width:1.8; height:1.02"
-                  material="color:#10131a; opacity:0.95"></a-entity>
-        <a-entity position="0 0.44 0.02"
-          text="value:Choose Background; align:center; width:3.0; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-        <a-entity id="skinStatus" position="0 0.32 0.02"
-          text="value:; align:center; width:2.6; color:#cfd3dc; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+    <!-- panel -->
+    <a-entity id="skinPanel" position="0 1.55 -2.7" visible="false">
+      <a-entity geometry="primitive:plane; width:1.8; height:1.02" material="color:#10131a; opacity:0.95"></a-entity>
+      <a-entity position="0 0.44 0.02"
+        text="value:Choose Background; align:center; width:3.0; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      <a-entity id="skinStatus" position="0 0.32 0.02"
+        text="value:; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
-        <a-entity id="btn0" position="-0.55 0.10 0.02"></a-entity>
-        <a-entity id="btn1" position="0 0.10 0.02"></a-entity>
-        <a-entity id="btn2" position="0.55 0.10 0.02"></a-entity>
-        <a-entity id="btn3" position="-0.55 -0.30 0.02"></a-entity>
-        <a-entity id="btn4" position="0 -0.30 0.02"></a-entity>
-        <a-entity id="btn5" position="0.55 -0.30 0.02"></a-entity>
-      </a-entity>
-
-      <a-entity id="orbRing"></a-entity>
+      <a-entity id="btn0" position="-0.55 0.10 0.02"></a-entity>
+      <a-entity id="btn1" position="0 0.10 0.02"></a-entity>
+      <a-entity id="btn2" position="0.55 0.10 0.02"></a-entity>
+      <a-entity id="btn3" position="-0.55 -0.30 0.02"></a-entity>
+      <a-entity id="btn4" position="0 -0.30 0.02"></a-entity>
+      <a-entity id="btn5" position="0.55 -0.30 0.02"></a-entity>
     </a-entity>
 
-    <a-entity id="keyLight" light="type:point; intensity:0.8; distance:12" position="0 3 0"></a-entity>
-    <a-entity id="ambLight" light="type:ambient; intensity:0.4; color:#ffffff"></a-entity>
+    <a-entity id="orbRing"></a-entity>
+
+    <a-entity id="keyLight" light="type:point; intensity:0.9; distance:12" position="0 3 0"></a-entity>
+    <a-entity id="ambLight" light="type:ambient; intensity:0.45; color:#ffffff"></a-entity>
   </a-scene>
 
   <script>
-    /* ---------- Components ---------- */
-
-    // Panel tracks camera yaw (not pitch/roll)
-    AFRAME.registerComponent('face-camera-y', {
-      init(){ this.cam = document.getElementById('camera'); this.euler = new THREE.Euler(); },
-      tick(){
-        if(!this.cam) return;
-        this.euler.setFromQuaternion(this.cam.object3D.quaternion, 'YXZ');
-        this.el.object3D.rotation.set(0, this.euler.y, 0);
-      }
-    });
-
-    // Upright, depth-safe labels (prevents missing letters)
-    AFRAME.registerComponent('billboard-label', {
-      init: function () {
-        this.cam = document.querySelector('#camera');
-        this.tmp = new THREE.Vector3();
-        this.flipQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-        const ensure = ()=>{
-          const m = this.el.getObject3D('mesh');
-          if (m && m.material){ m.material.depthTest = false; m.renderOrder = 999; }
-        };
-        this.el.addEventListener('object3dset', ensure);
-        this.el.addEventListener('textfontset', ensure);
-      },
-      tick: function () {
-        if (!this.cam) return;
-        const obj = this.el.object3D;
-        const camPos = this.cam.object3D.getWorldPosition(this.tmp);
-        obj.lookAt(camPos);
-        obj.quaternion.multiplyQuaternions(obj.quaternion, this.flipQ);
-        obj.rotation.x = 0; obj.rotation.z = 0;
-      }
-    });
-
-    // Look-down reset
-    AFRAME.registerComponent('lookdown-reset', {
-      schema: { hold: {type:'int', default:1500}, thresholdY: {type:'number', default:-0.3}},
-      init: function () { this.cam = document.getElementById('camera'); this.dir = new THREE.Vector3(); this.downMs = 0; this.resetGroup = document.querySelector('#resetGroup'); },
-      tick: function (t, dt) {
-        if (!this.cam) return;
-        this.cam.object3D.getWorldDirection(this.dir);
-        const lookingDown = this.dir.y < this.data.thresholdY;
-        if (lookingDown) { this.downMs += dt; if (!this.resetGroup.getAttribute('visible') && this.downMs >= this.data.hold) this.resetGroup.setAttribute('visible', true); }
-        else { this.downMs = 0; this.resetGroup.setAttribute('visible', false); }
-      }
-    });
-
-    /* ---------- Helpers & State ---------- */
     const $ = s => document.querySelector(s);
-    const gate = $('#gate');
-    const skyA = $('#skyA');
-    const skyB = $('#skyB');
-    const keyLight = $('#keyLight');
-    const ambLight = $('#ambLight');
-    const skinPanel = $('#skinPanel');
-    const skinsToggle = $('#skinsToggle');
-    const orbRing = $('#orbRing');
-    const skinStatus = $('#skinStatus');
-
-    // Fallbacks (JSON is optional but recommended)
-    const DEFAULT_SKINS = [
-      { name:'Night Sky', img:'assets/nightsky.jpg',    fallback:'#0a0d14', ambient:'#aaccff', ambInt:0.40, keyInt:0.80, audio:{src:'assets/night.mp3',   volume:0.55} },
-      { name:'Lake & Forest', img:'assets/lake_forest.jpg', fallback:'#1b2a24', ambient:'#cfead7', ambInt:0.45, keyInt:0.85, audio:{src:'assets/lake.mp3',    volume:0.50} },
-      { name:'City', img:'assets/city.jpg', fallback:'#1e2024', ambient:'#d0d3da', ambInt:0.42, keyInt:0.90, audio:{src:'assets/city.mp3',    volume:0.55} },
-      { name:'Village', img:'assets/village.jpg', fallback:'#2a2a1f', ambient:'#ffe8c2', ambInt:0.50, keyInt:0.80, audio:{src:'assets/village.mp3', volume:0.50} },
-      { name:'Balloons', img:'assets/balloons.jpg', fallback:'#172235', ambient:'#cfe2ff', ambInt:0.48, keyInt:0.85, audio:{src:'assets/balloons.mp3',volume:0.55} },
-      { name:'Graphite', img:'', fallback:'#111316', ambient:'#d0d0d0', ambInt:0.38, keyInt:0.90, audio:{src:'', volume:0.0} }
-    ];
-    const DEFAULT_LINKS = [
+    const sceneEl = $('#scene');
+    const renderer = sceneEl.renderer;
+    let LINKS = [
       {title:'360Cities', url:'https://www.360cities.net/'},
       {title:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
       {title:'YouTube 360 Playlist', url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'},
@@ -190,216 +94,136 @@
       {title:'Meta Quest TV', url:'https://www.meta.com/quest/tv/'},
       {title:'AirPano', url:'https://www.airpano.com/'}
     ];
-    const DEFAULT_TRANSITIONS = { skyMs: 1200, audioMs: 1200 };
 
-    let SKINS = DEFAULT_SKINS, LINKS = DEFAULT_LINKS, TRANS = DEFAULT_TRANSITIONS;
-    let skinIndex = 0;
+    // tone mapping for HDR
+    const onRendererReady = () => {
+      const r = sceneEl.renderer;
+      if (!r) return;
+      r.outputEncoding = THREE.sRGBEncoding;
+      r.toneMapping = THREE.ACESFilmicToneMapping;
+      r.toneMappingExposure = 1.0;
+    };
+    sceneEl.addEventListener('render-target-loaded', onRendererReady);
 
-    // crossfade audio (two <audio> elements)
-    let audioA = new Audio(); audioA.loop = true; audioA.preload = 'auto';
-    let audioB = new Audio(); audioB.loop = true; audioB.preload = 'auto';
-    let usingA = true;
-    function lerp(a,b,t){ return a + (b-a)*t; }
+    // Load JSON skins
+    async function loadJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch{return null;}}
+    let SKINS=[];
+    let skinIndex=0;
+    let usingA=true;
 
-    async function loadJSON(url){
-      try{ const r = await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }
-      catch{ return null; }
-    }
-    async function loadData(){
-      const media = await loadJSON('assets/media.json');
-      if (media?.skins) SKINS = media.skins;
-      if (media?.transitions) TRANS = {...DEFAULT_TRANSITIONS, ...media.transitions};
-      const scenes = await loadJSON('assets/scenes.json');
-      if (scenes?.links) LINKS = scenes.links;
-    }
+    function openURL(u){ const a=document.createElement('a'); a.href=u; a.target='_blank'; a.rel='noopener'; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
 
-    async function imageExists(url){
-      try{ const res = await fetch(url, {method:'HEAD', cache:'no-store'}); return res.ok; }
-      catch{ return false; }
-    }
-
-    async function fadeToSkin(i){
-      const s = SKINS[i % SKINS.length];
-      const skyMs = TRANS.skyMs;
-      skinIndex = i % SKINS.length;
-      ambLight.setAttribute('light', `type:ambient; intensity:${s.ambInt}; color:${s.ambient}`);
-      keyLight.setAttribute('light', `type:point; intensity:${s.keyInt}; distance:12; color:#ffffff`);
-
-      const front = usingA ? skyB : skyA;
-      const back  = usingA ? skyA : skyB;
-
-      if (s.img && await imageExists(s.img)){
-        front.removeAttribute('color'); front.setAttribute('src', s.img); front.setAttribute('rotation','0 -90 0');
-        skinStatus.setAttribute('text', `value:Using 360 image: ${s.name}; align:center; width:3.0; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      } else {
-        front.removeAttribute('src'); front.setAttribute('color', s.fallback || '#10131a');
-        skinStatus.setAttribute('text', `value:Image not found, using color: ${s.name}; align:center; width:3.0; color:#ffcc88; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      }
-
-      front.setAttribute('visible', true);
-      const t0 = performance.now();
-      const tick = (t)=>{
-        const k = Math.min(1, (t - t0) / skyMs);
-        front.setAttribute('material', `opacity:${k}; transparent:true`);
-        back .setAttribute('material', `opacity:${1-k}; transparent:true`);
-        if (k < 1) requestAnimationFrame(tick); else { back.setAttribute('visible', false); usingA = !usingA; }
-      };
-      requestAnimationFrame(tick);
-
-      crossfadeAudio(s.audio?.src || '', s.audio?.volume ?? 0, TRANS.audioMs);
-    }
-
-    function crossfadeAudio(newSrc, targetVol, ms){
-      const fadeOut = usingA ? audioA : audioB;
-      const fadeIn  = usingA ? audioB : audioA;
-      try { fadeOut.play().catch(()=>{}); fadeIn.play().catch(()=>{}); } catch {}
-      if (newSrc) { if (fadeIn.src !== newSrc) fadeIn.src = newSrc; fadeIn.volume = 0; fadeIn.play().catch(()=>{}); }
-      else { fadeIn.pause(); fadeIn.src=''; fadeIn.volume=0; }
-      const startVolOut = fadeOut.volume||0;
-      const t0 = performance.now();
-      const tick = (t)=>{
-        const k = Math.min(1, (t - t0) / ms);
-        fadeOut.volume = lerp(startVolOut, 0, k);
-        fadeIn .volume = lerp(0, targetVol, k);
-        if (k < 1) requestAnimationFrame(tick); else { fadeOut.pause(); }
-      };
-      requestAnimationFrame(tick);
-    }
-
-    function buildSkinPanel(){
-      const ids = ['btn0','btn1','btn2','btn3','btn4','btn5'];
-      ids.forEach((id, idx)=>{
-        const slot = document.getElementById(id); slot.innerHTML = '';
-        const bg = document.createElement('a-entity');
-        bg.setAttribute('geometry','primitive:plane; width:0.62; height:0.24');
-        bg.setAttribute('material','color:#161a22; opacity:0.95');
-        bg.classList.add('clickable');
-        const choose = ()=>fadeToSkin(idx);
-        bg.addEventListener('click', choose);
-        bg.addEventListener('pointerdown', choose);
-        bg.addEventListener('touchend', choose, {passive:true});
-        const label = document.createElement('a-entity');
-        label.setAttribute('position','0 0 0.02'); label.setAttribute('billboard-label','');
-        label.setAttribute('text',`value:${(SKINS[idx]||{}).name||''}; align:center; width:2.2; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-        slot.appendChild(bg); slot.appendChild(label);
-        slot.setAttribute('event-set__enter','_event:mouseenter; scale:1.07 1.07 1.07');
-        slot.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
-      });
-    }
-
-    // Fuse-safe link opener
-    function openURL(url){
-      const a = document.createElement('a');
-      a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.style.display = 'none';
-      document.body.appendChild(a); a.click(); a.remove();
-    }
-
-    function makeOrb(title, url){
-      const g = document.createElement('a-entity');
-      const orb = document.createElement('a-entity');
+    function makeOrb(title,url){
+      const g=document.createElement('a-entity');
+      const orb=document.createElement('a-entity');
       orb.classList.add('clickable','orb');
       orb.setAttribute('geometry','primitive:sphere; radius:0.25');
       orb.setAttribute('material','color:#ffd700; metalness:0.7; roughness:0.25; emissive:#6a5200; emissiveIntensity:0.35; opacity:0.97');
       orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.2 1.2 1.2');
       orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
-      orb.setAttribute('animation__glow','property=material.emissiveIntensity; dir=alternate; dur:2000; from:0.3; to:0.9; loop:true');
-      const label = document.createElement('a-entity');
-      label.setAttribute('position','0 0.52 0.02'); label.setAttribute('billboard-label','');
-      label.setAttribute('text',`value:${title}; align:center; width:3.4; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      const go = () => openURL(url);
-      orb.addEventListener('click', go); orb.addEventListener('pointerup', go, {passive:true});
-      orb.addEventListener('mouseup', go, {passive:true}); orb.addEventListener('touchend', go, {passive:true});
-      g.appendChild(orb); g.appendChild(label);
-      return g;
+      const label=document.createElement('a-entity');
+      label.setAttribute('position','0 0.52 0.02');
+      label.setAttribute('text','value:'+title+'; align:center; width:3.4; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
+      const go=()=>openURL(url);
+      ['click','pointerup','mouseup','touchend'].forEach(ev=>orb.addEventListener(ev,go,{passive:true}));
+      g.appendChild(orb); g.appendChild(label); return g;
     }
 
-    // Angle helpers
-    const TAU = Math.PI*2;
-    const clampPI = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
-
-    // Build ring locked to the panel’s yaw. No orb can enter the front cone.
-    function buildOrbRingForPanel(containerId, items, radius = 4.6, y = 1.25) {
-      const ring = document.getElementById(containerId); ring.innerHTML = '';
-      const n = items.length; if (!n) return;
-
-      const panelYaw = skinPanel.object3D.rotation.y;     // where the panel faces
-      const GAP_DEG = 120;                                 // front cone
-      const HALF = THREE.MathUtils.degToRad(GAP_DEG/2);
-      const EDGE = THREE.MathUtils.degToRad(8);            // small margin off edges
-      const usable = TAU - 2*HALF;                         // arc behind panel
-      const start = panelYaw + HALF + EDGE;                // right edge of gap
-      const end   = panelYaw - HALF - EDGE + TAU;          // left edge (wrapped)
-      const arc   = (end - start + TAU) % TAU || TAU;      // length of usable arc
-
-      if (n === 1){
-        const t = panelYaw + Math.PI;
-        return place(items[0], t);
-      }
-
-      const step = arc / (n - 1);
-      for (let i=0; i<n; i++){
-        let t = start + i*step;
-        // Hard guard (snap if drifting inside gap)
-        const rel = clampPI(t - panelYaw);
-        if (Math.abs(rel) < HALF){
-          t = panelYaw + (rel < 0 ? -(HALF+EDGE) : (HALF+EDGE));
-        }
-        place(items[i], t);
-      }
-
-      function place(item, t){
-        // wrap
-        t = (t + TAU) % TAU;
-        const x = Math.cos(t) * radius, z = -Math.sin(t) * radius;
-        const yawDeg = (Math.atan2(-x, -z) * 180 / Math.PI);
-        const g = makeOrb(item.title, item.url);
-        g.setAttribute('position', `${x} ${y} ${z}`);
-        g.setAttribute('rotation', `0 ${yawDeg} 0`);
+    function buildOrbRing(containerId, items, radius=4.6, y=1.25){
+      const ring=document.getElementById(containerId); ring.innerHTML='';
+      const n=items.length; if(!n) return;
+      const panelYaw=$('#skinPanel').object3D.rotation.y;
+      const HALF=THREE.MathUtils.degToRad(60); // 120° front gap
+      const EDGE=THREE.MathUtils.degToRad(8);
+      const TAU=Math.PI*2; const usable=TAU-2*HALF;
+      const start=panelYaw+HALF+EDGE; const arc=usable-2*EDGE;
+      const step = n>1 ? arc/(n-1) : 0;
+      for(let i=0;i<n;i++){
+        const t=start+i*step;
+        const x=Math.cos(t)*radius, z=-Math.sin(t)*radius;
+        const yawDeg=(Math.atan2(-x,-z)*180/Math.PI);
+        const g=makeOrb(items[i].title, items[i].url);
+        g.setAttribute('position',`${x} ${y} ${z}`);
+        g.setAttribute('rotation',`0 ${yawDeg} 0`);
         ring.appendChild(g);
       }
     }
 
-    /* ---------- Wire-up ---------- */
-    async function init(){
-      await loadData();
-      buildSkinPanel();
-      await fadeToSkin(skinIndex);
-
-      // Let face-camera-y tick once, then build ring anchored to panel yaw
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        buildOrbRingForPanel('orbRing', LINKS);
-      }));
-
-      // Look-down watcher
-      document.getElementById('camera').setAttribute('lookdown-reset','hold:1500; thresholdY:-0.3');
-
-      // UI
-      skinsToggle.setAttribute('visible', true);
-      skinPanel.setAttribute('visible', true);
+    // IMAGE (JPG/PNG) sky crossfade
+    async function setImageSky(src, name){
+      const skyA=$('#skyA'), skyB=$('#skyB');
+      const front = usingA ? skyB : skyA;
+      const back  = usingA ? skyA : skyB;
+      sceneEl.object3D.background = null; // ensure HDR is off
+      front.removeAttribute('color'); front.setAttribute('src', src); front.setAttribute('rotation','0 -90 0');
+      front.setAttribute('visible', true);
+      const start=performance.now(), ms=900;
+      const step=(t)=>{ const k=Math.min(1,(t-start)/ms); front.setAttribute('material',`opacity:${k}; transparent:true`); back.setAttribute('material',`opacity:${1-k}; transparent:true`); if(k<1) requestAnimationFrame(step); else { back.setAttribute('visible',false); usingA=!usingA; }};
+      requestAnimationFrame(step);
+      $('#skinStatus').setAttribute('text',`value:Using 360 image: ${name}; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+      // sharpen sampling
+      setTimeout(()=>{
+        const mesh=front.getObject3D('mesh'); const r=sceneEl.renderer;
+        if(mesh&&mesh.material&&mesh.material.map&&r){ const tex=mesh.material.map; tex.anisotropy=r.capabilities.getMaxAnisotropy(); tex.needsUpdate=true; }
+      },250);
     }
 
-    document.getElementById('enterBtn').addEventListener('click', ()=>{
-      gate.style.display = 'none';
-      // warm audio gesture
-      try { [audioA,audioB].forEach(a=>{ a.muted=true; a.play().finally(()=>{a.pause(); a.currentTime=0; a.muted=false;}); }); } catch {}
-      init();
-    });
+    // HDR/EXR sky/background
+    function setHDRSky(src, name){
+      const skyA=$('#skyA'), skyB=$('#skyB');
+      skyA.setAttribute('visible',false); skyB.setAttribute('visible',false);
+      const loader = new THREE.RGBELoader();
+      loader.setDataType(THREE.UnsignedByteType);
+      loader.load(src, (tex)=>{
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        sceneEl.object3D.environment = tex;
+        sceneEl.object3D.background  = tex;
+        $('#skinStatus').setAttribute('text',`value:Using HDR/EXR: ${name}; align:center; width:2.6; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+      }, undefined, ()=>{
+        $('#skinStatus').setAttribute('text',`value:HDR load failed, falling back to color; align:center; width:2.6; color:#ffcc88; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+        sceneEl.object3D.background = null;
+      });
+    }
 
-    skinsToggle.addEventListener('click', ()=>{
-      skinPanel.setAttribute('visible', !skinPanel.getAttribute('visible'));
-      // Rebuild ring to current panel yaw whenever you toggle
-      buildOrbRingForPanel('orbRing', LINKS);
-    });
+    function buildSkinPanel(){
+      const ids=['btn0','btn1','btn2','btn3','btn4','btn5'];
+      ids.forEach((id,idx)=>{
+        const slot=document.getElementById(id); slot.innerHTML='';
+        if(!SKINS[idx]){ slot.setAttribute('visible', false); return; }
+        const bg=document.createElement('a-entity');
+        bg.setAttribute('geometry','primitive:plane; width:0.62; height:0.24');
+        bg.setAttribute('material','color:#161a22; opacity:0.95');
+        bg.classList.add('clickable');
+        const s=SKINS[idx];
+        const choose=()=>{ if(s.hdr){ setHDRSky(s.img, s.name); } else { setImageSky(s.img, s.name); } };
+        ['click','pointerdown','touchend'].forEach(ev=>bg.addEventListener(ev,choose,{passive:true}));
+        const label=document.createElement('a-entity');
+        label.setAttribute('position','0 0 0.02');
+        label.setAttribute('text',`value:${s.name}; align:center; width:2.2; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+        slot.appendChild(bg); slot.appendChild(label);
+      });
+    }
 
-    document.getElementById('resetOrb')?.addEventListener('click', async ()=>{
-      buildOrbRingForPanel('orbRing', LINKS);
-      await fadeToSkin(skinIndex);
-    });
+    async function init(){
+      const media = await loadJSON('assets/media.json');
+      SKINS = media?.skins || [];
+      buildSkinPanel();
 
-    // Recenter ring if device orientation changes
-    window.addEventListener('orientationchange', ()=>{
-      setTimeout(()=>buildOrbRingForPanel('orbRing', LINKS), 250);
-    });
+      // default = first skin
+      if(SKINS[0]){
+        if(SKINS[0].hdr){ setHDRSky(SKINS[0].img, SKINS[0].name); }
+        else { setImageSky(SKINS[0].img, SKINS[0].name); }
+      }
+
+      $('#skinsToggle').setAttribute('visible', true);
+      $('#skinPanel').setAttribute('visible', true);
+
+      // links ring
+      buildOrbRing('orbRing', LINKS);
+    }
+
+    document.getElementById('enterBtn').addEventListener('click', ()=>{ document.getElementById('gate').style.display='none'; init(); });
+    document.getElementById('skinsToggle').addEventListener('click', ()=>{ const p=$('#skinPanel'); p.setAttribute('visible', !p.getAttribute('visible')); });
   </script>
 </body>
 </html>
