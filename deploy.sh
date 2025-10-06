@@ -1,23 +1,48 @@
-# From your VlifeVR-demo repo root
+#!/usr/bin/env bash
+# ==========================================================
+# VLifeVR Demo - GitHub Pages Deployment Script
+# ==========================================================
+# This script commits local changes and triggers a rebuild
+# of your site on GitHub Pages.
+# ==========================================================
+
+set -e
+
+echo "🔍 Checking current branch..."
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" != "main" ]; then
+  echo "⚠️  You're on branch '$branch'. Switching to 'main'..."
+  git checkout main
+fi
+
+echo "📦 Pulling latest changes..."
 git pull origin main
 
-# Sanity: show changed files (optional)
-git status
+echo "🧹 Cleaning untracked files..."
+git clean -fd
 
-# Make sure JSON is valid (optional, requires Python)
-python3 - <<'PY'
-import json, sys
-p="assets/media.json"
-try:
-    d=json.load(open(p,"r",encoding="utf-8"))
-    skins=d.get("backgrounds") or d.get("skins") or []
-    print(f"✅ media.json OK · {len(skins)} backgrounds")
-    print("   →", ", ".join(s.get("name","") for s in skins[:6]))
-except Exception as e:
-    print("❌ media.json invalid:", e); sys.exit(1)
-PY
-
-# Stage, commit, push (deploy)
+echo "✅ Staging all changes..."
 git add -A
-git commit -m "Deploy: Park Steps 360 background + panel fixes"
+
+# Prompt user for commit message if none passed
+if [ -z "$1" ]; then
+  read -p "Enter commit message: " commitMsg
+else
+  commitMsg=$1
+fi
+
+# If no message given, use a default
+commitMsg=${commitMsg:-"Auto deploy to GitHub Pages"}
+
+echo "💬 Committing changes..."
+git commit -m "$commitMsg" || echo "No new changes to commit."
+
+echo "🚀 Pushing to GitHub..."
 git push origin main
+
+echo "🌐 Deploying to GitHub Pages..."
+# GitHub Actions will automatically rebuild via pages.yml
+# No manual gh-pages branch needed.
+
+echo "✅ Deployment complete!"
+echo "🔗 View site: https://chrisburley01.github.io/VlifeVR-demo/"
