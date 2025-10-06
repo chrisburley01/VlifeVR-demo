@@ -6,48 +6,16 @@
       "fallback": "#0a0d14",
       "ambient": "#aaccff",
       "ambInt": 0.45,
-      "keyInt": 0.9,
-      "audio": { "src": "assets/city.mp3", "volume": 0.5 }
+      "keyInt": 0.9
     },
     {
-      "name": "Night Sky",
-      "img": "assets/nightsky.jpg",
-      "fallback": "#0a0d14",
+      "name": "Subway Entrance 4K (HDR/EXR)",
+      "img": "subway_entrance_4k.exr",
+      "hdr": true,
+      "fallback": "#0a0a0a",
       "ambient": "#aaccff",
-      "ambInt": 0.40,
-      "keyInt": 0.80
-    },
-    {
-      "name": "Lake & Forest",
-      "img": "assets/lake_forest.jpg",
-      "fallback": "#1b2a24",
-      "ambient": "#cfead7",
-      "ambInt": 0.45,
-      "keyInt": 0.85
-    },
-    {
-      "name": "City",
-      "img": "assets/city.jpg",
-      "fallback": "#1e2024",
-      "ambient": "#d0d3da",
-      "ambInt": 0.42,
-      "keyInt": 0.90
-    },
-    {
-      "name": "Village",
-      "img": "assets/village.jpg",
-      "fallback": "#2a2a1f",
-      "ambient": "#ffe8c2",
       "ambInt": 0.50,
-      "keyInt": 0.80
-    },
-    {
-      "name": "Balloons",
-      "img": "assets/balloons.jpg",
-      "fallback": "#172235",
-      "ambient": "#cfe2ff",
-      "ambInt": 0.48,
-      "keyInt": 0.85
+      "keyInt": 0.9
     },
     {
       "name": "Graphite",
