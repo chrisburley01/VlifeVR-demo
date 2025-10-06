@@ -2,7 +2,7 @@
   "skins": [
     {
       "name": "Neon Metropolis 360",
-      "img": "assets/neon_metropolis_360_equirectangular.jpg",
+      "img": "assets/neon_metropolis_360_equirectangular.jpg?v=1",
       "fallback": "#0a0d14",
       "ambient": "#aaccff",
       "ambInt": 0.45,
@@ -23,7 +23,7 @@
       "fallback": "#1b2a24",
       "ambient": "#cfead7",
       "ambInt": 0.45,
-      "keyInt": 0.85"
+      "keyInt": 0.85
     },
     {
       "name": "City",
