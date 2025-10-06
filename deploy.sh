@@ -1,49 +1,72 @@
 #!/usr/bin/env bash
 # =========================================
-# VLifeVR Demo Deployment Script
+# 🚀 VLifeVR Deployment Script
 # =========================================
-# Automates commits + GitHub Pages publish
+# Pushes the latest local version of your
+# VR demo (HTML, JSON, assets) to GitHub
+# Pages for instant publishing.
+#
+# Repo: chrisburley01/VlifeVR-demo
 # Live URL:
 #   https://chrisburley01.github.io/VlifeVR-demo/
 # =========================================
 
-set -e  # stop if any command fails
+set -e  # Exit immediately if a command fails
 
-# 1️⃣ Check current branch
+# 1️⃣ Verify Git setup
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "❌ This folder is not a Git repository."
+  echo "Please run: git init && git remote add origin <repo-url>"
+  exit 1
+fi
+
+# 2️⃣ Identify current branch
 BRANCH=$(git branch --show-current)
 echo "📦 Deploying branch: $BRANCH"
 
-# 2️⃣ Verify required files
-echo "🧩 Checking for core files..."
-for f in index.html assets/media.json; do
-  if [[ ! -f "$f" ]]; then
-    echo "❌ Missing: $f"
+# 3️⃣ Check essential files exist
+echo "🧩 Checking project structure..."
+REQUIRED=("index.html" "assets/media.json")
+for FILE in "${REQUIRED[@]}"; do
+  if [[ ! -f "$FILE" ]]; then
+    echo "❌ Missing required file: $FILE"
     exit 1
   fi
 done
-echo "✅ Files found."
+echo "✅ Core files found."
 
-# 3️⃣ Stage changes (only key file types)
-echo "📝 Adding HTML, JSON, and JPG/PNG files..."
-git add *.html *.json assets/*.jpg assets/*.png || true
+# 4️⃣ Stage only relevant changes
+echo "📝 Adding updates..."
+git add *.html *.json assets/*.jpg assets/*.png assets/*.jpeg 2>/dev/null || true
 
-# 4️⃣ Commit with timestamp
-COMMIT_MSG="Auto-deploy $(date '+%Y-%m-%d %H:%M:%S')"
+# 5️⃣ Commit with timestamp
+COMMIT_MSG="Auto-deploy: $(date '+%Y-%m-%d %H:%M:%S')"
 git commit -m "$COMMIT_MSG" || echo "⚠️ No new changes to commit."
 
-# 5️⃣ Push to main branch
-echo "🚀 Pushing to main..."
+# 6️⃣ Push to your main branch
+echo "🚀 Pushing to $BRANCH..."
 git push origin "$BRANCH"
 
-# 6️⃣ Deploy to GitHub Pages
+# 7️⃣ Publish to GitHub Pages
 echo "🌐 Publishing to GitHub Pages..."
 if git rev-parse --verify gh-pages >/dev/null 2>&1; then
   git subtree push --prefix . origin gh-pages
 else
-  echo "⚙️ Creating gh-pages branch for first deployment..."
+  echo "⚙️ Creating gh-pages branch..."
   git push origin `git subtree split --prefix . "$BRANCH"`:gh-pages --force
 fi
 
-# 7️⃣ Done!
+# 8️⃣ Post-deploy feedback
+URL="https://chrisburley01.github.io/VlifeVR-demo/"
+echo ""
 echo "✅ Deployment complete!"
-echo "🌍 Live at: https://chrisburley01.github.io/VlifeVR-demo/"
+echo "🌍 Live at: $URL"
+
+# 9️⃣ Optional: auto-open browser (Mac/Linux)
+if command -v open >/dev/null 2>&1; then
+  open "$URL"
+elif command -v xdg-open >/dev/null 2>&1; then
+  xdg-open "$URL"
+fi
+
+echo "🎉 All done!"
