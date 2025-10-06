@@ -14,9 +14,18 @@
       "fallback": "#0a0a0a",
       "ambient": "#aaccff",
       "ambInt": 0.50,
-      "keyInt": 0.9
-    }
-
-    /* …4 more items you already had (Night Sky, City, etc.) … */
-  ]
-}
+      "keyInt": 0.90
+    },
+    {
+      "name": "Night Sky",
+      "img": "",
+      "fallback": "#020212",
+      "ambient": "#aaccff",
+      "ambInt": 0.50,
+      "keyInt": 0.70
+    },
+    {
+      "name": "Lake & Forest",
+      "img": "",
+      "fallback": "#223311",
+      "ambient": "#
