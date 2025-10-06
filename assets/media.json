@@ -16,38 +16,6 @@
       "ambient": "#aaccff",
       "ambInt": 0.50,
       "keyInt": 0.9
-    },
-    {
-      "name": "Night Sky",
-      "img": "",
-      "fallback": "#020212",
-      "ambient": "#aaccff",
-      "ambInt": 0.50,
-      "keyInt": 0.70
-    },
-    {
-      "name": "Lake & Forest",
-      "img": "",
-      "fallback": "#223311",
-      "ambient": "#aaffaa",
-      "ambInt": 0.50,
-      "keyInt": 0.70
-    },
-    {
-      "name": "City",
-      "img": "",
-      "fallback": "#111122",
-      "ambient": "#aaccff",
-      "ambInt": 0.55,
-      "keyInt": 0.80
-    },
-    {
-      "name": "Village",
-      "img": "",
-      "fallback": "#332211",
-      "ambient": "#ffddaa",
-      "ambInt": 0.50,
-      "keyInt": 0.70
     }
   ]
 }
