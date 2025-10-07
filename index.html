@@ -2,234 +2,228 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>VLife • Hybrid VR MVP · 360° / HDR</title>
+  <title>VLife • Hybrid VR MVP</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
   <style>
-    body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif }
-    .badge { position:fixed; left:18px; top:18px; padding:10px 14px; border-radius:14px;
-             background:rgba(0,0,0,.5); color:#e7e7e7; font-weight:600; letter-spacing:.2px;
-             backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index:3; }
-    .brand { position:fixed; right:18px; top:18px; display:flex; align-items:center; gap:10px; z-index:3; }
-    .brand img{ width:38px; height:38px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.35) }
-    .brand b{ color:#ffe36d; text-shadow:0 1px 10px rgba(255,227,109,.35) }
-    .tip { position:fixed; left:18px; right:18px; bottom:18px; padding:14px 16px; border-radius:16px;
-           background:rgba(0,0,0,.55); color:#eaeaea; font-size:16px; line-height:1.35;
-           backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index:3; }
-    .tip b{ color:#ffd95e }
+    body { margin:0; background:#000; }
+    .hud-badge{
+      position: fixed; left: 18px; top: 18px;
+      padding: 12px 18px; border-radius: 18px;
+      background: rgba(0,0,0,.55);
+      color: #e6f4ff; font: 600 16px/1.1 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      letter-spacing:.2px; backdrop-filter: blur(6px);
+    }
+    .brand{
+      position: fixed; right: 18px; top: 18px;
+      padding: 8px 14px; border-radius: 14px;
+      background: radial-gradient(120% 120% at 0% 0%,#222 0,#000 55%);
+      color:#ffe66d; font: 800 18px/1.1 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      box-shadow: 0 6px 24px rgba(0,0,0,.35);
+    }
+    .tip{
+      position:fixed; left: 18px; right: 18px; bottom: 18px;
+      color:#fff; font: 500 17px/1.35 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.65));
+      border-radius:16px; padding:14px 18px; backdrop-filter: blur(6px);
+      text-shadow: 0 1px 2px rgba(0,0,0,.6);
+    }
   </style>
 </head>
 <body>
-  <div class="badge">Hybrid VR MVP · 360° / HDR</div>
-  <div class="brand">
-    <img src="assets/Vlifelogo_1_.png" alt="VLife" />
-    <b>VLIFE</b>
-  </div>
-  <div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
 
-  <a-scene renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true"
-           background="color: #000" vr-mode-ui="enabled: true">
+<div class="hud-badge">Hybrid VR MVP · 360° / HDR</div>
+<div class="brand">VLIFE</div>
+<div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
 
-    <!-- Camera + fixed reticle (always in front) -->
-    <a-entity id="rig" position="0 1.6 0">
-      <a-entity id="camera" camera look-controls>
-        <a-entity id="reticle" geometry="primitive: ring; radiusInner:0.0125; radiusOuter:0.022"
-                  material="color:#ffffff; opacity:0.95; shader:flat"
-                  position="0 0 -0.8"></a-entity>
-      </a-entity>
+<a-scene renderer="antialias:true; physicallyCorrectLights:true; colorManagement:true; toneMapping:ACESFilmic; exposure:1.05" background="color: #000">
+  <!-- Camera + reticle (gaze fuse) -->
+  <a-entity id="rig" position="0 1.6 0">
+    <a-entity id="camera" camera look-controls wasd-controls="enabled:false">
+      <a-entity cursor="fuse: true; fuseTimeout: 900"
+                raycaster="objects: .clickable; interval: 80"
+                position="0 0 -0.01"
+                geometry="primitive: ring; radiusInner: 0.008; radiusOuter: 0.014"
+                material="color: #fff; shader: flat; opacity: 0.95"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- 360 Sky -->
+  <a-assets>
+    <img id="bg-park" src="assets/Park360.jpg">
+    <img id="bg-forest" src="assets/Forrest360.jpg">
+    <img id="bg-future" src="assets/Futurecity360.jpg">
+    <img id="bg-club" src="assets/Neonnightclub.jpg">
+    <img id="bg-monastery" src="assets/floating_sky_monastery_upscaled_8k.jpg">
+  </a-assets>
+
+  <a-sky id="sky" src="#bg-park" rotation="0 -90 0"></a-sky>
+
+  <!-- Front Panel (raised title/subtitle + spaced rows) -->
+  <a-entity id="panel" position="0 1.55 -2.25">
+    <!-- Panel plate -->
+    <a-plane width="1.62" height="0.98" color="#0b0f12"
+             material="shader: standard; roughness:0.9; metalness:0; opacity:0.92"
+             geometry="primitive: plane; width:1.62; height:0.98"
+             shadow="cast:false; receive:false"></a-plane>
+
+    <!-- Title -->
+    <a-entity text="value: Choose Background; color: #ff8a1f; align: center; width: 2.4"
+              position="0 0.36 0.01"></a-entity>
+
+    <!-- Subtitle (updates dynamically) -->
+    <a-entity id="subtitle"
+              text="value: Using 360 image: Park Steps 360; color: #5BFF85; align: center; width: 2.6"
+              position="0 0.22 0.01"></a-entity>
+
+    <!-- Row 1 Buttons -->
+    <a-entity id="row1" position="0 0.04 0.01">
+      <a-plane class="clickable" width="0.68" height="0.14" color="#1a232b" position="-0.45 0 0"
+               material="shader: standard; roughness:0.8; metalness:0">
+        <a-entity text="value: Park Steps 360; align:center; width: 2.2; color:#e5f1ff" position="0 0 0.01"></a-entity>
+        <a-entity change-sky="id:#bg-park; label:Park Steps 360"></a-entity>
+      </a-plane>
+      <a-plane class="clickable" width="0.68" height="0.14" color="#1a232b" position="0.45 0 0"
+               material="shader: standard; roughness:0.8; metalness:0">
+        <a-entity text="value: Forest 360; align:center; width: 2.2; color:#e5f1ff" position="0 0 0.01"></a-entity>
+        <a-entity change-sky="id:#bg-forest; label:Forest 360"></a-entity>
+      </a-plane>
     </a-entity>
 
-    <!-- Sky (set by JS from media.json) -->
-    <a-sky id="sky" rotation="0 -90 0" src=""></a-sky>
-
-    <!-- Front UI panel -->
-    <a-entity id="panel" position="0 1.45 -2.2" rotation="0 0 0" look-at="#camera">
-      <!-- card -->
-      <a-entity geometry="primitive: plane; width: 1.18; height: 0.78"
-                material="shader: standard; color: #111316; roughness:0.9; metalness:0; opacity:0.94"
-                position="0 0 0"></a-entity>
-
-      <!-- Title -->
-      <a-entity id="title" text="value: Choose Background; align: center; color: #ff9532; width: 2.5"
-                position="0 0.30 0.01"></a-entity>
-
-      <!-- Sub-title (active background) -->
-      <a-entity id="subtitle" text="value: Using 360 image: …; align: center; color: #71ffa3; width: 2.6"
-                position="0 0.18 0.01"></a-entity>
-
-      <!-- Row 1 buttons -->
-      <a-entity id="btnRow1" position="0 0.05 0.01">
-        <a-entity class="bgbtn" data-index="0" position="-0.35 0 0"></a-entity>
-        <a-entity class="bgbtn" data-index="1" position="0.35 0 0"></a-entity>
-      </a-entity>
-
-      <!-- Row 2 buttons -->
-      <a-entity id="btnRow2" position="0 -0.13 0.01">
-        <a-entity class="bgbtn" data-index="2" position="-0.35 0 0"></a-entity>
-        <a-entity class="bgbtn" data-index="3" position="0.35 0 0"></a-entity>
-      </a-entity>
-
-      <!-- Row 3 buttons -->
-      <a-entity id="btnRow3" position="0 -0.31 0.01">
-        <a-entity class="bgbtn" data-index="4" position="-0.35 0 0"></a-entity>
-        <a-entity class="bgbtn" data-index="5" position="0.35 0 0"></a-entity>
-      </a-entity>
+    <!-- Row 2 Buttons -->
+    <a-entity id="row2" position="0 -0.16 0.01">
+      <a-plane class="clickable" width="0.68" height="0.14" color="#1a232b" position="-0.45 0 0"
+               material="shader: standard; roughness:0.8; metalness:0">
+        <a-entity text="value: Future City 360; align:center; width: 2.2; color:#e5f1ff" position="0 0 0.01"></a-entity>
+        <a-entity change-sky="id:#bg-future; label:Future City 360"></a-entity>
+      </a-plane>
+      <a-plane class="clickable" width="0.68" height="0.14" color="#1a232b" position="0.45 0 0"
+               material="shader: standard; roughness:0.8; metalness:0">
+        <a-entity text="value: Neon Nightclub 360; align:center; width: 2.2; color:#e5f1ff" position="0 0 0.01"></a-entity>
+        <a-entity change-sky="id:#bg-club; label:Neon Nightclub 360"></a-entity>
+      </a-plane>
     </a-entity>
 
-    <!-- Orb ring container -->
-    <a-entity id="orbRing" position="0 1.35 0"></a-entity>
+    <!-- Row 3 Button (single wide) -->
+    <a-entity id="row3" position="0 -0.36 0.01">
+      <a-plane class="clickable" width="1.4" height="0.14" color="#1a232b"
+               material="shader: standard; roughness:0.8; metalness:0">
+        <a-entity text="value: Floating Sky Monastery 8K; align:center; width: 3; color:#e5f1ff" position="0 0 0.01"></a-entity>
+        <a-entity change-sky="id:#bg-monastery; label:Floating Sky Monastery 8K"></a-entity>
+      </a-plane>
+    </a-entity>
+  </a-entity>
 
-    <!-- Ambient light for gentle lift -->
-    <a-entity light="type: ambient; color: #ffffff; intensity: 0.35"></a-entity>
+  <!-- GOLD ORBS (evenly spaced, brighter glow) -->
+  <a-entity id="orb-ring"></a-entity>
 
-    <!-- Helpers: components for buttons + orbs -->
-    <script>
-      AFRAME.registerComponent('bg-button', {
-        schema:{ label:{default:''}, index:{default:0} },
-        init(){
-          const plane = document.createElement('a-entity');
-          plane.setAttribute('geometry','primitive: plane; width: 0.62; height: 0.12;');
-          plane.setAttribute('material','color:#1a1f27; opacity:0.92; shader:standard; roughness:0.9; metalness:0;');
-          plane.setAttribute('class','clickable');
-          this.el.appendChild(plane);
-
-          const txt = document.createElement('a-entity');
-          txt.setAttribute('text',`value:${this.data.label}; align:center; color:#d7e6ff; width:1.8`);
-          txt.setAttribute('position','0 0 0.01');
-          this.el.appendChild(txt);
-
-          // subtle hover with gaze
-          this.el.addEventListener('mouseenter',()=> plane.setAttribute('material','color:#243042; opacity:0.98; shader:standard; roughness:0.85;'));
-          this.el.addEventListener('mouseleave',()=> plane.setAttribute('material','color:#1a1f27; opacity:0.92; shader:standard; roughness:0.9;'));
-
-          // click -> update background
-          this.el.addEventListener('click', () => {
-            const i = this.data.index;
-            window.setBackground(i);
-          });
-        }
-      });
-
-      // Fancy orb (core + glow + soft point-light) + label that always faces camera
-      AFRAME.registerComponent('gold-orb', {
-        schema:{ label:{default:''}, url:{default:''} },
-        init(){
-          // soft light
-          const lamp = document.createElement('a-entity');
-          lamp.setAttribute('light','type: point; intensity: 0.22; distance: 3; color: #ffd766');
-          lamp.setAttribute('position','0 0 0.2');
-          this.el.appendChild(lamp);
-
-          // glow sphere
-          const glow = document.createElement('a-sphere');
-          glow.setAttribute('radius','0.18');
-          glow.setAttribute('material','color:#ffd657; emissive:#eebc40; emissiveIntensity:1.2; roughness:0.6; metalness:0.1;');
-          this.el.appendChild(glow);
-
-          // halo (slightly bigger, transparent)
-          const halo = document.createElement('a-sphere');
-          halo.setAttribute('radius','0.24');
-          halo.setAttribute('material','color:#ffdf7a; opacity:0.25; transparent:true; side:double');
-          this.el.appendChild(halo);
-
-          // label plate
-          const plate = document.createElement('a-entity');
-          plate.setAttribute('geometry','primitive: plane; width: 0.9; height: 0.12;');
-          plate.setAttribute('material','color:#2b2b2b; opacity:0.78');
-          plate.setAttribute('position','0 0.34 0');
-          plate.setAttribute('look-at','#camera');
-          this.el.appendChild(plate);
-
-          const txt = document.createElement('a-entity');
-          txt.setAttribute('text',`value:${this.data.label}; align:center; color:#ffcf5a; width:2.2`);
-          txt.setAttribute('position','0 0 0.01');
-          plate.appendChild(txt);
-
-          // gaze to open preview page
-          this.el.setAttribute('class','clickable');
-          this.el.addEventListener('click', () => {
-            if(this.data.url){ window.open(this.data.url, '_blank'); }
-          });
-        }
-      });
-
-      // --- Data + layout ---
-      const PANEL_Z = -2.2;     // front card depth
-      const ORB_RADIUS = 3.8;    // circle radius
-      const ORB_Y = 1.25;        // height
-      const ORB_COUNT = 6;       // how many around the ring
-      const NO_ARC = 50;         // degrees blocked in front of the panel (keeps clear)
-      let media = null, activeIndex = 0;
-
-      async function loadMedia(){
-        const res = await fetch('assets/media.json?_=' + Date.now());
-        media = await res.json();
-        if (!media || !media.backgrounds || media.backgrounds.length === 0) return;
-
-        // Populate buttons
-        const btns = Array.from(document.querySelectorAll('.bgbtn'));
-        btns.forEach((b,i)=>{
-          const item = media.backgrounds[i];
-          if(!item) { b.setAttribute('visible','false'); return; }
-          b.setAttribute('bg-button',`label:${item.name.replaceAll(':','-')}; index:${i}`);
-          b.setAttribute('visible','true');
+  <!-- Helpers -->
+  <script>
+    // Change-sky component: switches sky + subtitle on click/gaze
+    AFRAME.registerComponent('change-sky', {
+      schema: { id: {type:'selector'}, label: {type:'string'} },
+      init: function(){
+        const el = this.el.parentEl; // plane
+        const sky = document.querySelector('#sky');
+        const subtitle = document.querySelector('#subtitle');
+        el.addEventListener('click', () => {
+          if (!this.data.id) return;
+          sky.setAttribute('src', '#' + this.data.id.id);
+          subtitle.setAttribute('text', 'value: Using 360 image: ' + this.data.label);
         });
+      }
+    });
 
-        // First background
-        setBackground(0);
+    // Build 6 preview orbs in a ring
+    const ORBS = [
+      { title:'Skins', action:'open-panel' },
+      { title:'YouTube VR Channel', url:'https://www.youtube.com/vr' },
+      { title:'360Cities', url:'https://www.360cities.net/' },
+      { title:'Meta Quest TV', url:'https://www.meta.com/quest/experiences/' },
+      { title:'Help', url:'https://support.google.com/webvr' },
+      { title:'About', url:'https://chrisburley01.github.io' }
+    ];
 
-        // Build orbs (6 evenly spread, but skipping the forward arc)
-        const orbRing = document.getElementById('orbRing');
-        orbRing.innerHTML = '';
-        const links = [
-          {label:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
-          {label:'360Cities',         url:'https://www.360cities.net/'},
-          {label:'Meta Quest TV',     url:'https://www.meta.com/quest/tv/'},
-          {label:'Skins',             url:''}, // will open panel, not a link
-          {label:'Help',              url:''},
-          {label:'More 360',          url:'https://www.airpano.com/'}
-        ];
+    const ring = document.querySelector('#orb-ring');
+    const radius = 4.6;          // ← pushed further out
+    const y = 1.1;               // ← slightly lower
+    const orbSize = 0.24;        // sphere radius
+    const haloSize = 0.44;       // halo ring outer
+    const emissive = '#f7d24b';
 
-        let placed = 0, angle = -140; // start from far left
-        while (placed < ORB_COUNT && angle <= 140){
-          // Skip forward arc around 0°
-          if (Math.abs(angle) < NO_ARC){ angle += 20; continue; }
-          const rad = angle * Math.PI / 180;
-          const x = Math.sin(rad) * ORB_RADIUS;
-          const z = -Math.cos(rad) * ORB_RADIUS; // negative z = in front
-          const orb = document.createElement('a-entity');
-          const link = links[placed] || {label:`Link ${placed+1}`, url:''};
-          orb.setAttribute('position', `${x} ${ORB_Y} ${z}`);
-          if (link.label.toLowerCase()==='skins'){
-            orb.setAttribute('gold-orb', `label:${link.label}; url:`);
-            orb.addEventListener('click', () => showPanel(true));
-          } else {
-            orb.setAttribute('gold-orb', `label:${link.label}; url:${link.url}`);
-          }
-          orbRing.appendChild(orb);
-          placed++; angle += 48; // spread nicely
+    function makeOrb(angleDeg, label, url, action){
+      const a = angleDeg * Math.PI/180;
+      const x = Math.cos(a) * radius;
+      const z = Math.sin(a) * radius;
+
+      // container that always faces the camera a bit
+      const group = document.createElement('a-entity');
+      group.setAttribute('position', `${x} ${y} ${z}`);
+      group.setAttribute('rotation', `0 ${-angleDeg+90} 0`);
+
+      // halo
+      const halo = document.createElement('a-ring');
+      halo.setAttribute('radius-inner', haloSize*0.58);
+      halo.setAttribute('radius-outer', haloSize);
+      halo.setAttribute('rotation', '-90 0 0');
+      halo.setAttribute('material', 'color: #f1c94f; opacity: 0.35; side: double; transparent: true');
+      halo.setAttribute('position', `0 0 ${-orbSize-0.01}`);
+      group.appendChild(halo);
+
+      // sphere
+      const sphere = document.createElement('a-sphere');
+      sphere.setAttribute('radius', orbSize);
+      sphere.setAttribute('class', 'clickable');
+      sphere.setAttribute('material',
+        `color:#ffd84d; metalness:0.15; roughness:0.3; emissive:${emissive}; emissiveIntensity:1.8`);
+      sphere.addEventListener('click', () => {
+        if(action === 'open-panel'){
+          // recentre panel quickly so it’s always visible
+          const cam = document.querySelector('#camera').object3D;
+          const forward = new THREE.Vector3();
+          cam.getWorldDirection(forward);
+          forward.y = 0; forward.normalize().multiplyScalar(2.25);
+          const pos = cam.getWorldPosition(new THREE.Vector3()).add(forward);
+          document.querySelector('#panel').setAttribute('position', `${pos.x} 1.55 ${pos.z}`);
+          document.querySelector('#panel').setAttribute('rotation',
+            `0 ${THREE.MathUtils.radToDeg(Math.atan2(-forward.x, -forward.z))} 0`);
+          return;
         }
-      }
+        if(url){ window.open(url, '_blank'); }
+      });
+      group.appendChild(sphere);
 
-      window.setBackground = function(index){
-        if (!media || !media.backgrounds[index]) return;
-        activeIndex = index;
-        const item = media.backgrounds[index];
-        const sky = document.getElementById('sky');
-        sky.setAttribute('src', item.img);
-        document.getElementById('subtitle')
-          .setAttribute('text', `value: Using 360 image: ${item.name}; align:center; color:#71ffa3; width:2.6`);
-        // keep the panel visible after change
-        showPanel(true);
-      }
+      // label plate
+      const plate = document.createElement('a-plane');
+      plate.setAttribute('width', 1.15);
+      plate.setAttribute('height', 0.16);
+      plate.setAttribute('position', '0 0.34 0');
+      plate.setAttribute('material', 'color:#2a2f36; opacity:0.85; shader:standard; roughness:0.85');
+      const txt = document.createElement('a-entity');
+      txt.setAttribute('text', `value:${label}; align:center; width: 2.6; color:#e9f2ff`);
+      txt.setAttribute('position', '0 0 0.01');
+      plate.appendChild(txt);
+      group.appendChild(plate);
 
-      function showPanel(vis){
-        const p = document.getElementById('panel');
-        p.setAttribute('visible', vis ? 'true':'true'); // always visible now
-      }
+      ring.appendChild(group);
+    }
 
-      document.addEventListener('DOMContentLoaded', loadMedia);
-    </script>
-  </a-scene>
+    // Even spacing
+    const step = 360 / ORBS.length;
+    ORBS.forEach((o, i) => makeOrb(i*step, o.title, o.url, o.action));
+
+    // Ensure panel always starts centred on load
+    AFRAME.scenes[0].addEventListener('loaded', () => {
+      const cam3 = document.querySelector('#camera').object3D;
+      const dir = new THREE.Vector3();
+      cam3.getWorldDirection(dir);
+      dir.y = 0; dir.normalize().multiplyScalar(2.25);
+      const pos = cam3.getWorldPosition(new THREE.Vector3()).add(dir);
+      const panel = document.querySelector('#panel');
+      panel.setAttribute('position', `${pos.x} 1.55 ${pos.z}`);
+      panel.setAttribute('rotation', `0 ${THREE.MathUtils.radToDeg(Math.atan2(-dir.x, -dir.z))} 0`);
+    });
+  </script>
+</a-scene>
 </body>
 </html>
