@@ -23,14 +23,12 @@
   <div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
 
   <a-scene
-    renderer="antialias:true; physicallyCorrectLights:true; colorManagement:true; toneMappingExposure:1.15"
+    renderer="antialias:true; physicallyCorrectLights:true; colorManagement:true; toneMappingExposure:1.18"
     background="color:#000"
     vr-mode-ui="enabled:true">
 
-    <!-- Assets (images listed in assets/media.json) -->
     <a-assets id="assetBank" timeout="30000"></a-assets>
 
-    <!-- Camera + cursor -->
     <a-entity id="rig" position="0 1.6 0">
       <a-entity id="cam" camera look-controls>
         <a-entity id="cursor"
@@ -41,37 +39,31 @@
       </a-entity>
     </a-entity>
 
-    <!-- UNLIT 360 BACKGROUND (fixes darkness) -->
-    <!-- We show exactly one of these at a time -->
-    <a-entity id="bgRoot">
-      <!-- Using a-sky with shader:flat ignores scene lights and shows full image brightness -->
-      <a-sky id="bgSky" radius="5000" material="shader:flat" rotation="0 -90 0"></a-sky>
-    </a-entity>
+    <!-- Unlit 360 background -->
+    <a-sky id="bgSky" radius="5000" material="shader:flat" rotation="0 -90 0"></a-sky>
 
-    <!-- Lights (only for orbs/panels; background is unlit) -->
-    <a-entity light="type:ambient; intensity:0.45"></a-entity>
-    <a-entity light="type:point; intensity:0.7; distance:18" position="1.2 2.2 -2.2"></a-entity>
+    <!-- Lights only for orbs/panels -->
+    <a-entity light="type:ambient; intensity:0.5"></a-entity>
+    <a-entity light="type:point; intensity:0.75; distance:18" position="1.2 2.2 -2.2"></a-entity>
 
-    <!-- GOLD ORBS GROUP -->
+    <!-- ORBS (evenly spaced) -->
     <a-entity id="orbs">
-      <!-- Skins selector orb (front/left) -->
-      <a-entity id="skinsOrb" position="-1.6 1.1 -2.4">
-        <a-entity geometry="primitive:sphere; radius:0.28"
+      <!-- Skins -->
+      <a-entity id="skinsOrb" position="-2.2 1.15 -2.7">
+        <a-entity geometry="primitive:sphere; radius:0.3"
                   material="color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:0.25"></a-entity>
-        <a-entity text="value:Skins; align:center; width:2; color:#ffd700"
-                  position="0 0.48 0" rotation="0 0 0"></a-entity>
+        <a-entity text="value:Skins; align:center; width:2; color:#ffd700" position="0 0.5 0"></a-entity>
       </a-entity>
 
-      <!-- Example link orbs (left/center/right) -->
-      <a-entity class="link-orb" data-title="YouTube VR Channel" data-url="https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ" position="-0.6 1.0 -2.6"></a-entity>
-      <a-entity class="link-orb" data-title="Meta Quest TV" data-url="https://www.meta.com/quest/tv/" position="0 0.95 -2.2"></a-entity>
-      <a-entity class="link-orb" data-title="360Cities" data-url="https://www.360cities.net/" position="0.9 1.0 -2.6"></a-entity>
+      <!-- Links -->
+      <a-entity class="link-orb" data-title="YouTube VR Channel" data-url="https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ" position="-0.75 1.05 -2.6"></a-entity>
+      <a-entity class="link-orb" data-title="Meta Quest TV" data-url="https://www.meta.com/quest/tv/" position="0.75 1.05 -2.6"></a-entity>
+      <a-entity class="link-orb" data-title="360Cities" data-url="https://www.360cities.net/" position="2.25 1.05 -2.6"></a-entity>
     </a-entity>
 
-    <!-- LINK PREVIEW PANEL (faces camera; opens over orb) -->
-    <a-entity id="linkPanel" visible="false" position="0 1.4 -1.6" rotation="0 0 0">
-      <a-entity geometry="primitive:plane; width:1.6; height:0.9"
-                material="color:#121319; opacity:0.96"></a-entity>
+    <!-- LINK PREVIEW PANEL -->
+    <a-entity id="linkPanel" visible="false" position="0 1.45 -1.6">
+      <a-entity geometry="primitive:plane; width:1.6; height:0.9" material="color:#121319; opacity:0.96"></a-entity>
       <a-entity id="lpTitle" position="0 0.28 0.01" text="align:center; width:2.6; color:#ffd700; value:Title"></a-entity>
       <a-entity id="lpUrl" position="0 0.06 0.01" text="align:center; width:2.6; color:#9fb4ff; value:https://"></a-entity>
       <a-entity id="lpBtnOpen" position="-0.42 -0.26 0.01"
@@ -88,15 +80,11 @@
                 text="value:Close; align:center; width:0.9; color:#d3d3db"></a-entity>
     </a-entity>
 
-    <!-- BACKGROUND PICKER PANEL (orbs hide while open) -->
+    <!-- SKIN PANEL -->
     <a-entity id="skinPanel" visible="true" position="0 1.45 -2">
-      <a-entity geometry="primitive:plane; width:2.2; height:1.2" material="color:#0f1217; opacity:0.96"></a-entity>
-      <a-entity position="0 0.42 0.01"
-                text="value:Choose Background; align:center; width:3; color:#ffb83f"></a-entity>
-      <a-entity id="skinActive" position="0 0.23 0.01"
-                text="value:Using 360 image: ...; align:center; width:3; color:#72ff72"></a-entity>
-
-      <!-- Rows of buttons (we’ll fill them from media.json) -->
+      <a-entity geometry="primitive:plane; width:2.4; height:1.18" material="color:#0f1217; opacity:0.96"></a-entity>
+      <a-entity position="0 0.42 0.01" text="value:Choose Background; align:center; width:3; color:#ffb83f"></a-entity>
+      <a-entity id="skinActive" position="0 0.23 0.01" text="value:Using 360 image: ...; align:center; width:3; color:#72ff72"></a-entity>
       <a-entity id="skinBtnsTop" position="0 0.02 0.01"></a-entity>
       <a-entity id="skinBtnsBottom" position="0 -0.38 0.01"></a-entity>
     </a-entity>
@@ -104,8 +92,7 @@
   </a-scene>
 
   <script>
-    // ---------- Helpers ----------
-    const $ = sel => document.querySelector(sel);
+    const $ = s => document.querySelector(s);
     const scene = document.querySelector('a-scene');
     const assetsEl = $('#assetBank');
     const orbsRoot = $('#orbs');
@@ -121,101 +108,90 @@
     const lpBtnTab = $('#lpBtnTab');
     const lpClose = $('#lpClose');
 
-    // Ensure link panel faces camera each frame
-    scene.addEventListener('loaded', () => {
-      scene.renderer.toneMappingExposure = 1.15; // small extra safety
-      scene.addEventListener('renderstart', () => {
-        scene.object3D.onBeforeRender = () => {
+    // keep link panel facing camera
+    scene.addEventListener('loaded', ()=>{
+      scene.addEventListener('renderstart', ()=>{
+        scene.object3D.onBeforeRender = ()=>{
           const cam = $('#cam').object3D;
-          const panel = linkPanel.object3D;
-          panel.lookAt(cam.getWorldPosition(new THREE.Vector3()));
+          linkPanel.object3D.lookAt(cam.getWorldPosition(new THREE.Vector3()));
         };
       });
     });
 
-    // Build gold orbs
+    // build link orbs
     document.querySelectorAll('.link-orb').forEach(node=>{
-      const sphere=document.createElement('a-entity');
-      sphere.setAttribute('geometry','primitive:sphere; radius:0.22');
-      sphere.setAttribute('material','color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:0.25');
-      node.appendChild(sphere);
-
+      const ball=document.createElement('a-entity');
+      ball.setAttribute('geometry','primitive:sphere; radius:0.24');
+      ball.setAttribute('material','color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:0.25');
+      node.appendChild(ball);
       const label=document.createElement('a-entity');
-      label.setAttribute('position','0 0.42 0');
-      label.setAttribute('text',`value:${node.dataset.title}; align:center; width:2; color:#ffd700`);
+      label.setAttribute('text',`value:${node.dataset.title}; align:center; width:2.2; color:#ffd700`);
+      label.setAttribute('position','0 0.46 0');
       node.appendChild(label);
-
       node.addEventListener('click',()=>{
-        // Fill and show link panel
         lpTitle.setAttribute('text','value:'+node.dataset.title);
         lpUrl.setAttribute('text','value:'+node.dataset.url);
         linkPanel.setAttribute('visible',true);
       });
     });
-
-    // Link panel buttons
-    lpBtnOpen.addEventListener('click', ()=>{
-      const url = lpUrl.getAttribute('text').value;
-      location.href = url;
-    });
-    lpBtnTab.addEventListener('click', ()=>{
-      const url = lpUrl.getAttribute('text').value;
-      window.open(url,'_blank');
-    });
+    lpBtnOpen.addEventListener('click', ()=> location.href = lpUrl.getAttribute('text').value);
+    lpBtnTab.addEventListener('click', ()=> window.open(lpUrl.getAttribute('text').value,'_blank'));
     lpClose.addEventListener('click', ()=> linkPanel.setAttribute('visible',false));
 
-    // Load media.json and build background buttons
+    // backgrounds
     fetch('assets/media.json').then(r=>r.json()).then(cfg=>{
-      // Preload images
-      cfg.backgrounds.forEach((bg,i)=>{
-        const img=document.createElement('img');
-        img.setAttribute('id','bg'+i);
+      // preload with original index IDs
+      cfg.backgrounds.forEach((bg,idx)=>{
+        const img = document.createElement('img');
+        img.setAttribute('id','bg'+idx);
         img.setAttribute('src',bg.img);
         assetsEl.appendChild(img);
       });
 
-      const makeBtn=(bg,i)=> {
+      // helper to create a button (store original index!)
+      const makeBtn=(bg,idx)=>{
         const btn=document.createElement('a-entity');
-        btn.setAttribute('geometry','primitive:plane; width:0.86; height:0.24');
+        btn.setAttribute('geometry','primitive:plane; width:0.9; height:0.24');
         btn.setAttribute('material','color:#1b2430; opacity:0.98');
-        btn.setAttribute('text',`value:${bg.name}; align:center; width:1.6; color:#dfe6ff`);
-        btn.addEventListener('click',()=>applyBG(bg,i));
+        btn.setAttribute('text',`value:${bg.name}; align:center; width:1.8; color:#dfe6ff`);
+        btn.setAttribute('class','clickable');
+        btn.dataset.idx = idx;                           // ← keep original index
+        btn.addEventListener('click',()=>applyBG(bg,idx));
         return btn;
       };
 
-      // Build two rows (up to 6 items -> 3+3)
-      const top = cfg.backgrounds.slice(0,3);
-      const bot = cfg.backgrounds.slice(3,6);
-      const placeRow=(row,rootX,root)=>{
-        const gap = 0.96;
-        const startX = -gap*(row.length-1)/2;
-        row.forEach((bg,i)=>{
-          const btn=makeBtn(bg,i);
-          btn.setAttribute('position',`${startX + i*gap} 0 0`);
-          root.appendChild(btn);
+      // dynamic row layout with EVEN spacing
+      const layoutRow = (items, rootEl) => {
+        const gap = 1.05;
+        const startX = -gap*(items.length-1)/2;
+        items.forEach((entry,i)=>{
+          const btn = makeBtn(entry.bg, entry.idx);
+          btn.setAttribute('position', `${startX + i*gap} 0 0`);
+          rootEl.appendChild(btn);
         });
       };
-      placeRow(top,0,skinBtnsTop);
-      placeRow(bot,0,skinBtnsBottom);
 
-      // Initial background
-      applyBG(cfg.backgrounds[0],0);
+      // split into two rows but keep original indices
+      const entries = cfg.backgrounds.map((bg,idx)=>({bg,idx}));
+      layoutRow(entries.slice(0,3), skinBtnsTop);
+      layoutRow(entries.slice(3,6), skinBtnsBottom);
 
-      // While panel is visible, hide orbs fully
-      const setOrbsVisible = vis => orbsRoot.setAttribute('visible', vis);
-      const showPanel = () => { skinPanel.setAttribute('visible',true); setOrbsVisible(false); };
-      const hidePanel = () => { skinPanel.setAttribute('visible',false); setOrbsVisible(true); };
+      // initial background
+      applyBG(cfg.backgrounds[0], 0);
 
-      // Skins orb toggles the panel
-      $('#skinsOrb').addEventListener('click',()=>{
+      // hide orbs when panel open
+      const setOrbs = v => orbsRoot.setAttribute('visible', v);
+      const showPanel = ()=>{ skinPanel.setAttribute('visible',true); setOrbs(false); };
+      const hidePanel = ()=>{ skinPanel.setAttribute('visible',false); setOrbs(true); };
+
+      $('#skinsOrb').addEventListener('click', ()=>{
         const vis = skinPanel.getAttribute('visible');
         vis ? hidePanel() : showPanel();
       });
 
-      // Apply background (UNLIT sky)
-      function applyBG(bg,i){
+      function applyBG(bg, idx){
         skinActive.setAttribute('text','value:Using 360 image: '+bg.name);
-        bgSky.setAttribute('src','#bg'+i);               // <a-sky material="shader:flat"> ignores lights → full brightness
+        bgSky.setAttribute('src', '#bg'+idx);            // correct original index
         hidePanel();
       }
     });
