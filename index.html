@@ -1,193 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Vlife – Hybrid VR 360° / HDR</title>
-<link rel="icon" href="assets/Vlifelogo_1_.png" />
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vlife – Hybrid VR 360° / HDR</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png" />
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 
-<style>
-:root { --gold:#ffd776; --bg:#0b0b0f; --text:#e7e7ea; }
-html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-.topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:10}
-.brandimg{width:32px;height:32px;border-radius:8px;background:#000;object-fit:contain;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
-.brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.45)}
-.badge{position:fixed;left:16px;top:16px;color:#cfd1d6;font-size:12px;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);z-index:10}
-.tip{position:fixed;left:16px;bottom:16px;color:#d8dde6;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
-     padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);z-index:10}
+  <style>
+    :root { --gold:#ffd776; --panel:#101317; --text:#e7e7ea; }
+    html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
 
-/* Live iframe overlay */
-#liveFrameWrap{
-  position:fixed;inset:0;display:none;place-items:center;z-index:9999;
-  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
-}
-#liveFrame{width:min(960px,92vw);height:min(540px,52vh);border:0;
-  border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.55);background:#000;}
-#liveClose{position:absolute;top:10px;right:12px;background:#0e1117;color:#fff;
-  border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 12px;
-  font-weight:700;cursor:pointer;}
-</style>
+    .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:10}
+    .brandimg{width:32px;height:32px;border-radius:8px;background:#000;object-fit:contain;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
+    .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.45)}
+    .badge{position:fixed;left:16px;top:16px;color:#cfd1d6;font-size:12px;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);z-index:10}
+    .tip{position:fixed;left:16px;bottom:16px;color:#d8dde6;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
+         padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);z-index:10}
+
+    /* Live iframe overlay */
+    #liveFrameWrap{
+      position:fixed;inset:0;display:none;place-items:center;z-index:9999;
+      background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+    }
+    #liveFrame{width:min(960px,92vw);height:min(540px,52vh);border:0;
+      border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.55);background:#000;}
+    #liveClose{position:absolute;top:10px;right:12px;background:#0e1117;color:#fff;
+      border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 12px;
+      font-weight:700;cursor:pointer;}
+    #enterVR{position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:12px;border:0;
+      background:#fff;color:#000;font-weight:800;box-shadow:0 8px 26px rgba(0,0,0,.35);z-index:10}
+  </style>
 </head>
 <body>
-<div class="topright">
-  <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
-  <div class="brand">VLIFE</div>
-</div>
-<div class="badge">Hybrid VR MVP · 360° / HDR</div>
-<div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
+  <div class="topright">
+    <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
+    <div class="brand">VLIFE</div>
+  </div>
+  <div class="badge">Hybrid VR MVP · 360° / HDR</div>
+  <div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
 
-<a-scene renderer="alpha:true antialias:true" background="color:#000" vr-mode-ui="enterVRButton: #enterVR">
-  <a-assets id="assets" timeout="30000"></a-assets>
+  <a-scene renderer="alpha:true antialias:true" background="color:#000" vr-mode-ui="enterVRButton: #enterVR">
+    <a-assets id="assets" timeout="30000"></a-assets>
 
-  <a-entity id="rig" position="0 0 0">
-    <a-entity id="camera" camera look-controls position="0 1.6 0">
-      <a-entity cursor="fuse:true; fuseTimeout:900"
-        position="0 0 -1"
-        geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-        material="shader:flat; opacity:0.95; color:#ffffff"></a-entity>
+    <a-entity id="rig">
+      <a-entity id="camera" camera look-controls position="0 1.6 0">
+        <a-entity cursor="fuse:true; fuseTimeout:900" position="0 0 -1"
+          geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
+          material="shader:flat; opacity:0.95; color:#ffffff"></a-entity>
+      </a-entity>
     </a-entity>
-  </a-entity>
 
-  <a-sky id="spherePhoto" rotation="0 -90 0" color="#0b0d13"></a-sky>
+    <a-sky id="spherePhoto" rotation="0 -90 0" color="#0b0d13"></a-sky>
+    <a-entity id="ambLight" light="type:ambient; intensity:0.45; color:#aaccff"></a-entity>
+    <a-entity id="keyLight" light="type:point; intensity:0.9; distance:18; decay:1; color:#ffffff" position="2 2 -2"></a-entity>
 
-  <a-entity id="ambLight" light="type:ambient; intensity:0.45; color:#aaccff"></a-entity>
-  <a-entity id="keyLight" light="type:point; intensity:0.9; distance:18; decay:1; color:#ffffff" position="2 2 -2"></a-entity>
-
-  <!-- Background panel -->
-  <a-entity id="skinsPanel" position="0 1.45 -2">
-    <a-entity geometry="primitive:plane; width:1.6; height:0.9"
-              material="color:#101317; opacity:0.97"></a-entity>
-    <a-entity id="skinsTitle" position="0 0.36 0.01"
-              text="value:Choose Background; align:center; width:1.4; color:#ffd776; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-    <a-entity id="skinsSubtitle" position="0 0.22 0.01"
-              text="value:; align:center; width:1.5; color:#8ee58e; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-    <a-entity id="skinRow1" position="0 0.04 0.01"></a-entity>
-    <a-entity id="skinRow2" position="0 -0.20 0.01"></a-entity>
-  </a-entity>
-
-  <a-entity id="orbs"></a-entity>
-
-  <a-entity id="preview3d" visible="false">
-    <a-entity geometry="primitive:plane; width:1.5; height:1"
-              material="color:#0f1217; opacity:0.96"></a-entity>
-    <a-entity id="p3dTitle" position="0 0.39 0.01"
-              text="value:; align:center; width:1.35; color:#ffd776; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-    <a-entity id="p3dHost" position="0 0.25 0.01"
-              text="value:; align:center; width:1.25; color:#9fb4c7; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-
-    <a-entity id="btnLive" class="clickable" position="-0.45 -0.28 0.02">
-      <a-entity geometry="primitive:plane; width:0.56; height:0.16"
-                material="color:#2a2f39; opacity:0.98"></a-entity>
-      <a-entity position="0 0 0.01"
-        text="value:Live preview; align:center; width:0.48; color:#dce6ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+    <!-- Skins panel -->
+    <a-entity id="skinsPanel" position="0 1.45 -2">
+      <a-entity geometry="primitive:plane; width:1.6; height:0.9" material="color:#101317; opacity:0.97"></a-entity>
+      <a-entity id="skinsTitle" position="0 0.36 0.01"
+        text="value:Choose Background; align:center; width:1.4; color:#ffd776; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      <a-entity id="skinsSubtitle" position="0 0.22 0.01"
+        text="value:; align:center; width:1.5; color:#8ee58e; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      <a-entity id="skinRow1" position="0 0.04 0.01"></a-entity>
+      <a-entity id="skinRow2" position="0 -0.20 0.01"></a-entity>
     </a-entity>
-    <a-entity id="btnOpen" class="clickable" position="0.45 -0.28 0.02">
-      <a-entity geometry="primitive:plane; width:0.56; height:0.16"
-                material="color:#2a2f39; opacity:0.98"></a-entity>
-      <a-entity position="0 0 0.01"
-        text="value:Open in new tab; align:center; width:0.48; color:#dce6ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+
+    <!-- Link orbs row -->
+    <a-entity id="orbs"></a-entity>
+
+    <!-- In-scene preview panel -->
+    <a-entity id="preview3d" visible="false">
+      <a-entity geometry="primitive:plane; width:1.5; height:1" material="color:#0f1217; opacity:0.96"></a-entity>
+      <a-entity id="p3dTitle" position="0 0.39 0.01"
+        text="value:; align:center; width:1.35; color:#ffd776; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      <a-entity id="p3dHost" position="0 0.25 0.01"
+        text="value:; align:center; width:1.25; color:#9fb4c7; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+
+      <a-entity id="btnLive" class="clickable" position="-0.45 -0.28 0.02">
+        <a-entity geometry="primitive:plane; width:0.56; height:0.16" material="color:#2a2f39; opacity:0.98"></a-entity>
+        <a-entity position="0 0 0.01"
+          text="value:Live preview; align:center; width:0.48; color:#dce6ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      </a-entity>
+      <a-entity id="btnOpen" class="clickable" position="0.45 -0.28 0.02">
+        <a-entity geometry="primitive:plane; width:0.56; height:0.16" material="color:#2a2f39; opacity:0.98"></a-entity>
+        <a-entity position="0 0 0.01"
+          text="value:Open in new tab; align:center; width:0.48; color:#dce6ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      </a-entity>
+      <a-entity id="btnClose3D" class="clickable" position="0 -0.52 0.02">
+        <a-entity geometry="primitive:plane; width:0.44; height:0.14" material="color:#1e232b; opacity:0.98"></a-entity>
+        <a-entity position="0 0 0.01"
+          text="value:Close; align:center; width:0.36; color:#c9d3e5; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      </a-entity>
     </a-entity>
-    <a-entity id="btnClose3D" class="clickable" position="0 -0.52 0.02">
-      <a-entity geometry="primitive:plane; width:0.44; height:0.14"
-                material="color:#1e232b; opacity:0.98"></a-entity>
-      <a-entity position="0 0 0.01"
-        text="value:Close; align:center; width:0.36; color:#c9d3e5; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+
+    <!-- Fallback hint overlay -->
+    <a-entity id="overlay" visible="false" position="0 1.45 -1.6">
+      <a-entity geometry="primitive:plane; width:1.3; height:0.42" material="color:#101317; opacity:0.9"></a-entity>
+      <a-entity id="overlayText" position="0 0 0.01"
+        text="value:Preview unavailable (site blocks embedding). Use 'Open in new tab'.; align:center; width:1.2; wrapCount:36; color:#e6edf7; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
     </a-entity>
-  </a-entity>
+  </a-scene>
 
-  <a-entity id="overlay" visible="false" position="0 1.45 -1.6">
-    <a-entity geometry="primitive:plane; width:1.3; height:0.42"
-              material="color:#101317; opacity:0.9"></a-entity>
-    <a-entity id="overlayText" position="0 0 0.01"
-      text="value:Preview unavailable (site blocks embedding). Use 'Open in new tab'.; align:center; width:1.2; wrapCount:36; color:#e6edf7; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-  </a-entity>
-</a-scene>
+  <!-- Live iframe overlay -->
+  <div id="liveFrameWrap">
+    <button id="liveClose">Close</button>
+    <iframe id="liveFrame" allow="xr-spatial-tracking; gyroscope; accelerometer; autoplay; fullscreen"></iframe>
+  </div>
 
-<div id="liveFrameWrap">
-  <button id="liveClose">Close</button>
-  <iframe id="liveFrame" allow="xr-spatial-tracking; gyroscope; accelerometer; autoplay; fullscreen"></iframe>
-</div>
+  <button id="enterVR">VR</button>
 
-<button id="enterVR" style="position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:12px;border:0;
-  background:#fff;color:#000;font-weight:800;box-shadow:0 8px 26px rgba(0,0,0,.35);">VR</button>
+  <script>
+  const $ = s => document.querySelector(s);
 
-<script>
-const $ = s => document.querySelector(s);
-AFRAME.registerComponent('billboard-yaw',{tick(){const c=this.el.sceneEl.camera;if(!c)return;const p=new THREE.Vector3();c.el.object3D.getWorldPosition(p);this.el.object3D.lookAt(p);this.el.object3D.rotation.x=0;this.el.object3D.rotation.z=0;}});
-AFRAME.registerComponent('ui-click',{schema:{action:{type:'string'}},init(){const f=()=>document.dispatchEvent(new CustomEvent(this.data.action));['click','pointerup','mouseup','touchend'].forEach(e=>this.el.addEventListener(e,f,{passive:true}));}});
+  /* Billboard to camera (yaw only) */
+  AFRAME.registerComponent('billboard-yaw',{
+    tick(){
+      const c=this.el.sceneEl.camera; if(!c) return;
+      const p=new THREE.Vector3(); c.el.object3D.getWorldPosition(p);
+      this.el.object3D.lookAt(p); this.el.object3D.rotation.x=0; this.el.object3D.rotation.z=0;
+    }
+  });
 
-let BG=[],LINKS=[],textures={},currentBg=null,currentPreview={title:'',url:''};
+  /* Click handler */
+  AFRAME.registerComponent('ui-click',{
+    schema:{action:{type:'string'}},
+    init(){
+      const fire=()=>document.dispatchEvent(new CustomEvent(this.data.action));
+      ['click','pointerup','mouseup','touchend'].forEach(ev=>this.el.addEventListener(ev,fire,{passive:true}));
+    }
+  });
 
-async function loadJSON(p){const r=await fetch(p);return r.json();}
-function hexToRgb(h){const m=h.replace('#','');const n=parseInt(m,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
-function luminanceFromHex(h){const{r,g,b}=hexToRgb(h);return(0.2126*r+0.7152*g+0.0722*b)/255;}
+  /* Data */
+  let BG=[], LINKS=[], textures={}, currentPreview={title:'',url:''};
 
-async function init(){
-  BG=(await loadJSON('assets/media.json')).backgrounds||[];
-  LINKS=(await loadJSON('assets/scenes.json')).links||[];
-  const assets=$('#assets');
-  BG.forEach((b,i)=>{const id='bg'+i;const img=document.createElement('img');
-    img.id=id;img.src=b.img;img.crossorigin='anonymous';assets.appendChild(img);
-    textures[id]=img;b._id=id;});
-  buildSkinButtons();buildLinkOrbs();
-  if(BG.length)applyBackground(BG[0]);
-}
-init();
+  async function loadJSON(p){ const r=await fetch(p); return r.json(); }
+  function hexToRgb(h){const m=h.replace('#','');const n=parseInt(m,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
+  function luminanceFromHex(h){const {r,g,b}=hexToRgb(h);return (0.2126*r+0.7152*g+0.0722*b)/255;}
 
-function buildSkinButtons(){
-  const makeBtn=(bg,x,row)=>{const r=document.createElement('a-entity');r.setAttribute('position',`${x} 0 0`);
-    r.classList.add('clickable');r.setAttribute('ui-click','action:skin-'+bg._id);
-    const p=document.createElement('a-entity');p.setAttribute('geometry','primitive:plane; width:0.72; height:0.16');
-    p.setAttribute('material','color:#1a1f27; opacity:0.98');r.appendChild(p);
-    const l=document.createElement('a-entity');l.setAttribute('position','0 0 0.01');
-    l.setAttribute('text',`value:${bg.name}; align:center; width:0.64; color:#dbe5ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-    r.appendChild(l);row.appendChild(r);document.addEventListener('skin-'+bg._id,()=>applyBackground(bg));};
-  const r1=$('#skinRow1'),r2=$('#skinRow2');r1.innerHTML='';r2.innerHTML='';
-  const s=(c,i)=>{const w=Math.min(c,3)*0.78;const st=-(w/2)+0.39;return st+i*0.78;};
-  BG.slice(0,3).forEach((b,i)=>makeBtn(b,s(BG.slice(0,3).length,i),r1));
-  BG.slice(3,6).forEach((b,i)=>makeBtn(b,s(BG.slice(3,6).length,i),r2));
-}
+  async function init(){
+    BG = (await loadJSON('assets/media.json')).backgrounds || [];
+    LINKS = (await loadJSON('assets/scenes.json')).links || [];
 
-function applyBackground(bg){
-  currentBg=bg;const sky=$('#spherePhoto');
-  if(bg&&bg._id&&textures[bg._id])sky.setAttribute('src','#'+bg._id);
-  else{sky.removeAttribute('src');sky.setAttribute('color',bg?.fallback||'#0b0d13');}
-  $('#ambLight').setAttribute('light',`type:ambient; intensity:${bg.ambInt||0.45}; color:${bg.ambient||'#aaccff'}`);
-  $('#keyLight').setAttribute('light',`type:point; intensity:${bg.keyInt||0.9}; distance:18; decay:1; color:#ffffff`);
-  const L=luminanceFromHex(bg.fallback||'#0b0d13');
-  const haloInt=Math.min((1-L)*1.6+0.35,1.2);
-  const orbEmiss=Math.min((1-L)*0.55+0.28,0.7);
-  document.querySelectorAll('.orb').forEach(o=>o.setAttribute('material',`color:#ffd100; emissive:#ffcc33; emissiveIntensity:${orbEmiss}`));
-  document.querySelectorAll('.haloLight').forEach(h=>h.setAttribute('light',`type:point; color:#ffd560; intensity:${haloInt}; distance:3; decay:1`));
-  $('#skinsSubtitle').setAttribute('text',`value:Using 360 image: ${bg.name}; align:center; width:1.45; color:#9ef59a; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-}
+    const assets=$('#assets');
+    BG.forEach((b,i)=>{
+      const id='bg'+i; b._id=id;
+      const img=document.createElement('img');
+      img.id=id; img.src=b.img; img.crossorigin='anonymous';
+      assets.appendChild(img); textures[id]=img;
+    });
 
-function buildLinkOrbs(){
-  const root=$('#orbs');root.innerHTML='';
-  const radius=2.8,yawStart=-32,yawStep=13,y=1.02;
-  LINKS.forEach((link,i)=>{const yaw=yawStart+i*yawStep;const pos=polarOnRing(radius,yaw,y);
-    const g=document.createElement('a-entity');g.setAttribute('position',`${pos.x} ${pos.y} ${pos.z}`);g.setAttribute('rotation',`0 ${-yaw} 0`);
-    const halo=document.createElement('a-entity');halo.classList.add('haloLight');
-    halo.setAttribute('light','type:point; color:#ffd560; intensity:0.9; distance:2.2; decay:1');g.appendChild(halo);
-    const orb=document.createElement('a-sphere');orb.setAttribute('radius','0.18');orb.classList.add('orb','clickable');
-    orb.setAttribute('material','color:#ffd100; emissive:#ffcc33; emissiveIntensity:0.45');
-    orb.setAttribute('ui-click','action:open-'+i);g.appendChild(orb);
-    const lbl=document.createElement('a-entity');lbl.setAttribute('position','0 0.32 0');lbl.setAttribute('billboard-yaw','');
-    lbl.setAttribute('text',`value:${link.title}; align:center; width:1.2; color:#ffd776; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-    g.appendChild(lbl);document.addEventListener('open-'+i,()=>show3DPreview(link.title,link.url));root.appendChild(g);});
-}
-function polarOnRing(r,yaw,y){const a=THREE.MathUtils.degToRad(yaw);return{x:r*Math.sin(a),y:y,z:-r*Math.cos(a)};}
+    buildSkinButtons();
+    buildLinkOrbs();
+    if(BG.length) applyBackground(BG[0]);
 
-function show3DPreview(title,url){
-  currentPreview={title,url};
-  $('#skinsPanel').setAttribute('visible',false);
-  $('#p3dTitle').setAttribute('text',`value:${title}; align:center; width:1.32; color:#ffd776; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-  $('#p3dHost').setAttribute('text',`value:${(new URL(url)).host}; align:center; width:1.22; color:#9fb4c7; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-  const p=$('#preview3d');const cam=$('#camera').object3D;const pos=new THREE.Vector3(),dir=new THREE.Vector3();
-  cam.getWorldPosition(pos);cam.getWorldDirection(dir);const t=pos.clone().add(dir.multiplyScalar(2));
-  p.object3D.position.copy(t);p.setAttribute('billboard-yaw','');p.setAttribute('visible',true);
-}
-function hide3DPreview(){$('#preview3d').setAttribute('visible',false);$('#skinsPanel').setAttribute('visible',true);}
-function showOverlayPreview(){const ov=$('#overlay');const p=$('#preview3d').object3D.position;
-  ov.object3D.position.set
+    // Preview panel buttons
+    $('#btnOpen').addEventListener('click', ()=> window.open(currentPreview.url,'_blank'));
+    $('#btnLive').addEventListener('click', ()=>{
+      const src = embedURL(currentPreview.url);
+      if(src) LIVE.show(src); else showOverlayPreview();
+    });
+    $('#btnClose3D').addEventListener('click', hide3DPreview);
+  }
+  init();
+
+  /* Skins UI */
+  function buildSkinButtons(){
+    const makeBtn=(bg,x,row)=>{
+      const e=document.createElement('a-entity'); e.classList.add('clickable');
+      e.setAttribute('position',`${x} 0 0`); e.setAttribute('ui-click','action:skin-'+bg._id);
+      const p=document.createElement('a-entity');
+      p.setAttribute('geometry','primitive:plane; width:0.72; height:0.16');
+      p.setAttribute('material','color:#1a1f27; opacity:0.98'); e.appendChild(p);
+      const t=document.createElement('a-entity'); t.setAttribute('position','0 0 0.01');
+      t.setAttribute('text',`value:${bg.name}; align:center; width:0.64; color:#dbe5ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+      e.appendChild(t); row.appendChild(e);
+      document.addEventListener('skin-'+bg._id,()=>applyBackground(bg));
+    };
+
+    const r1=$('#skinRow1'), r2=$('#skinRow2'); r1.innerHTML=''; r2.innerHTML='';
+    const centerX=(count,i)=>{const w=Math.min(count,3)*0.78; const start=-(w/2)+0.39; return start+i*0.78;};
+
+    BG.slice(0,3).forEach((b,i)=>makeBtn(b,centerX(BG.slice(0,3).length,i),r1));
+    BG.slice(3,6).forEach((b,i)=>makeBtn(b,centerX(BG.slice(3,6).length,i),r2));
+  }
+
+  function applyBackground(bg){
+    const sky=$('#spherePhoto');
+    if(bg && textures[bg._id]) sky.setAttribute('src','#'+bg._id);
+    else { sky.removeAttribute('src'); sky.setAttribute('color',bg?.fallback || '#0b0d13'); }
+
+    $('#ambLight').setAttribute('light',`type:ambient; intensity:${bg.ambInt||0.45}; color:${bg.ambient||'#aaccff'}`);
+    $('#keyLight').setAttribute('light',`type:point; intensity:${bg.keyInt||0.9}; distance:18; decay:1; color:#ffffff`);
+
+    // Update subtitle
+    $('#skinsSubtitle').setAttribute('text',
+      `value:Using 360 image: ${bg.name}; align:center; width:1.45; color:#9ef59a; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+
+    // Adaptive orb glow
+    const L=luminanceFromHex(bg.fallback||'#0b0d13');
+    const haloInt=Math.min((1-L)*1.6+0.35,1.2);
+    const orbEmiss=Math.min((1-L)*0.55+0.28,0.7);
+    document.querySelectorAll('.orb').forEach(o=>o.setAttribute('material',
+      `color:#ffd100; emissive:#ffcc33; emissiveIntensity:${orbEmiss}; metalness:0.1; roughness:0.35`));
+    document.querySelectorAll('.haloLight').forEach(h=>h.setAttribute('light',
+      `type:point; color:#ffd560; intensity:${haloInt}; distance:2.2; decay:1`));
+  }
+
+  /* Link orbs row */
+  function buildLinkOrbs(){
+    const root=$('#orbs'); root.innerHTML='';
+    const radius=2.8, yawStart=-32, yawStep=13, y=1.02;
+
+    LINKS.forEach((link,i)=>{
+      const yaw = yawStart + i*yawStep;
+      const a = THREE.MathUtils.degToRad(yaw);
+      const pos = { x: radius*Math.sin(a), y, z: -radius*Math.cos(a) };
+
+      const group = document.createElement('a-entity');
+      group.setAttribute('position',`${pos.x} ${pos.y} ${pos.z}`);
+      group.setAttribute('rotation',`0 ${-yaw} 0`);
+
+      const halo=document.createElement('a-entity');
+      halo.classList.add('haloLight');
+      halo.setAttribute('light','type:point; color:#ffd560; intensity:0.9; distance:2.2; decay:1');
+      group.appendChild(halo);
+
+      const orb=document.createElement('a-sphere');
+      orb.classList.add('orb','clickable');
+      orb.setAttribute('radius','0.18');
+      orb.setAttribute('material','color:#ffd100; emissive:#ffcc33; emissiveIntensity:0.45; metalness:0.1; roughness:0.35');
+      orb.setAttribute('ui-click','action:open-'+i);
+      group.appendChild(orb);
+
+      const label=document.createElement('a-entity');
+      label.setAttribute('position','0 0.32 0');
+      label.setAttribute('billboard-yaw','');
+      label.setAttribute('text',
+        `value:${link.title}; align:center; width:1.2; color:#ffd776; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+      group.appendChild(label);
+
+      document.addEventListener('open-'+i,()=>show3DPreview(link.title, link.url));
+      root.appendChild(group);
+    });
+  }
+
+  /* In-scene preview positioning */
+  function show3DPreview(title,url){
+    currentPreview={title,url};
+    $('#skinsPanel').setAttribute('visible',false);
+
+    $('#p3dTitle').setAttribute('text',
+      `value:${title}; align:center; width:1.32; color:#ffd776; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+    $('#p3dHost').setAttribute('text',
+      `value:${(new URL(url)).host}; align:center; width:1.22; color:#9fb4c7; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+
+    const p=$('#preview3d');
+    const cam=$('#camera').object3D;
+    const pos=new THREE.Vector3(), dir=new THREE.Vector3();
+    cam.getWorldPosition(pos); cam.getWorldDirection(dir);
+    const t=pos.clone().add(dir.multiplyScalar(2)); // 2m in front
+    p.object3D.position.copy(t);
+    p.setAttribute('billboard-yaw',''); // face camera (no sideways)
+    p.setAttribute('visible',true);
+  }
+  function hide3DPreview(){
+    $('#preview3d').setAttribute('visible',false);
+    $('#skinsPanel').setAttribute('visible',true);
+    hideOverlay();
+  }
+
+  /* Fallback hint */
+  function showOverlayPreview(){
+    const ov=$('#overlay');
+    const p=$('#preview3d').object3D.position;
+    ov.object3D.position.set(p.x, p.y, p.z - 0.2);
+    ov.setAttribute('billboard-yaw','');
+    ov.setAttribute('visible',true);
+  }
+  function hideOverlay(){ $('#overlay').setAttribute('visible',false); }
+
+  /* Live iframe overlay (whitelist) */
+  const LIVE = {
+    wrap:null, frame:null, closeBtn:null,
+    show(src){ this.frame.src=src; this.wrap.style.display='grid'; },
+    hide(){ this.frame.src=''; this.wrap.style.display='none'; }
+  };
+  function embedURL(raw){
+    try{
+      const u=new URL(raw); const host=u.hostname.replace(/^www\./,'').toLowerCase();
+      // YouTube
+      if(host.includes('youtube.com') || host==='youtu.be'){
+        const list=u.searchParams.get('list'); if(list) return `https://www.youtube.com/embed/videoseries?list=${list}`;
+        let v=u.searchParams.get('v'); if(!v && host==='youtu.be') v=u.pathname.slice(1);
+        if(v) return `https://www.youtube.com/embed/${v}`;
+        return null;
+      }
+      // Vimeo
+      if(host.includes('vimeo.com')){
+        const m=u.pathname.match(/\/(\d+)/); if(m) return `https://player.vimeo.com/video/${m[1]}`;
+        return null;
+      }
+      // 360Cities (pano pages)
+      if(host.includes('360cities.net')){
+        if(u.pathname.startsWith('/image/'))
+          return `https://www.360cities.net/embed_image${u.pathname.slice(6)}`;
+        return null;
+      }
+      // Others likely block
+      return null;
+    }catch(e){ return null; }
+  }
+  window.addEventListener('DOMContentLoaded',()=>{
+    LIVE.wrap=$('#liveFrameWrap'); LIVE.frame=$('#liveFrame'); LIVE.closeBtn=$('#liveClose');
+    LIVE.closeBtn.addEventListener('click',()=>LIVE.hide());
+  });
+  </script>
+</body>
+</html>
