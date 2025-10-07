@@ -1,351 +1,235 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Vlife – Hybrid VR MVP</title>
-  <link rel="icon" href="assets/Vlifelogo_1_.png"/>
+  <meta charset="utf-8" />
+  <title>VLife • Hybrid VR MVP · 360° / HDR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
   <style>
-    :root { --gold:#ffd84a; --bg:#0b0f10; --text:#e8eaf0; }
-    html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .brand { position:fixed; top:14px; right:18px; display:flex; gap:8px; align-items:center; z-index:9 }
-    .brand img{width:32px;height:32px;border-radius:8px;object-fit:contain; box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
-    .brand b{color:#ffe58a;text-shadow:0 0 10px rgba(255,215,0,.45); letter-spacing:.5px}
-    .pill{ position:fixed; top:16px; left:16px; color:#cfd2da; font-weight:600; background:rgba(0,0,0,.55);
-           border:1px solid rgba(255,255,255,.14); padding:8px 12px; border-radius:12px; z-index:9 }
-    .toast{ position:fixed; left:16px; right:16px; bottom:18px; z-index:9; display:flex; justify-content:center }
-    .toast > div{ max-width:720px; width:100%; color:#e9eef6; background:rgba(0,0,0,.55);
-                  border:1px solid rgba(255,255,255,.14); padding:12px 14px; border-radius:12px; }
+    body { margin:0; background:#000; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif }
+    .badge { position:fixed; left:18px; top:18px; padding:10px 14px; border-radius:14px;
+             background:rgba(0,0,0,.5); color:#e7e7e7; font-weight:600; letter-spacing:.2px;
+             backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index:3; }
+    .brand { position:fixed; right:18px; top:18px; display:flex; align-items:center; gap:10px; z-index:3; }
+    .brand img{ width:38px; height:38px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,.35) }
+    .brand b{ color:#ffe36d; text-shadow:0 1px 10px rgba(255,227,109,.35) }
+    .tip { position:fixed; left:18px; right:18px; bottom:18px; padding:14px 16px; border-radius:16px;
+           background:rgba(0,0,0,.55); color:#eaeaea; font-size:16px; line-height:1.35;
+           backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index:3; }
+    .tip b{ color:#ffd95e }
   </style>
 </head>
 <body>
-  <div class="pill">Hybrid VR MVP · 360° / HDR</div>
+  <div class="badge">Hybrid VR MVP · 360° / HDR</div>
   <div class="brand">
-    <img src="assets/Vlifelogo_1_.png" alt="VLIFE"/>
+    <img src="assets/Vlifelogo_1_.png" alt="VLife" />
     <b>VLIFE</b>
   </div>
-  <div class="toast"><div id="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div></div>
+  <div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
 
-  <a-scene renderer="colorManagement:false toneMapping:none sortObjects:true"
-           background="color:#000">
-    <a-assets id="assets"></a-assets>
+  <a-scene renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true"
+           background="color: #000" vr-mode-ui="enabled: true">
 
-    <!-- Camera + always-on-top cursor -->
-    <a-entity id="rig" position="0 0 0">
-      <a-entity id="cam" camera look-controls wasd-controls="acceleration:20" position="0 1.6 0"
-                raycaster="objects:.clickable,.orbbtn,.uiclick" cursor="fuse:true; fuseTimeout:900">
-        <a-entity id="cursorHalo" position="0 0 -0.76"
-                  geometry="primitive:ring; radiusInner:0.016; radiusOuter:0.026"
-                  material="shader:flat; color:#000; opacity:.85; transparent:true; depthTest:false"></a-entity>
-        <a-entity id="cursorRing" position="0 0 -0.75"
-                  geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
-                  material="shader:flat; color:#fff; opacity:.98; transparent:false; depthTest:false"></a-entity>
+    <!-- Camera + fixed reticle (always in front) -->
+    <a-entity id="rig" position="0 1.6 0">
+      <a-entity id="camera" camera look-controls>
+        <a-entity id="reticle" geometry="primitive: ring; radiusInner:0.0125; radiusOuter:0.022"
+                  material="color:#ffffff; opacity:0.95; shader:flat"
+                  position="0 0 -0.8"></a-entity>
       </a-entity>
     </a-entity>
 
-    <!-- SKY -->
-    <a-sky id="sky" rotation="0 0 0" material="shader:flat; side:double; color:#000"></a-sky>
+    <!-- Sky (set by JS from media.json) -->
+    <a-sky id="sky" rotation="0 -90 0" src=""></a-sky>
 
-    <!-- ORBS -->
-    <a-entity id="orbLayer"></a-entity>
+    <!-- Front UI panel -->
+    <a-entity id="panel" position="0 1.45 -2.2" rotation="0 0 0" look-at="#camera">
+      <!-- card -->
+      <a-entity geometry="primitive: plane; width: 1.18; height: 0.78"
+                material="shader: standard; color: #111316; roughness:0.9; metalness:0; opacity:0.94"
+                position="0 0 0"></a-entity>
 
-    <!-- BACKGROUND PICKER (taller + header above buttons) -->
-    <a-entity id="picker" position="0 1.7 -2.3" visible="true" look-at="#cam">
-      <!-- panel taller -->
-      <a-plane width="2.15" height="1.55"
-               material="shader:flat; color:#11151c; opacity:0.98; transparent:true; depthTest:false; depthWrite:false"
-               position="0 0 0.001"></a-plane>
+      <!-- Title -->
+      <a-entity id="title" text="value: Choose Background; align: center; color: #ff9532; width: 2.5"
+                position="0 0.30 0.01"></a-entity>
 
-      <!-- Close -->
-      <a-entity id="closePick" class="uiclick clickable" position="1.01 0.7 0.02">
-        <a-circle radius="0.065" material="shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false"></a-circle>
-        <a-entity position="0 0 0.01" text="value:×; width:1; align:center; color:#eaf0ff"></a-entity>
+      <!-- Sub-title (active background) -->
+      <a-entity id="subtitle" text="value: Using 360 image: …; align: center; color: #71ffa3; width: 2.6"
+                position="0 0.18 0.01"></a-entity>
+
+      <!-- Row 1 buttons -->
+      <a-entity id="btnRow1" position="0 0.05 0.01">
+        <a-entity class="bgbtn" data-index="0" position="-0.35 0 0"></a-entity>
+        <a-entity class="bgbtn" data-index="1" position="0.35 0 0"></a-entity>
       </a-entity>
 
-      <!-- Title block sits above buttons -->
-      <a-entity position="0 0.63 0.02" text="value:Choose Background; width:3.1; align:center; color:#ffb238"></a-entity>
-      <a-entity id="usingTxt" position="0 0.48 0.02" text="value:Using 360 image: —; width:2.9; align:center; color:#72e27d"></a-entity>
+      <!-- Row 2 buttons -->
+      <a-entity id="btnRow2" position="0 -0.13 0.01">
+        <a-entity class="bgbtn" data-index="2" position="-0.35 0 0"></a-entity>
+        <a-entity class="bgbtn" data-index="3" position="0.35 0 0"></a-entity>
+      </a-entity>
 
-      <!-- Buttons start lower so no overlap -->
-      <a-entity id="btnGrid" position="0 -0.05 0.03"></a-entity>
+      <!-- Row 3 buttons -->
+      <a-entity id="btnRow3" position="0 -0.31 0.01">
+        <a-entity class="bgbtn" data-index="4" position="-0.35 0 0"></a-entity>
+        <a-entity class="bgbtn" data-index="5" position="0.35 0 0"></a-entity>
+      </a-entity>
     </a-entity>
 
-    <a-entity light="type:ambient; intensity:0.55"></a-entity>
+    <!-- Orb ring container -->
+    <a-entity id="orbRing" position="0 1.35 0"></a-entity>
+
+    <!-- Ambient light for gentle lift -->
+    <a-entity light="type: ambient; color: #ffffff; intensity: 0.35"></a-entity>
+
+    <!-- Helpers: components for buttons + orbs -->
+    <script>
+      AFRAME.registerComponent('bg-button', {
+        schema:{ label:{default:''}, index:{default:0} },
+        init(){
+          const plane = document.createElement('a-entity');
+          plane.setAttribute('geometry','primitive: plane; width: 0.62; height: 0.12;');
+          plane.setAttribute('material','color:#1a1f27; opacity:0.92; shader:standard; roughness:0.9; metalness:0;');
+          plane.setAttribute('class','clickable');
+          this.el.appendChild(plane);
+
+          const txt = document.createElement('a-entity');
+          txt.setAttribute('text',`value:${this.data.label}; align:center; color:#d7e6ff; width:1.8`);
+          txt.setAttribute('position','0 0 0.01');
+          this.el.appendChild(txt);
+
+          // subtle hover with gaze
+          this.el.addEventListener('mouseenter',()=> plane.setAttribute('material','color:#243042; opacity:0.98; shader:standard; roughness:0.85;'));
+          this.el.addEventListener('mouseleave',()=> plane.setAttribute('material','color:#1a1f27; opacity:0.92; shader:standard; roughness:0.9;'));
+
+          // click -> update background
+          this.el.addEventListener('click', () => {
+            const i = this.data.index;
+            window.setBackground(i);
+          });
+        }
+      });
+
+      // Fancy orb (core + glow + soft point-light) + label that always faces camera
+      AFRAME.registerComponent('gold-orb', {
+        schema:{ label:{default:''}, url:{default:''} },
+        init(){
+          // soft light
+          const lamp = document.createElement('a-entity');
+          lamp.setAttribute('light','type: point; intensity: 0.22; distance: 3; color: #ffd766');
+          lamp.setAttribute('position','0 0 0.2');
+          this.el.appendChild(lamp);
+
+          // glow sphere
+          const glow = document.createElement('a-sphere');
+          glow.setAttribute('radius','0.18');
+          glow.setAttribute('material','color:#ffd657; emissive:#eebc40; emissiveIntensity:1.2; roughness:0.6; metalness:0.1;');
+          this.el.appendChild(glow);
+
+          // halo (slightly bigger, transparent)
+          const halo = document.createElement('a-sphere');
+          halo.setAttribute('radius','0.24');
+          halo.setAttribute('material','color:#ffdf7a; opacity:0.25; transparent:true; side:double');
+          this.el.appendChild(halo);
+
+          // label plate
+          const plate = document.createElement('a-entity');
+          plate.setAttribute('geometry','primitive: plane; width: 0.9; height: 0.12;');
+          plate.setAttribute('material','color:#2b2b2b; opacity:0.78');
+          plate.setAttribute('position','0 0.34 0');
+          plate.setAttribute('look-at','#camera');
+          this.el.appendChild(plate);
+
+          const txt = document.createElement('a-entity');
+          txt.setAttribute('text',`value:${this.data.label}; align:center; color:#ffcf5a; width:2.2`);
+          txt.setAttribute('position','0 0 0.01');
+          plate.appendChild(txt);
+
+          // gaze to open preview page
+          this.el.setAttribute('class','clickable');
+          this.el.addEventListener('click', () => {
+            if(this.data.url){ window.open(this.data.url, '_blank'); }
+          });
+        }
+      });
+
+      // --- Data + layout ---
+      const PANEL_Z = -2.2;     // front card depth
+      const ORB_RADIUS = 3.8;    // circle radius
+      const ORB_Y = 1.25;        // height
+      const ORB_COUNT = 6;       // how many around the ring
+      const NO_ARC = 50;         // degrees blocked in front of the panel (keeps clear)
+      let media = null, activeIndex = 0;
+
+      async function loadMedia(){
+        const res = await fetch('assets/media.json?_=' + Date.now());
+        media = await res.json();
+        if (!media || !media.backgrounds || media.backgrounds.length === 0) return;
+
+        // Populate buttons
+        const btns = Array.from(document.querySelectorAll('.bgbtn'));
+        btns.forEach((b,i)=>{
+          const item = media.backgrounds[i];
+          if(!item) { b.setAttribute('visible','false'); return; }
+          b.setAttribute('bg-button',`label:${item.name.replaceAll(':','-')}; index:${i}`);
+          b.setAttribute('visible','true');
+        });
+
+        // First background
+        setBackground(0);
+
+        // Build orbs (6 evenly spread, but skipping the forward arc)
+        const orbRing = document.getElementById('orbRing');
+        orbRing.innerHTML = '';
+        const links = [
+          {label:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
+          {label:'360Cities',         url:'https://www.360cities.net/'},
+          {label:'Meta Quest TV',     url:'https://www.meta.com/quest/tv/'},
+          {label:'Skins',             url:''}, // will open panel, not a link
+          {label:'Help',              url:''},
+          {label:'More 360',          url:'https://www.airpano.com/'}
+        ];
+
+        let placed = 0, angle = -140; // start from far left
+        while (placed < ORB_COUNT && angle <= 140){
+          // Skip forward arc around 0°
+          if (Math.abs(angle) < NO_ARC){ angle += 20; continue; }
+          const rad = angle * Math.PI / 180;
+          const x = Math.sin(rad) * ORB_RADIUS;
+          const z = -Math.cos(rad) * ORB_RADIUS; // negative z = in front
+          const orb = document.createElement('a-entity');
+          const link = links[placed] || {label:`Link ${placed+1}`, url:''};
+          orb.setAttribute('position', `${x} ${ORB_Y} ${z}`);
+          if (link.label.toLowerCase()==='skins'){
+            orb.setAttribute('gold-orb', `label:${link.label}; url:`);
+            orb.addEventListener('click', () => showPanel(true));
+          } else {
+            orb.setAttribute('gold-orb', `label:${link.label}; url:${link.url}`);
+          }
+          orbRing.appendChild(orb);
+          placed++; angle += 48; // spread nicely
+        }
+      }
+
+      window.setBackground = function(index){
+        if (!media || !media.backgrounds[index]) return;
+        activeIndex = index;
+        const item = media.backgrounds[index];
+        const sky = document.getElementById('sky');
+        sky.setAttribute('src', item.img);
+        document.getElementById('subtitle')
+          .setAttribute('text', `value: Using 360 image: ${item.name}; align:center; color:#71ffa3; width:2.6`);
+        // keep the panel visible after change
+        showPanel(true);
+      }
+
+      function showPanel(vis){
+        const p = document.getElementById('panel');
+        p.setAttribute('visible', vis ? 'true':'true'); // always visible now
+      }
+
+      document.addEventListener('DOMContentLoaded', loadMedia);
+    </script>
   </a-scene>
-
-<script>
-/* --------------------------- CONFIG --------------------------- */
-const LINKS = [
-  {name:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
-  {name:'Meta Quest TV',      url:'https://www.meta.com/experiences/quest-tv/'},
-  {name:'360Cities',          url:'https://www.360cities.net/'}
-];
-const EXTRA_ORBS = [
-  {name:'Reset', type:'reset'},
-  {name:'Help',  type:'help'}
-];
-/* -------------------------------------------------------------- */
-
-const $ = s => document.querySelector(s);
-const sky = $('#sky');
-const btnGrid = $('#btnGrid');
-const usingTxt = $('#usingTxt');
-const orbLayer = $('#orbLayer');
-const tip = $('#tip');
-
-let media = null;
-let currentBgIndex = 0;
-
-/* Keep cursor above everything */
-document.querySelector('a-scene').addEventListener('loaded', ()=>{
-  const halo = document.querySelector('#cursorHalo').object3D;
-  const ring = document.querySelector('#cursorRing').object3D;
-  halo.renderOrder = 10000;
-  ring.renderOrder = 10001;
-});
-
-/* load media.json */
-fetch('assets/media.json')
-  .then(r => r.json())
-  .then(data => {
-    media = data;
-    buildPickerButtons(media.backgrounds);
-    applyBackground(0);
-    buildOrbs();
-    $('#closePick').addEventListener('click', ()=> $('#picker').setAttribute('visible', false));
-  })
-  .catch(err => console.error('media.json load error', err));
-
-/* --------- BACKGROUND PICKER ---------- */
-function buildPickerButtons(list){
-  btnGrid.innerHTML = '';
-  const cols = 2;
-  const w = 1.8, h = .28, gapY = .1;
-  const rows = Math.ceil(list.length / cols);
-
-  for(let i=0;i<list.length;i++){
-    const row = Math.floor(i / cols);
-    const col = i % cols;
-    const x = (col===0 ? -w/4 : w/4);
-    const y = ((rows-1)/2 - row) * (h + gapY);
-
-    const bg = list[i];
-
-    const holder = document.createElement('a-entity');
-    holder.setAttribute('position', `${x} ${y} 0`);
-    holder.setAttribute('class','uiclick clickable');
-
-    const btn = document.createElement('a-plane');
-    btn.setAttribute('width', w/2);
-    btn.setAttribute('height', h);
-    btn.setAttribute('material','shader:flat; color:#1b212c; opacity:.99; transparent:true; depthTest:false; depthWrite:false');
-    btn.setAttribute('class','uiclick clickable');
-    holder.appendChild(btn);
-
-    const label = document.createElement('a-entity');
-    label.setAttribute('text', `value:${bg.name}; width:1.6; align:center; color:#e7efff`);
-    label.setAttribute('position','0 0 0.01');
-    label.setAttribute('class','uiclick clickable');
-    holder.appendChild(label);
-
-    holder.addEventListener('click', (ev) => { ev.stopPropagation(); applyBackground(i); });
-    btnGrid.appendChild(holder);
-  }
-}
-
-function applyBackground(i){
-  currentBgIndex = i;
-  const bg = media.backgrounds[i];
-  usingTxt.setAttribute('text', `value:Using 360 image: ${bg.name}; width:2.8; align:center; color:#72e27d`);
-
-  const prev = $('#assets img[data-dyn="1"]');
-  if(prev) prev.parentNode.removeChild(prev);
-
-  const img = document.createElement('img');
-  img.setAttribute('crossorigin','anonymous');
-  img.setAttribute('data-dyn','1');
-  img.id = 'bgtex';
-  img.src = bg.img;
-  img.onload = () => {
-    sky.setAttribute('src', '#bgtex');
-    sky.setAttribute('color', '#ffffff');
-  };
-  $('#assets').appendChild(img);
-
-  sky.removeAttribute('src');
-  sky.setAttribute('color', bg.fallback || '#000');
-}
-
-/* ------------------ ORBS ------------------- */
-function buildOrbs(){
-  orbLayer.innerHTML = '';
-  const defs = [
-    {name:'Skins', type:'skins'},
-    ...LINKS.map(l => ({name:l.name, url:l.url, type:'link'})),
-    ...EXTRA_ORBS
-  ];
-
-  /* push orbs much farther out & slightly lower */
-  const R = 4.8;          // increased from 2.6 (≈ double distance)
-  const y = 1.05;
-  const spread = Math.PI * 1.35;  // a bit wider fan for more spacing
-  const start = -spread/2;
-
-  defs.forEach((def, idx) => {
-    const t = start + (idx * (spread/(defs.length-1)));
-    const x = Math.sin(t) * R;
-    const z = -Math.cos(t) * R;
-
-    const halo = document.createElement('a-circle');
-    halo.setAttribute('radius','0.30');
-    halo.setAttribute('position', `${x} ${y} ${z+0.001}`);
-    halo.setAttribute('material','shader:flat; color:#000000; opacity:.35; transparent:true; depthTest:false; depthWrite:false');
-    halo.setAttribute('look-at','#cam');
-    orbLayer.appendChild(halo);
-
-    const orb = document.createElement('a-sphere');
-    orb.setAttribute('class','orbbtn clickable');
-    orb.setAttribute('position', `${x} ${y} ${z}`);
-    orb.setAttribute('radius', '0.24');
-    orb.setAttribute('material', 'shader:flat; color:#ffd84a; emissive:#b38500; metalness:0; roughness:.15');
-    orb.addEventListener('click', () => handleOrb(def));
-    orbLayer.appendChild(orb);
-
-    const plate = document.createElement('a-plane');
-    plate.setAttribute('width','1.15'); plate.setAttribute('height','0.28');
-    plate.setAttribute('position', `${x} ${y+.41} ${z+0.001}`);
-    plate.setAttribute('material','shader:flat; color:#0f1319; opacity:.75; transparent:true; depthTest:false; depthWrite:false');
-    plate.setAttribute('look-at','#cam');
-    orbLayer.appendChild(plate);
-
-    const label = document.createElement('a-entity');
-    label.setAttribute('text', `value:${def.name}; width:1.6; align:center; color:#ffd27a`);
-    label.setAttribute('position', `${x} ${y+.41} ${z+0.002}`);
-    label.setAttribute('look-at','#cam');
-    orbLayer.appendChild(label);
-  });
-}
-
-function handleOrb(def){
-  if(def.type === 'skins'){
-    $('#picker').setAttribute('visible', true);
-    tip.innerHTML = 'Choose a background above. Use the × to close.';
-    return;
-  }
-  if(def.type === 'reset'){
-    applyBackground(0);
-    tip.innerHTML = 'Reset to default background.';
-    return;
-  }
-  if(def.type === 'help'){
-    showInfo('How to use', 'Gaze at gold orbs to open actions. Use the Skins orb to change the 360° background. Tap the × on any panel to close it.');
-    return;
-  }
-  if(def.type === 'link' && def.url){
-    openLinkPanel(def.name, def.url);
-  }
-}
-
-/* --------------- PANELS (links/help) ---------------- */
-function openLinkPanel(title, url){
-  const old = document.querySelector('#linkPanel');
-  if(old) old.parentNode.removeChild(old);
-
-  const p = document.createElement('a-entity');
-  p.id = 'linkPanel';
-  p.setAttribute('position','0 1.55 -2.25');
-  p.setAttribute('look-at','#cam');
-
-  const bg = document.createElement('a-plane');
-  bg.setAttribute('width','1.9'); bg.setAttribute('height','0.95');
-  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false; depthWrite:false');
-  p.appendChild(bg);
-
-  const close = document.createElement('a-entity');
-  close.setAttribute('position','0.9 0.43 0.02'); close.setAttribute('class','uiclick clickable');
-  const c1 = document.createElement('a-circle'); c1.setAttribute('radius','0.06');
-  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false');
-  const c2 = document.createElement('a-entity');
-  c2.setAttribute('position','0 0 0.01'); c2.setAttribute('text','value:×; width:1; align:center; color:#eaf0ff');
-  close.appendChild(c1); close.appendChild(c2);
-  close.addEventListener('click', ()=>p.parentNode.removeChild(p));
-  p.appendChild(close);
-
-  const tt = document.createElement('a-entity');
-  tt.setAttribute('text', `value:${title}; width:2.6; align:center; color:#ffb238`);
-  tt.setAttribute('position','0 .28 0.01');
-  p.appendChild(tt);
-
-  const urlTxt = document.createElement('a-entity');
-  urlTxt.setAttribute('text', `value:${url}; width:2.2; align:center; color:#cfe1ff`);
-  urlTxt.setAttribute('position','0 .12 0.01');
-  p.appendChild(urlTxt);
-
-  const btns = [
-    {label:'Open in new tab', action: ()=>window.open(url,'_blank')},
-    {label:'Close', action: ()=>p.parentNode.removeChild(p)}
-  ];
-  btns.forEach((b,i)=>{
-    const holder = document.createElement('a-entity');
-    holder.setAttribute('position', `${i===0?-0.45:0.45} -0.2 0.02`);
-    holder.setAttribute('class','uiclick clickable');
-
-    const btn = document.createElement('a-plane');
-    btn.setAttribute('width','.95'); btn.setAttribute('height','.24');
-    btn.setAttribute('material','shader:flat; color:#222833; opacity:.98; transparent:true; depthTest:false; depthWrite:false');
-    btn.setAttribute('class','uiclick clickable');
-    holder.appendChild(btn);
-
-    const lab = document.createElement('a-entity');
-    lab.setAttribute('text', `value:${b.label}; width:1.5; align:center; color:#e8f0ff`);
-    lab.setAttribute('position','0 0 0.01'); lab.setAttribute('class','uiclick clickable');
-    holder.appendChild(lab);
-
-    holder.addEventListener('click', b.action);
-    p.appendChild(holder);
-  });
-
-  document.querySelector('a-scene').appendChild(p);
-}
-
-function showInfo(head, body){
-  const old = document.querySelector('#helpPanel');
-  if(old) old.parentNode.removeChild(old);
-
-  const p = document.createElement('a-entity');
-  p.id = 'helpPanel';
-  p.setAttribute('position','0 1.58 -2.25');
-  p.setAttribute('look-at','#cam');
-
-  const bg = document.createElement('a-plane');
-  bg.setAttribute('width','1.9'); bg.setAttribute('height','0.85');
-  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false; depthWrite:false');
-  p.appendChild(bg);
-
-  const close = document.createElement('a-entity');
-  close.setAttribute('position','0.9 0.39 0.02'); close.setAttribute('class','uiclick clickable');
-  const c1 = document.createElement('a-circle'); c1.setAttribute('radius','0.06');
-  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false');
-  const c2 = document.createElement('a-entity');
-  c2.setAttribute('position','0 0 0.01'); c2.setAttribute('text','value:×; width:1; align:center; color:#eaf0ff');
-  close.appendChild(c1); close.appendChild(c2);
-  close.addEventListener('click', ()=>p.parentNode.removeChild(p));
-  p.appendChild(close);
-
-  const tt = document.createElement('a-entity');
-  tt.setAttribute('text', `value:${head}; width:2.6; align:center; color:#ffb238`);
-  tt.setAttribute('position','0 .25 0.01');
-  p.appendChild(tt);
-
-  const bodyEnt = document.createElement('a-entity');
-  bodyEnt.setAttribute('text', `value:${body}; width:1.7; align:center; color:#d9e6ff; wrapCount:38`);
-  bodyEnt.setAttribute('position','0 .02 0.01');
-  p.appendChild(bodyEnt);
-
-  document.querySelector('a-scene').appendChild(p);
-}
-</script>
 </body>
 </html>
