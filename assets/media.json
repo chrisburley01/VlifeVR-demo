@@ -3,7 +3,7 @@
     {
       "name": "Park Steps 360",
       "img": "assets/Park360.jpg",
-      "fallback": "#202a18",
+      "fallback": "#0a0d08",
       "ambient": "#aaccff",
       "ambInt": 0.50,
       "keyInt": 0.90
@@ -11,34 +11,34 @@
     {
       "name": "Forest 360",
       "img": "assets/Forrest360.jpg",
-      "fallback": "#0e1b12",
-      "ambient": "#bfe3c4",
+      "fallback": "#0b1408",
+      "ambient": "#b6d6ff",
       "ambInt": 0.55,
-      "keyInt": 0.85
+      "keyInt": 0.95
     },
     {
       "name": "Future City 360",
       "img": "assets/Futurecity360.jpg",
-      "fallback": "#0b0d13",
-      "ambient": "#9fb9ff",
-      "ambInt": 0.50,
-      "keyInt": 0.95
+      "fallback": "#0a0d12",
+      "ambient": "#b6c9ff",
+      "ambInt": 0.48,
+      "keyInt": 0.90
     },
     {
       "name": "Neon Nightclub 360",
       "img": "assets/Neonnightclub.jpg",
-      "fallback": "#0b0d13",
-      "ambient": "#ffd670",
+      "fallback": "#0b0810",
+      "ambient": "#88aaff",
       "ambInt": 0.45,
-      "keyInt": 0.90
+      "keyInt": 0.85
     },
     {
       "name": "Floating Sky Monastery 8K",
       "img": "assets/floating_sky_monastery_upscaled_8k.jpg",
-      "fallback": "#1a1a24",
-      "ambient": "#ffe3b6",
-      "ambInt": 0.60,
-      "keyInt": 1.00
+      "fallback": "#0e1013",
+      "ambient": "#9fc7ff",
+      "ambInt": 0.52,
+      "keyInt": 0.90
     }
   ]
 }
