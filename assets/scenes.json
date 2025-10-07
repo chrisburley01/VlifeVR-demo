@@ -1,10 +1,34 @@
 {
   "links": [
-    { "title": "360Cities",            "url": "https://www.360cities.net/" },
-    { "title": "YouTube VR Channel",   "url": "https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ" },
-    { "title": "YouTube 360 Playlist", "url": "https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O" },
-    { "title": "Vimeo 360",            "url": "https://vimeo.com/channels/360videos" },
-    { "title": "Meta Quest TV",        "url": "https://www.meta.com/quest/tv/" },
-    { "title": "AirPano",              "url": "https://www.airpano.com/" }
+    {
+      "title": "YouTube VR Channel",
+      "url": "https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ",
+      "desc": "YouTube’s official hub for VR / 360° videos."
+    },
+    {
+      "title": "360Cities",
+      "url": "https://www.360cities.net/",
+      "desc": "Community-powered 360° panoramas from around the world."
+    },
+    {
+      "title": "Meta Quest TV",
+      "url": "https://www.meta.com/quest/tv/",
+      "desc": "Curated VR video content for Meta Quest headsets."
+    },
+    {
+      "title": "AirPano",
+      "url": "https://www.airpano.com/",
+      "desc": "High-quality aerial and city 360° tours."
+    },
+    {
+      "title": "Vimeo 360",
+      "url": "https://vimeo.com/channels/360videos",
+      "desc": "Hand-picked immersive videos on Vimeo."
+    },
+    {
+      "title": "YouTube 360 Playlist",
+      "url": "https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O",
+      "desc": "Starter playlist to explore 360° content."
+    }
   ]
 }
