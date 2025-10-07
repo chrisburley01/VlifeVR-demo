@@ -20,22 +20,25 @@
     .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;border:1px solid rgba(255,255,255,.15);border-radius:16px;text-align:center;color:var(--text);box-shadow:0 16px 72px rgba(0,0,0,.6)}
     .btn{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#2b2500;border:none;border-radius:12px;padding:10px 18px;font-weight:700;cursor:pointer}
 
-    /* Modal (for orbs) */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:11}
-    .modal{width:min(540px,92vw);background:rgba(16,18,24,.96);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 18px 14px;color:#e8eaee;box-shadow:0 18px 90px rgba(0,0,0,.6)}
-    .modal h3{margin:4px 0 8px;font-size:18px;color:#ffd76a}
-    .modal p{margin:0 0 12px;color:#cfd3da}
-    .modal .row{display:flex;gap:10px;justify-content:flex-end}
-    .modal .b{padding:9px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));color:#e7e7ea;font-weight:600;cursor:pointer}
-    .modal .b.primary{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#251e00;border:none}
-
-    /* Mobile HUD “Skins” button near reticle */
+    /* Panel + modal */
     .skinsHud{position:fixed;left:50%;bottom:68px;transform:translateX(-50%);z-index:8}
     .chip{background:rgba(0,0,0,.55);backdrop-filter:blur(8px);color:#e8e8ef;border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;font-size:13px}
 
-    /* Label pill behind orb text (fallback when DOM modal hidden) */
-    .pill{background:rgba(12,14,18,.7);border:1px solid rgba(255,255,255,.12);padding:4px 8px;border-radius:10px}
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:11}
+    .panel{width:min(920px,94vw);background:rgba(16,18,24,.96);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 14px 12px;color:#e8eaee;box-shadow:0 18px 90px rgba(0,0,0,.6)}
+    .panel .head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .panel h3{margin:0;font-size:18px;color:#ffd76a;flex:1}
+    .row{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+    .b{padding:9px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));color:#e7e7ea;font-weight:600;cursor:pointer}
+    .b.primary{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#251e00;border:none}
 
+    .frameWrap{position:relative;background:#0e1117;border:1px solid rgba(255,255,255,.08);border-radius:12px;height:min(56vw,420px)}
+    .frame{position:absolute;inset:0;border:0;width:100%;height:100%;border-radius:12px;background:#0e1117}
+    .frameFallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#cfd3da}
+    .small{font-size:12px;color:#9aa1ad}
+
+    /* For orb labels */
+    .pill{background:rgba(12,14,18,.72);border:1px solid rgba(255,255,255,.12);padding:4px 8px;border-radius:10px}
   </style>
 </head>
 <body>
@@ -52,18 +55,32 @@
       <h1>Enter Vlife</h1>
       <p>Immersive 360° exploration. Tap “Skins” to switch backgrounds.</p>
       <button class="btn" id="enterBtn" type="button">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Gaze/click gold orbs to preview links.</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Gaze/click gold orbs to preview links in-app.</p>
     </div>
   </div>
 
-  <!-- Modal -->
-  <div class="modal-backdrop" id="linkBackdrop" role="dialog" aria-modal="true">
-    <div class="modal">
-      <h3 id="modalTitle">Link</h3>
-      <p id="modalDesc">Open this experience in a new tab?</p>
+  <!-- In-app web preview -->
+  <div class="backdrop" id="previewBackdrop" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="head">
+        <h3 id="pvTitle">Preview</h3>
+        <span id="pvHost" class="small"></span>
+      </div>
+      <div class="frameWrap">
+        <iframe id="pvFrame" class="frame"
+          allow="autoplay; fullscreen; xr-spatial-tracking; gyroscope; accelerometer; vr; encrypted-media"
+          referrerpolicy="no-referrer-when-downgrade" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation">
+        </iframe>
+        <div id="pvFallback" class="frameFallback">
+          <div style="text-align:center;max-width:90%">
+            <div style="margin-bottom:6px;">This site blocks embedding.</div>
+            <div class="small">Tap “Open in new tab”.</div>
+          </div>
+        </div>
+      </div>
       <div class="row">
-        <button class="b" id="modalCancel">Cancel</button>
-        <button class="b primary" id="modalGo">Visit</button>
+        <button class="b" id="pvClose">Close</button>
+        <button class="b primary" id="pvOpen">Open in new tab</button>
       </div>
     </div>
   </div>
@@ -90,7 +107,7 @@
       </a-entity>
     </a-entity>
 
-    <!-- double sky for crossfade -->
+    <!-- crossfade skies -->
     <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
     <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
@@ -121,26 +138,41 @@
     const $ = s => document.querySelector(s);
     const sceneEl = $('#scene');
 
-    // Modal helpers
-    const linkBackdrop = $('#linkBackdrop');
-    const modalTitle = $('#modalTitle');
-    const modalDesc = $('#modalDesc');
-    const modalGo = $('#modalGo');
-    const modalCancel = $('#modalCancel');
-    let pendingURL = null;
+    // Preview modal elements
+    const pvBackdrop = $('#previewBackdrop');
+    const pvTitle    = $('#pvTitle');
+    const pvHost     = $('#pvHost');
+    const pvFrame    = $('#pvFrame');
+    const pvFallback = $('#pvFallback');
+    const pvClose    = $('#pvClose');
+    const pvOpen     = $('#pvOpen');
+    let pvURL = null, pvTimer = null;
 
-    function showModal(title, url, desc='Opens in a new tab'){
-      pendingURL = url;
-      modalTitle.textContent = title;
-      modalDesc.textContent = desc;
-      linkBackdrop.style.display = 'flex';
+    function hostFromUrl(u){ try{ return new URL(u).host; }catch{ return ''; } }
+
+    function showPreview(title,url){
+      pvURL = url;
+      pvTitle.textContent = title;
+      pvHost.textContent  = hostFromUrl(url);
+      pvFallback.style.display = 'none';
+      pvFrame.src = 'about:blank';
+      pvBackdrop.style.display = 'flex';
+
+      // try to load – if blocked, show fallback after timeout
+      pvTimer = setTimeout(()=>{ pvFallback.style.display='flex'; }, 3500);
+      pvFrame.onload = ()=>{ clearTimeout(pvTimer); };
+      pvFrame.src = url;
     }
-    function hideModal(){ linkBackdrop.style.display = 'none'; pendingURL = null; }
-    modalCancel.onclick = hideModal;
-    modalGo.onclick = () => { if (pendingURL){ window.open(pendingURL,'_blank','noopener'); } hideModal(); };
-    linkBackdrop.addEventListener('click', e => { if (e.target === linkBackdrop) hideModal(); });
+    function hidePreview(){
+      pvBackdrop.style.display = 'none';
+      pvFrame.src = 'about:blank';
+      pvURL = null;
+      clearTimeout(pvTimer);
+    }
+    pvClose.onclick = hidePreview;
+    pvOpen.onclick  = ()=>{ if(pvURL) window.open(pvURL,'_blank','noopener'); };
 
-    // renderer tweaks
+    // renderer
     sceneEl.addEventListener('render-target-loaded', ()=>{
       const r = sceneEl.renderer; if (!r) return;
       r.outputEncoding = THREE.sRGBEncoding;
@@ -151,7 +183,7 @@
     async function getJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch(e){ return null; } }
     let SKINS = [];
 
-    // Links
+    // External links
     const LINKS = [
       {title:'YouTube VR Channel',  url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ', desc:'Official YouTube VR/360 hub.'},
       {title:'360Cities',           url:'https://www.360cities.net/', desc:'Explore community 360° panoramas.'},
@@ -161,31 +193,26 @@
       {title:'YouTube 360 Playlist',url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O', desc:'Starter 360° playlist.'}
     ];
 
-    // Create a high-contrast orb with glow + label
+    // High-contrast orbs
     function makeOrb(title,url,desc){
       const g=document.createElement('a-entity');
 
-      // soft halo (always faces camera)
       const halo=document.createElement('a-entity');
       halo.setAttribute('geometry','primitive:plane; width:1.15; height:1.15');
       halo.setAttribute('material','color:#ffd700; opacity:0.22; blending:additive; transparent:true; side:double');
       halo.setAttribute('look-at','#camera');
-      halo.setAttribute('position','0 0 0');
       halo.setAttribute('animation__pulse','property=material.opacity; to:0.38; dir=alternate; dur:1200; easing=easeInOutSine; loop:true');
 
-      // main bright core
       const orb=document.createElement('a-entity');
       orb.classList.add('clickable');
       orb.setAttribute('geometry','primitive:sphere; radius:0.26');
       orb.setAttribute('material','color:#ffd700; metalness:0.55; roughness:0.2; emissive:#e7c23a; emissiveIntensity:0.75; opacity:0.98');
       orb.setAttribute('animation__breath','property=scale; to:1.09 1.09 1.09; dir=alternate; dur:1500; easing=easeInOutSine; loop:true');
 
-      // slim rim
       const ring=document.createElement('a-entity');
       ring.setAttribute('geometry','primitive:torus; radius:0.36; radiusTubular:0.01; segmentsTubular:40');
       ring.setAttribute('material','color:#fff1a8; emissive:#ffd700; emissiveIntensity:0.7; metalness:0.1; roughness:0.2');
 
-      // readable label (dark pill + text)
       const labelBg=document.createElement('a-entity');
       labelBg.setAttribute('geometry','primitive:plane; width:1.8; height:0.33');
       labelBg.setAttribute('material','color:#0e1218; opacity:0.8; transparent:true');
@@ -195,7 +222,7 @@
       label.setAttribute('position','0 0.55 0.04');
       label.setAttribute('text','value:'+title+'; align:center; width:2.0; wrapCount:24; color:#ffd700; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
 
-      const open = ()=>showModal(title,url,desc || 'Opens external link');
+      const open = ()=>showPreview(title,url,desc);
       ['click','pointerup','mouseup','touchend'].forEach(ev=>{
         orb.addEventListener(ev,open,{passive:true});
         label.addEventListener(ev,open,{passive:true});
@@ -203,11 +230,8 @@
         halo.addEventListener(ev,open,{passive:true});
       });
 
-      g.appendChild(halo);
-      g.appendChild(orb);
-      g.appendChild(ring);
-      g.appendChild(labelBg);
-      g.appendChild(label);
+      g.appendChild(halo); g.appendChild(orb); g.appendChild(ring);
+      g.appendChild(labelBg); g.appendChild(label);
       return g;
     }
 
