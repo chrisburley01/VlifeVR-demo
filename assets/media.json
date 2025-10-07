@@ -1,0 +1,20 @@
+{
+  "backgrounds": [
+    {
+      "name": "Park 360",
+      "img": "assets/Park360.jpg",
+      "fallback": "#0a0a0a",
+      "ambient": "#aaccff",
+      "ambInt": 0.50,
+      "keyInt": 0.90
+    },
+    {
+      "name": "Neon Nightclub",
+      "img": "assets/Neonnightclub.jpg",
+      "fallback": "#0b0d13",
+      "ambient": "#89a2ff",
+      "ambInt": 0.50,
+      "keyInt": 0.85
+    }
+  ]
+}
