@@ -2,23 +2,28 @@
   "backgrounds": [
     {
       "name": "Park Steps 360",
-      "img": "assets/Park360.jpg"
+      "img": "assets/Park360.jpg",
+      "fallback": "#121a12"
     },
     {
       "name": "Forest 360",
-      "img": "assets/Forrest360.jpg"
+      "img": "assets/Forrest360.jpg",
+      "fallback": "#0f1a12"
     },
     {
       "name": "Future City 360",
-      "img": "assets/Futurecity360.jpg"
+      "img": "assets/Futurecity360.jpg",
+      "fallback": "#0b0e18"
     },
     {
       "name": "Neon Nightclub 360",
-      "img": "assets/Neonnightclub.jpg"
+      "img": "assets/Neonnightclub.jpg",
+      "fallback": "#101018"
     },
     {
       "name": "Floating Sky Monastery 8K",
-      "img": "assets/floating_sky_monastery_upscaled_8k.jpg"
+      "img": "assets/floating_sky_monastery_upscaled_8k.jpg",
+      "fallback": "#0f1015"
     }
   ]
 }
