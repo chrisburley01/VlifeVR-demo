@@ -2,319 +2,223 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Vlife – Hybrid VR 360° / HDR</title>
-  <link rel="icon" href="assets/Vlifelogo_1_.png" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vlife – Hybrid VR MVP</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png"/>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-
   <style>
-    :root { --gold:#ffd776; --panel:#101317; --text:#e7e7ea; }
-    html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-
-    .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:10}
-    .brandimg{width:32px;height:32px;border-radius:8px;background:#000;object-fit:contain;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
-    .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.45)}
-    .badge{position:fixed;left:16px;top:16px;color:#cfd1d6;font-size:12px;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);z-index:10}
-    .tip{position:fixed;left:16px;bottom:16px;color:#d8dde6;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
-         padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);z-index:10}
-
-    /* Live iframe overlay */
-    #liveFrameWrap{
-      position:fixed;inset:0;display:none;place-items:center;z-index:9999;
-      background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
-    }
-    #liveFrame{width:min(960px,92vw);height:min(540px,52vh);border:0;
-      border-radius:14px;box-shadow:0 24px 80px rgba(0,0,0,.55);background:#000;}
-    #liveClose{position:absolute;top:10px;right:12px;background:#0e1117;color:#fff;
-      border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 12px;
-      font-weight:700;cursor:pointer;}
-    #enterVR{position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:12px;border:0;
-      background:#fff;color:#000;font-weight:800;box-shadow:0 8px 26px rgba(0,0,0,.35);z-index:10}
+    :root{--gold:#ffd700;--bg:#0b0b0f;--text:#e7e7ea}
+    body{margin:0;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .brand{position:fixed;top:14px;right:16px;display:flex;gap:8px;align-items:center;z-index:9}
+    .brand img{width:32px;height:32px;border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;background:#000}
+    .brand b{color:var(--gold);text-shadow:0 0 12px rgba(255,215,0,.4)}
+    .pill{position:fixed;left:16px;top:16px;background:rgba(0,0,0,.45);color:#cfcfd6;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:8px 12px;z-index:9}
+    .tip{position:fixed;left:16px;bottom:16px;color:#eaeaf0;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);
+         border-radius:16px;padding:14px 16px;max-width:min(680px,90vw);z-index:9}
   </style>
 </head>
 <body>
-  <div class="topright">
-    <img class="brandimg" src="assets/Vlifelogo_1_.png" alt="V LIFE" />
-    <div class="brand">VLIFE</div>
-  </div>
-  <div class="badge">Hybrid VR MVP · 360° / HDR</div>
+  <div class="pill">Hybrid VR MVP · 360° / HDR</div>
+  <div class="brand"><img src="assets/Vlifelogo_1_.png" alt="VLIFE"/><b>VLIFE</b></div>
   <div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
 
-  <a-scene renderer="alpha:true antialias:true" background="color:#000" vr-mode-ui="enterVRButton: #enterVR">
-    <a-assets id="assets" timeout="30000"></a-assets>
+  <a-scene
+    renderer="antialias:true; physicallyCorrectLights:true; colorManagement:true; toneMappingExposure:1.15"
+    background="color:#000"
+    vr-mode-ui="enabled:true">
 
-    <a-entity id="rig">
-      <a-entity id="camera" camera look-controls position="0 1.6 0">
-        <a-entity cursor="fuse:true; fuseTimeout:900" position="0 0 -1"
+    <!-- Assets (images listed in assets/media.json) -->
+    <a-assets id="assetBank" timeout="30000"></a-assets>
+
+    <!-- Camera + cursor -->
+    <a-entity id="rig" position="0 1.6 0">
+      <a-entity id="cam" camera look-controls>
+        <a-entity id="cursor"
+          cursor="fuse:true; fuseTimeout:900"
+          position="0 0 -1"
           geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-          material="shader:flat; opacity:0.95; color:#ffffff"></a-entity>
+          material="shader:flat; color:#fff; opacity:.9"></a-entity>
       </a-entity>
     </a-entity>
 
-    <a-sky id="spherePhoto" rotation="0 -90 0" color="#0b0d13"></a-sky>
-    <a-entity id="ambLight" light="type:ambient; intensity:0.45; color:#aaccff"></a-entity>
-    <a-entity id="keyLight" light="type:point; intensity:0.9; distance:18; decay:1; color:#ffffff" position="2 2 -2"></a-entity>
-
-    <!-- Skins panel -->
-    <a-entity id="skinsPanel" position="0 1.45 -2">
-      <a-entity geometry="primitive:plane; width:1.6; height:0.9" material="color:#101317; opacity:0.97"></a-entity>
-      <a-entity id="skinsTitle" position="0 0.36 0.01"
-        text="value:Choose Background; align:center; width:1.4; color:#ffd776; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      <a-entity id="skinsSubtitle" position="0 0.22 0.01"
-        text="value:; align:center; width:1.5; color:#8ee58e; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      <a-entity id="skinRow1" position="0 0.04 0.01"></a-entity>
-      <a-entity id="skinRow2" position="0 -0.20 0.01"></a-entity>
+    <!-- UNLIT 360 BACKGROUND (fixes darkness) -->
+    <!-- We show exactly one of these at a time -->
+    <a-entity id="bgRoot">
+      <!-- Using a-sky with shader:flat ignores scene lights and shows full image brightness -->
+      <a-sky id="bgSky" radius="5000" material="shader:flat" rotation="0 -90 0"></a-sky>
     </a-entity>
 
-    <!-- Link orbs row -->
-    <a-entity id="orbs"></a-entity>
+    <!-- Lights (only for orbs/panels; background is unlit) -->
+    <a-entity light="type:ambient; intensity:0.45"></a-entity>
+    <a-entity light="type:point; intensity:0.7; distance:18" position="1.2 2.2 -2.2"></a-entity>
 
-    <!-- In-scene preview panel -->
-    <a-entity id="preview3d" visible="false">
-      <a-entity geometry="primitive:plane; width:1.5; height:1" material="color:#0f1217; opacity:0.96"></a-entity>
-      <a-entity id="p3dTitle" position="0 0.39 0.01"
-        text="value:; align:center; width:1.35; color:#ffd776; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      <a-entity id="p3dHost" position="0 0.25 0.01"
-        text="value:; align:center; width:1.25; color:#9fb4c7; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+    <!-- GOLD ORBS GROUP -->
+    <a-entity id="orbs">
+      <!-- Skins selector orb (front/left) -->
+      <a-entity id="skinsOrb" position="-1.6 1.1 -2.4">
+        <a-entity geometry="primitive:sphere; radius:0.28"
+                  material="color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:0.25"></a-entity>
+        <a-entity text="value:Skins; align:center; width:2; color:#ffd700"
+                  position="0 0.48 0" rotation="0 0 0"></a-entity>
+      </a-entity>
 
-      <a-entity id="btnLive" class="clickable" position="-0.45 -0.28 0.02">
-        <a-entity geometry="primitive:plane; width:0.56; height:0.16" material="color:#2a2f39; opacity:0.98"></a-entity>
-        <a-entity position="0 0 0.01"
-          text="value:Live preview; align:center; width:0.48; color:#dce6ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      </a-entity>
-      <a-entity id="btnOpen" class="clickable" position="0.45 -0.28 0.02">
-        <a-entity geometry="primitive:plane; width:0.56; height:0.16" material="color:#2a2f39; opacity:0.98"></a-entity>
-        <a-entity position="0 0 0.01"
-          text="value:Open in new tab; align:center; width:0.48; color:#dce6ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      </a-entity>
-      <a-entity id="btnClose3D" class="clickable" position="0 -0.52 0.02">
-        <a-entity geometry="primitive:plane; width:0.44; height:0.14" material="color:#1e232b; opacity:0.98"></a-entity>
-        <a-entity position="0 0 0.01"
-          text="value:Close; align:center; width:0.36; color:#c9d3e5; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-      </a-entity>
+      <!-- Example link orbs (left/center/right) -->
+      <a-entity class="link-orb" data-title="YouTube VR Channel" data-url="https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ" position="-0.6 1.0 -2.6"></a-entity>
+      <a-entity class="link-orb" data-title="Meta Quest TV" data-url="https://www.meta.com/quest/tv/" position="0 0.95 -2.2"></a-entity>
+      <a-entity class="link-orb" data-title="360Cities" data-url="https://www.360cities.net/" position="0.9 1.0 -2.6"></a-entity>
     </a-entity>
 
-    <!-- Fallback hint overlay -->
-    <a-entity id="overlay" visible="false" position="0 1.45 -1.6">
-      <a-entity geometry="primitive:plane; width:1.3; height:0.42" material="color:#101317; opacity:0.9"></a-entity>
-      <a-entity id="overlayText" position="0 0 0.01"
-        text="value:Preview unavailable (site blocks embedding). Use 'Open in new tab'.; align:center; width:1.2; wrapCount:36; color:#e6edf7; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+    <!-- LINK PREVIEW PANEL (faces camera; opens over orb) -->
+    <a-entity id="linkPanel" visible="false" position="0 1.4 -1.6" rotation="0 0 0">
+      <a-entity geometry="primitive:plane; width:1.6; height:0.9"
+                material="color:#121319; opacity:0.96"></a-entity>
+      <a-entity id="lpTitle" position="0 0.28 0.01" text="align:center; width:2.6; color:#ffd700; value:Title"></a-entity>
+      <a-entity id="lpUrl" position="0 0.06 0.01" text="align:center; width:2.6; color:#9fb4ff; value:https://"></a-entity>
+      <a-entity id="lpBtnOpen" position="-0.42 -0.26 0.01"
+                geometry="primitive:plane; width:0.7; height:0.22"
+                material="color:#ffe58a"
+                text="value:Open; align:center; width:1.4; color:#2b2500"></a-entity>
+      <a-entity id="lpBtnTab" position="0.42 -0.26 0.01"
+                geometry="primitive:plane; width:0.9; height:0.22"
+                material="color:#253041"
+                text="value:Open in new tab; align:center; width:1.7; color:#e7e7ea"></a-entity>
+      <a-entity id="lpClose" position="0 -0.54 0.01"
+                geometry="primitive:plane; width:0.36; height:0.18"
+                material="color:#1b1c22"
+                text="value:Close; align:center; width:0.9; color:#d3d3db"></a-entity>
     </a-entity>
+
+    <!-- BACKGROUND PICKER PANEL (orbs hide while open) -->
+    <a-entity id="skinPanel" visible="true" position="0 1.45 -2">
+      <a-entity geometry="primitive:plane; width:2.2; height:1.2" material="color:#0f1217; opacity:0.96"></a-entity>
+      <a-entity position="0 0.42 0.01"
+                text="value:Choose Background; align:center; width:3; color:#ffb83f"></a-entity>
+      <a-entity id="skinActive" position="0 0.23 0.01"
+                text="value:Using 360 image: ...; align:center; width:3; color:#72ff72"></a-entity>
+
+      <!-- Rows of buttons (we’ll fill them from media.json) -->
+      <a-entity id="skinBtnsTop" position="0 0.02 0.01"></a-entity>
+      <a-entity id="skinBtnsBottom" position="0 -0.38 0.01"></a-entity>
+    </a-entity>
+
   </a-scene>
 
-  <!-- Live iframe overlay -->
-  <div id="liveFrameWrap">
-    <button id="liveClose">Close</button>
-    <iframe id="liveFrame" allow="xr-spatial-tracking; gyroscope; accelerometer; autoplay; fullscreen"></iframe>
-  </div>
-
-  <button id="enterVR">VR</button>
-
   <script>
-  const $ = s => document.querySelector(s);
+    // ---------- Helpers ----------
+    const $ = sel => document.querySelector(sel);
+    const scene = document.querySelector('a-scene');
+    const assetsEl = $('#assetBank');
+    const orbsRoot = $('#orbs');
+    const skinPanel = $('#skinPanel');
+    const skinActive = $('#skinActive');
+    const skinBtnsTop = $('#skinBtnsTop');
+    const skinBtnsBottom = $('#skinBtnsBottom');
+    const bgSky = $('#bgSky');
+    const linkPanel = $('#linkPanel');
+    const lpTitle = $('#lpTitle');
+    const lpUrl = $('#lpUrl');
+    const lpBtnOpen = $('#lpBtnOpen');
+    const lpBtnTab = $('#lpBtnTab');
+    const lpClose = $('#lpClose');
 
-  /* Billboard to camera (yaw only) */
-  AFRAME.registerComponent('billboard-yaw',{
-    tick(){
-      const c=this.el.sceneEl.camera; if(!c) return;
-      const p=new THREE.Vector3(); c.el.object3D.getWorldPosition(p);
-      this.el.object3D.lookAt(p); this.el.object3D.rotation.x=0; this.el.object3D.rotation.z=0;
-    }
-  });
-
-  /* Click handler */
-  AFRAME.registerComponent('ui-click',{
-    schema:{action:{type:'string'}},
-    init(){
-      const fire=()=>document.dispatchEvent(new CustomEvent(this.data.action));
-      ['click','pointerup','mouseup','touchend'].forEach(ev=>this.el.addEventListener(ev,fire,{passive:true}));
-    }
-  });
-
-  /* Data */
-  let BG=[], LINKS=[], textures={}, currentPreview={title:'',url:''};
-
-  async function loadJSON(p){ const r=await fetch(p); return r.json(); }
-  function hexToRgb(h){const m=h.replace('#','');const n=parseInt(m,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
-  function luminanceFromHex(h){const {r,g,b}=hexToRgb(h);return (0.2126*r+0.7152*g+0.0722*b)/255;}
-
-  async function init(){
-    BG = (await loadJSON('assets/media.json')).backgrounds || [];
-    LINKS = (await loadJSON('assets/scenes.json')).links || [];
-
-    const assets=$('#assets');
-    BG.forEach((b,i)=>{
-      const id='bg'+i; b._id=id;
-      const img=document.createElement('img');
-      img.id=id; img.src=b.img; img.crossorigin='anonymous';
-      assets.appendChild(img); textures[id]=img;
+    // Ensure link panel faces camera each frame
+    scene.addEventListener('loaded', () => {
+      scene.renderer.toneMappingExposure = 1.15; // small extra safety
+      scene.addEventListener('renderstart', () => {
+        scene.object3D.onBeforeRender = () => {
+          const cam = $('#cam').object3D;
+          const panel = linkPanel.object3D;
+          panel.lookAt(cam.getWorldPosition(new THREE.Vector3()));
+        };
+      });
     });
 
-    buildSkinButtons();
-    buildLinkOrbs();
-    if(BG.length) applyBackground(BG[0]);
-
-    // Preview panel buttons
-    $('#btnOpen').addEventListener('click', ()=> window.open(currentPreview.url,'_blank'));
-    $('#btnLive').addEventListener('click', ()=>{
-      const src = embedURL(currentPreview.url);
-      if(src) LIVE.show(src); else showOverlayPreview();
-    });
-    $('#btnClose3D').addEventListener('click', hide3DPreview);
-  }
-  init();
-
-  /* Skins UI */
-  function buildSkinButtons(){
-    const makeBtn=(bg,x,row)=>{
-      const e=document.createElement('a-entity'); e.classList.add('clickable');
-      e.setAttribute('position',`${x} 0 0`); e.setAttribute('ui-click','action:skin-'+bg._id);
-      const p=document.createElement('a-entity');
-      p.setAttribute('geometry','primitive:plane; width:0.72; height:0.16');
-      p.setAttribute('material','color:#1a1f27; opacity:0.98'); e.appendChild(p);
-      const t=document.createElement('a-entity'); t.setAttribute('position','0 0 0.01');
-      t.setAttribute('text',`value:${bg.name}; align:center; width:0.64; color:#dbe5ff; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      e.appendChild(t); row.appendChild(e);
-      document.addEventListener('skin-'+bg._id,()=>applyBackground(bg));
-    };
-
-    const r1=$('#skinRow1'), r2=$('#skinRow2'); r1.innerHTML=''; r2.innerHTML='';
-    const centerX=(count,i)=>{const w=Math.min(count,3)*0.78; const start=-(w/2)+0.39; return start+i*0.78;};
-
-    BG.slice(0,3).forEach((b,i)=>makeBtn(b,centerX(BG.slice(0,3).length,i),r1));
-    BG.slice(3,6).forEach((b,i)=>makeBtn(b,centerX(BG.slice(3,6).length,i),r2));
-  }
-
-  function applyBackground(bg){
-    const sky=$('#spherePhoto');
-    if(bg && textures[bg._id]) sky.setAttribute('src','#'+bg._id);
-    else { sky.removeAttribute('src'); sky.setAttribute('color',bg?.fallback || '#0b0d13'); }
-
-    $('#ambLight').setAttribute('light',`type:ambient; intensity:${bg.ambInt||0.45}; color:${bg.ambient||'#aaccff'}`);
-    $('#keyLight').setAttribute('light',`type:point; intensity:${bg.keyInt||0.9}; distance:18; decay:1; color:#ffffff`);
-
-    // Update subtitle
-    $('#skinsSubtitle').setAttribute('text',
-      `value:Using 360 image: ${bg.name}; align:center; width:1.45; color:#9ef59a; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-
-    // Adaptive orb glow
-    const L=luminanceFromHex(bg.fallback||'#0b0d13');
-    const haloInt=Math.min((1-L)*1.6+0.35,1.2);
-    const orbEmiss=Math.min((1-L)*0.55+0.28,0.7);
-    document.querySelectorAll('.orb').forEach(o=>o.setAttribute('material',
-      `color:#ffd100; emissive:#ffcc33; emissiveIntensity:${orbEmiss}; metalness:0.1; roughness:0.35`));
-    document.querySelectorAll('.haloLight').forEach(h=>h.setAttribute('light',
-      `type:point; color:#ffd560; intensity:${haloInt}; distance:2.2; decay:1`));
-  }
-
-  /* Link orbs row */
-  function buildLinkOrbs(){
-    const root=$('#orbs'); root.innerHTML='';
-    const radius=2.8, yawStart=-32, yawStep=13, y=1.02;
-
-    LINKS.forEach((link,i)=>{
-      const yaw = yawStart + i*yawStep;
-      const a = THREE.MathUtils.degToRad(yaw);
-      const pos = { x: radius*Math.sin(a), y, z: -radius*Math.cos(a) };
-
-      const group = document.createElement('a-entity');
-      group.setAttribute('position',`${pos.x} ${pos.y} ${pos.z}`);
-      group.setAttribute('rotation',`0 ${-yaw} 0`);
-
-      const halo=document.createElement('a-entity');
-      halo.classList.add('haloLight');
-      halo.setAttribute('light','type:point; color:#ffd560; intensity:0.9; distance:2.2; decay:1');
-      group.appendChild(halo);
-
-      const orb=document.createElement('a-sphere');
-      orb.classList.add('orb','clickable');
-      orb.setAttribute('radius','0.18');
-      orb.setAttribute('material','color:#ffd100; emissive:#ffcc33; emissiveIntensity:0.45; metalness:0.1; roughness:0.35');
-      orb.setAttribute('ui-click','action:open-'+i);
-      group.appendChild(orb);
+    // Build gold orbs
+    document.querySelectorAll('.link-orb').forEach(node=>{
+      const sphere=document.createElement('a-entity');
+      sphere.setAttribute('geometry','primitive:sphere; radius:0.22');
+      sphere.setAttribute('material','color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:0.25');
+      node.appendChild(sphere);
 
       const label=document.createElement('a-entity');
-      label.setAttribute('position','0 0.32 0');
-      label.setAttribute('billboard-yaw','');
-      label.setAttribute('text',
-        `value:${link.title}; align:center; width:1.2; color:#ffd776; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-      group.appendChild(label);
+      label.setAttribute('position','0 0.42 0');
+      label.setAttribute('text',`value:${node.dataset.title}; align:center; width:2; color:#ffd700`);
+      node.appendChild(label);
 
-      document.addEventListener('open-'+i,()=>show3DPreview(link.title, link.url));
-      root.appendChild(group);
+      node.addEventListener('click',()=>{
+        // Fill and show link panel
+        lpTitle.setAttribute('text','value:'+node.dataset.title);
+        lpUrl.setAttribute('text','value:'+node.dataset.url);
+        linkPanel.setAttribute('visible',true);
+      });
     });
-  }
 
-  /* In-scene preview positioning */
-  function show3DPreview(title,url){
-    currentPreview={title,url};
-    $('#skinsPanel').setAttribute('visible',false);
+    // Link panel buttons
+    lpBtnOpen.addEventListener('click', ()=>{
+      const url = lpUrl.getAttribute('text').value;
+      location.href = url;
+    });
+    lpBtnTab.addEventListener('click', ()=>{
+      const url = lpUrl.getAttribute('text').value;
+      window.open(url,'_blank');
+    });
+    lpClose.addEventListener('click', ()=> linkPanel.setAttribute('visible',false));
 
-    $('#p3dTitle').setAttribute('text',
-      `value:${title}; align:center; width:1.32; color:#ffd776; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
-    $('#p3dHost').setAttribute('text',
-      `value:${(new URL(url)).host}; align:center; width:1.22; color:#9fb4c7; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+    // Load media.json and build background buttons
+    fetch('assets/media.json').then(r=>r.json()).then(cfg=>{
+      // Preload images
+      cfg.backgrounds.forEach((bg,i)=>{
+        const img=document.createElement('img');
+        img.setAttribute('id','bg'+i);
+        img.setAttribute('src',bg.img);
+        assetsEl.appendChild(img);
+      });
 
-    const p=$('#preview3d');
-    const cam=$('#camera').object3D;
-    const pos=new THREE.Vector3(), dir=new THREE.Vector3();
-    cam.getWorldPosition(pos); cam.getWorldDirection(dir);
-    const t=pos.clone().add(dir.multiplyScalar(2)); // 2m in front
-    p.object3D.position.copy(t);
-    p.setAttribute('billboard-yaw',''); // face camera (no sideways)
-    p.setAttribute('visible',true);
-  }
-  function hide3DPreview(){
-    $('#preview3d').setAttribute('visible',false);
-    $('#skinsPanel').setAttribute('visible',true);
-    hideOverlay();
-  }
+      const makeBtn=(bg,i)=> {
+        const btn=document.createElement('a-entity');
+        btn.setAttribute('geometry','primitive:plane; width:0.86; height:0.24');
+        btn.setAttribute('material','color:#1b2430; opacity:0.98');
+        btn.setAttribute('text',`value:${bg.name}; align:center; width:1.6; color:#dfe6ff`);
+        btn.addEventListener('click',()=>applyBG(bg,i));
+        return btn;
+      };
 
-  /* Fallback hint */
-  function showOverlayPreview(){
-    const ov=$('#overlay');
-    const p=$('#preview3d').object3D.position;
-    ov.object3D.position.set(p.x, p.y, p.z - 0.2);
-    ov.setAttribute('billboard-yaw','');
-    ov.setAttribute('visible',true);
-  }
-  function hideOverlay(){ $('#overlay').setAttribute('visible',false); }
+      // Build two rows (up to 6 items -> 3+3)
+      const top = cfg.backgrounds.slice(0,3);
+      const bot = cfg.backgrounds.slice(3,6);
+      const placeRow=(row,rootX,root)=>{
+        const gap = 0.96;
+        const startX = -gap*(row.length-1)/2;
+        row.forEach((bg,i)=>{
+          const btn=makeBtn(bg,i);
+          btn.setAttribute('position',`${startX + i*gap} 0 0`);
+          root.appendChild(btn);
+        });
+      };
+      placeRow(top,0,skinBtnsTop);
+      placeRow(bot,0,skinBtnsBottom);
 
-  /* Live iframe overlay (whitelist) */
-  const LIVE = {
-    wrap:null, frame:null, closeBtn:null,
-    show(src){ this.frame.src=src; this.wrap.style.display='grid'; },
-    hide(){ this.frame.src=''; this.wrap.style.display='none'; }
-  };
-  function embedURL(raw){
-    try{
-      const u=new URL(raw); const host=u.hostname.replace(/^www\./,'').toLowerCase();
-      // YouTube
-      if(host.includes('youtube.com') || host==='youtu.be'){
-        const list=u.searchParams.get('list'); if(list) return `https://www.youtube.com/embed/videoseries?list=${list}`;
-        let v=u.searchParams.get('v'); if(!v && host==='youtu.be') v=u.pathname.slice(1);
-        if(v) return `https://www.youtube.com/embed/${v}`;
-        return null;
+      // Initial background
+      applyBG(cfg.backgrounds[0],0);
+
+      // While panel is visible, hide orbs fully
+      const setOrbsVisible = vis => orbsRoot.setAttribute('visible', vis);
+      const showPanel = () => { skinPanel.setAttribute('visible',true); setOrbsVisible(false); };
+      const hidePanel = () => { skinPanel.setAttribute('visible',false); setOrbsVisible(true); };
+
+      // Skins orb toggles the panel
+      $('#skinsOrb').addEventListener('click',()=>{
+        const vis = skinPanel.getAttribute('visible');
+        vis ? hidePanel() : showPanel();
+      });
+
+      // Apply background (UNLIT sky)
+      function applyBG(bg,i){
+        skinActive.setAttribute('text','value:Using 360 image: '+bg.name);
+        bgSky.setAttribute('src','#bg'+i);               // <a-sky material="shader:flat"> ignores lights → full brightness
+        hidePanel();
       }
-      // Vimeo
-      if(host.includes('vimeo.com')){
-        const m=u.pathname.match(/\/(\d+)/); if(m) return `https://player.vimeo.com/video/${m[1]}`;
-        return null;
-      }
-      // 360Cities (pano pages)
-      if(host.includes('360cities.net')){
-        if(u.pathname.startsWith('/image/'))
-          return `https://www.360cities.net/embed_image${u.pathname.slice(6)}`;
-        return null;
-      }
-      // Others likely block
-      return null;
-    }catch(e){ return null; }
-  }
-  window.addEventListener('DOMContentLoaded',()=>{
-    LIVE.wrap=$('#liveFrameWrap'); LIVE.frame=$('#liveFrame'); LIVE.closeBtn=$('#liveClose');
-    LIVE.closeBtn.addEventListener('click',()=>LIVE.hide());
-  });
+    });
   </script>
 </body>
-</html>.
+</html>
