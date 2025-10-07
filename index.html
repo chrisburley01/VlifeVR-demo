@@ -1,193 +1,327 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VLIFE · Hybrid VR MVP</title>
-  <link rel="icon" href="assets/Vlifelogo_1_.png" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Vlife – Hybrid VR MVP</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png"/>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- tiny helper so text/labels always face camera -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
   <style>
-    body{margin:0;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    .pill{position:fixed;left:14px;top:14px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15);
-          color:#d7d7de;border-radius:14px;padding:8px 12px;z-index:9}
-    .brand{position:fixed;top:14px;right:16px;display:flex;gap:8px;align-items:center;z-index:9}
-    .brand img{width:32px;height:32px;border-radius:8px;background:#000;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
-    .brand b{color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.35)}
-    .tip{position:fixed;left:14px;bottom:14px;max-width:min(680px,90vw);background:rgba(0,0,0,.5);
-         border:1px solid rgba(255,255,255,.12);color:#eee;padding:12px 14px;border-radius:14px;z-index:9}
+    :root { --gold:#ffd84a; --bg:#0b0f10; --text:#e8eaf0; }
+    body{margin:0;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .brand { position:fixed; top:14px; right:18px; display:flex; gap:8px; align-items:center; z-index:9 }
+    .brand img{width:32px;height:32px;border-radius:8px;object-fit:contain; box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
+    .brand b{color:#ffe58a;text-shadow:0 0 10px rgba(255,215,0,.45); letter-spacing:.5px}
+    .pill{ position:fixed; top:16px; left:16px; color:#cfd2da; font-weight:600; background:rgba(0,0,0,.55);
+           border:1px solid rgba(255,255,255,.14); padding:8px 12px; border-radius:12px; z-index:9 }
+    .toast{ position:fixed; left:16px; right:16px; bottom:18px; z-index:9; display:flex; justify-content:center }
+    .toast > div{ max-width:720px; width:100%; color:#e9eef6; background:rgba(0,0,0,.55);
+                  border:1px solid rgba(255,255,255,.14); padding:12px 14px; border-radius:12px; }
   </style>
 </head>
 <body>
   <div class="pill">Hybrid VR MVP · 360° / HDR</div>
-  <div class="brand"><img src="assets/Vlifelogo_1_.png" alt=""><b>VLIFE</b></div>
-  <div class="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div>
+  <div class="brand">
+    <img src="assets/Vlifelogo_1_.png" alt="VLIFE"/>
+    <b>VLIFE</b>
+  </div>
+  <div class="toast"><div id="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div></div>
 
-  <a-scene renderer="antialias:true;physicallyCorrectLights:true;colorManagement:true;toneMappingExposure:1.18"
-           background="color:#000" vr-mode-ui="enabled:true">
+  <a-scene renderer="colorManagement:true antialias:true" background="color:#000">
+    <a-assets id="assets"></a-assets>
 
-    <a-assets id="assets" timeout="30000"></a-assets>
-
-    <!-- camera -->
-    <a-entity id="rig" position="0 1.6 0">
-      <a-entity id="cam" camera look-controls>
-        <a-entity id="cursor" cursor="fuse:true; fuseTimeout:900"
-                  position="0 0 -1"
-                  geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
-                  material="shader:flat; color:#fff; opacity:.9"></a-entity>
+    <!-- Camera + cursor -->
+    <a-entity id="rig" position="0 0 0">
+      <a-entity id="cam" camera look-controls wasd-controls="acceleration:20" position="0 1.6 0"
+                raycaster="objects:.clickable,.orbbtn,.uiclick" cursor="fuse:true; fuseTimeout:900">
+        <a-entity position="0 0 -0.8" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
+                  material="color:#fff; shader:flat; opacity:.85"></a-entity>
       </a-entity>
     </a-entity>
 
-    <!-- the unlit 360 image -->
-    <a-sky id="bgSky" radius="5000" material="shader:flat" rotation="0 -90 0"></a-sky>
+    <!-- SKY for 360 images (unlit so images stay bright) -->
+    <a-sky id="sky" rotation="0 -90 0" material="shader:flat; side:double; color:#000"></a-sky>
 
-    <!-- gentle lights for orbs/panels (not for background) -->
-    <a-entity light="type:ambient; intensity:0.55"></a-entity>
-    <a-entity light="type:point; intensity:0.75; distance:18" position="1.5 2.2 -2.2"></a-entity>
+    <!-- ORBS (built by JS) -->
+    <a-entity id="orbLayer"></a-entity>
 
-    <!-- ORBS (lower & spread) -->
-    <a-entity id="orbs">
-      <!-- Skins -->
-      <a-entity id="skinsOrb" position="-3.2 0.7 -2.75">
-        <a-entity geometry="primitive:sphere; radius:0.28"
-                  material="color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:0.25"></a-entity>
-        <a-entity text="value:Skins; align:center; width:2; color:#ffd700" position="0 0.46 0"></a-entity>
-      </a-entity>
+    <!-- BACKGROUND PICKER PANEL -->
+    <a-entity id="picker" position="0 1.55 -2.1" visible="true">
+      <!-- backdrop -->
+      <a-plane width="1.8" height="1.05"
+               material="shader:flat; color:#161a1f; opacity:0.96; transparent:true; depthTest:false"
+               position="0 0 0.001"></a-plane>
 
-      <!-- Link orbs -->
-      <a-entity class="link-orb" data-title="YouTube VR Channel"
-                data-url="https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ"
-                position="-1.4 0.7 -2.75"></a-entity>
+      <!-- title + subtitle -->
+      <a-entity position="0 .42 0.02" text="value:Choose Background; width:2.8; align:center; color:#ffb238"></a-entity>
+      <a-entity id="usingTxt" position="0 .28 0.02" text="value:Using 360 image: —; width:2.6; align:center; color:#72e27d"></a-entity>
 
-      <a-entity class="link-orb" data-title="Meta Quest TV"
-                data-url="https://www.meta.com/quest/tv/"
-                position="0 0.7 -2.75"></a-entity>
+      <!-- buttons grid -->
+      <a-entity id="btnGrid" position="0 .02 0.03"></a-entity>
 
-      <a-entity class="link-orb" data-title="360Cities"
-                data-url="https://www.360cities.net/"
-                position="1.4 0.7 -2.75"></a-entity>
+      <!-- rotate to camera, always readable -->
+      <a-entity look-at="#cam"></a-entity>
     </a-entity>
 
-    <!-- LINK PREVIEW PANEL -->
-    <a-entity id="linkPanel" visible="false" position="0 1.45 -1.6">
-      <a-entity geometry="primitive:plane; width:1.6; height:0.9" material="color:#121319; opacity:.96"></a-entity>
-      <a-entity id="lpTitle" position="0 0.28 0.01" text="align:center; width:2.6; color:#ffd777; value:Title"></a-entity>
-      <a-entity id="lpUrl"   position="0 0.06 0.01" text="align:center; width:2.6; color:#9fb4ff; value:https://"></a-entity>
-      <a-entity id="lpOpen"  position="-0.42 -0.26 0.01"
-                geometry="primitive:plane; width:.7; height:.22"
-                material="color:#ffe58a"
-                text="value:Open; align:center; width:1.4; color:#2b2500"></a-entity>
-      <a-entity id="lpTab"   position="0.42 -0.26 0.01"
-                geometry="primitive:plane; width:.9; height:.22"
-                material="color:#253041"
-                text="value:Open in new tab; align:center; width:1.7; color:#e7e7ea"></a-entity>
-      <a-entity id="lpClose" position="0 -0.54 0.01"
-                geometry="primitive:plane; width:.36; height:.18"
-                material="color:#1b1c22"
-                text="value:Close; align:center; width:.9; color:#d3d3db"></a-entity>
-    </a-entity>
-
-    <!-- SKIN SELECTOR -->
-    <a-entity id="skinPanel" visible="true" position="0 1.45 -2">
-      <a-entity geometry="primitive:plane; width:2.4; height:1.18" material="color:#0f1217; opacity:.96"></a-entity>
-      <a-entity position="0 0.42 0.01" text="value:Choose Background; align:center; width:3; color:#ffb83f"></a-entity>
-      <a-entity id="skinActive" position="0 0.23 0.01" text="value:Using 360 image: ...; align:center; width:3; color:#72ff72"></a-entity>
-      <a-entity id="rowTop"    position="0 0.02 0.01"></a-entity>
-      <a-entity id="rowBottom" position="0 -0.38 0.01"></a-entity>
-    </a-entity>
-
+    <!-- LIGHT hint (subtle) -->
+    <a-entity light="type:ambient; intensity:0.35"></a-entity>
   </a-scene>
 
-  <script>
-    const $ = s => document.querySelector(s);
-    const assets = $('#assets');
-    const bgSky = $('#bgSky');
+<script>
+/* --------------------------- CONFIG --------------------------- */
+const LINKS = [
+  {name:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
+  {name:'Meta Quest TV',      url:'https://www.meta.com/experiences/quest-tv/'},
+  {name:'360Cities',          url:'https://www.360cities.net/'}
+];
+// These two utility orbs:
+const EXTRA_ORBS = [
+  {name:'Reset', type:'reset'},
+  {name:'Help',  type:'help'}
+];
+/* -------------------------------------------------------------- */
 
-    // keep link panel facing camera
-    const linkPanel = $('#linkPanel');
-    const lpTitle = $('#lpTitle'), lpUrl = $('#lpUrl');
-    const lpOpen = $('#lpOpen'), lpTab = $('#lpTab'), lpClose = $('#lpClose');
-    const camObj = () => $('#cam').object3D;
+const $ = s => document.querySelector(s);
+const sky = $('#sky');
+const btnGrid = $('#btnGrid');
+const usingTxt = $('#usingTxt');
+const orbLayer = $('#orbLayer');
+const tip = $('#tip');
 
-    const faceCamera = el => {
-      const v = new THREE.Vector3();
-      el.object3D.lookAt(camObj().getWorldPosition(v));
-    };
-    linkPanel.addEventListener('loaded', () => {
-      linkPanel.sceneEl.addEventListener('renderstart', () => {
-        linkPanel.sceneEl.object3D.onBeforeRender = () => faceCamera(linkPanel);
-      });
-    });
+let media = null;
+let currentBgIndex = 0;
 
-    // build link orbs
-    document.querySelectorAll('.link-orb').forEach(node=>{
-      const ball=document.createElement('a-entity');
-      ball.setAttribute('geometry','primitive:sphere; radius:0.26');
-      ball.setAttribute('material','color:#ffd700; metalness:0.2; roughness:0.35; emissive:#6b5b00; emissiveIntensity:.25');
-      node.appendChild(ball);
-      const label=document.createElement('a-entity');
-      label.setAttribute('text',`value:${node.dataset.title}; align:center; width:2.2; color:#ffd700`);
-      label.setAttribute('position','0 0.44 0');
-      node.appendChild(label);
-      node.addEventListener('click',()=>{
-        lpTitle.setAttribute('text','value:'+node.dataset.title);
-        lpUrl.setAttribute('text','value:'+node.dataset.url);
-        linkPanel.setAttribute('visible',true);
-      });
-    });
-    lpOpen.addEventListener('click',()=>location.href = lpUrl.getAttribute('text').value);
-    lpTab .addEventListener('click',()=>window.open(lpUrl.getAttribute('text').value,'_blank'));
-    lpClose.addEventListener('click',()=>linkPanel.setAttribute('visible',false));
+/* load media.json */
+fetch('assets/media.json')
+  .then(r => r.json())
+  .then(data => {
+    media = data;
+    buildPickerButtons(media.backgrounds);
+    applyBackground(0);        // default first bg
+    buildOrbs();               // 6 orbs
+  })
+  .catch(err => console.error('media.json load error', err));
 
-    // skins
-    const rowTop = $('#rowTop'), rowBottom = $('#rowBottom'), skinActive = $('#skinActive');
+/* --------- BACKGROUND PICKER ---------- */
+function buildPickerButtons(list){
+  btnGrid.innerHTML = '';
+  const cols = 2;
+  const w = 1.55, h = .26, gapY = .06;
+  const rows = Math.ceil(list.length / cols);
+  for(let i=0;i<list.length;i++){
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = (col===0 ? -w/4 : w/4);
+    const y = ((rows-1)/2 - row) * (h + gapY);
 
-    fetch('assets/media.json').then(r=>r.json()).then(cfg=>{
-      // Preload & remember original indices
-      cfg.backgrounds.forEach((bg,idx)=>{
-        const img = document.createElement('img');
-        img.id = 'bg'+idx;
-        img.src = bg.img;
-        assets.appendChild(img);
-      });
+    const bg = list[i];
 
-      const makeBtn = (bg, idx) => {
-        const btn = document.createElement('a-entity');
-        btn.setAttribute('geometry','primitive:plane; width:0.95; height:0.26');
-        btn.setAttribute('material','color:#1b2430; opacity:.98');
-        btn.setAttribute('text',`value:${bg.name}; align:center; width:1.8; color:#dfe6ff`);
-        btn.addEventListener('click',()=>applyBG(bg, idx));
-        return btn;
-      };
+    const holder = document.createElement('a-entity');
+    holder.setAttribute('position', `${x} ${y} 0`);
+    holder.setAttribute('class','uiclick clickable');
 
-      // layout evenly on row
-      const layoutRow = (items, root) => {
-        const gap = 1.1;
-        const start = -gap*(items.length-1)/2;
-        items.forEach((it,i)=>{
-          const btn = makeBtn(it.bg, it.idx);
-          btn.setAttribute('position', `${start+i*gap} 0 0`);
-          root.appendChild(btn);
-        });
-      };
+    const btn = document.createElement('a-plane');
+    btn.setAttribute('width', w/2);
+    btn.setAttribute('height', h);
+    btn.setAttribute('material','shader:flat; color:#1d222a; opacity:.96; transparent:true; depthTest:false');
+    btn.setAttribute('class','uiclick clickable');
+    holder.appendChild(btn);
 
-      // two rows, keep original indices
-      const entries = cfg.backgrounds.map((bg,idx)=>({bg,idx}));
-      layoutRow(entries.slice(0,3), rowTop);
-      layoutRow(entries.slice(3,6), rowBottom);
+    const label = document.createElement('a-entity');
+    label.setAttribute('text', `value:${bg.name}; width:1.4; align:center; color:#dbe6ff`);
+    label.setAttribute('position','0 0 0.01');
+    label.setAttribute('class','uiclick clickable');
+    holder.appendChild(label);
 
-      // initial background
-      applyBG(cfg.backgrounds[0], 0);
+    holder.addEventListener('click', () => applyBackground(i));
+    btnGrid.appendChild(holder);
+  }
+}
 
-      $('#skinsOrb').addEventListener('click', ()=>{
-        const vis = $('#skinPanel').getAttribute('visible');
-        $('#skinPanel').setAttribute('visible', !vis);
-      });
+function applyBackground(i){
+  currentBgIndex = i;
+  const bg = media.backgrounds[i];
+  usingTxt.setAttribute('text', `value:Using 360 image: ${bg.name}; width:2.4; align:center; color:#72e27d`);
 
-      function applyBG(bg, idx){
-        skinActive.setAttribute('text','value:Using 360 image: '+bg.name);
-        bgSky.setAttribute('src', '#bg'+idx);     // original id
-      }
-    }).catch(()=>alert('Could not load assets/media.json'));
-  </script>
+  // remove old <img> if any
+  const prev = $('#assets img[data-dyn="1"]');
+  if(prev) prev.parentNode.removeChild(prev);
+
+  // pre-load image and set sky
+  const img = document.createElement('img');
+  img.setAttribute('crossorigin','anonymous');
+  img.setAttribute('data-dyn','1');
+  img.id = 'bgtex';
+  img.src = bg.img;
+  img.onload = () => { sky.setAttribute('src', '#bgtex'); };
+  $('#assets').appendChild(img);
+
+  // fallback tint while loading or if image missing
+  sky.removeAttribute('src');
+  sky.setAttribute('color', bg.fallback || '#000');
+}
+
+/* ------------------ ORBS ------------------- */
+function buildOrbs(){
+  orbLayer.innerHTML = '';
+  const allOrbDefs = [
+    {name:'Skins', type:'skins'},
+    ...LINKS.map(l => ({name:l.name, url:l.url, type:'link'})),
+    ...EXTRA_ORBS
+  ]; // => 6 orbs
+
+  const R = 2.2;        // radius
+  const y = 1.0;        // height
+  const spread = Math.PI * 0.9;   // arc spread in radians
+  const start = -spread/2;
+
+  allOrbDefs.forEach((def, idx) => {
+    const t = start + (idx * (spread/(allOrbDefs.length-1)));
+    const x = Math.sin(t) * R;
+    const z = -Math.cos(t) * R;
+
+    // sphere
+    const orb = document.createElement('a-sphere');
+    orb.setAttribute('class','orbbtn clickable');
+    orb.setAttribute('position', `${x} ${y} ${z}`);
+    orb.setAttribute('radius', '0.22');
+    orb.setAttribute('material', 'shader:flat; color:#ffd84a; emissive:#b38500; metalness:0; roughness:.2');
+    orb.setAttribute('shadow','cast:true');
+    orb.addEventListener('click', () => handleOrb(def));
+    orbLayer.appendChild(orb);
+
+    // label
+    const label = document.createElement('a-entity');
+    label.setAttribute('text', `value:${def.name}; width:2.2; align:center; color:#ffd27a`);
+    label.setAttribute('position', `${x} ${y+.34} ${z}`);
+    label.setAttribute('look-at','#cam');               // always face camera
+    orbLayer.appendChild(label);
+  });
+}
+
+function handleOrb(def){
+  if(def.type === 'skins'){
+    $('#picker').setAttribute('visible', true);
+    tip.innerHTML = 'Choose a background above. Click outside to close.';
+    return;
+  }
+  if(def.type === 'reset'){
+    applyBackground(0);
+    tip.innerHTML = 'Reset to default background.';
+    return;
+  }
+  if(def.type === 'help'){
+    showInfo('How to use', 'Gaze at gold orbs to open actions. Use the Skins orb to change the 360° background. Tap the screen to dismiss panels.');
+    return;
+  }
+  if(def.type === 'link' && def.url){
+    openLinkPanel(def.name, def.url);
+  }
+}
+
+/* ---------------- PANELS (links) ---------------- */
+function openLinkPanel(title, url){
+  const old = document.querySelector('#linkPanel');
+  if(old) old.parentNode.removeChild(old);
+
+  const p = document.createElement('a-entity');
+  p.id = 'linkPanel';
+  p.setAttribute('position','0 1.5 -2.1');
+  p.setAttribute('look-at','#cam');
+
+  const bg = document.createElement('a-plane');
+  bg.setAttribute('width','1.8'); bg.setAttribute('height','0.9');
+  bg.setAttribute('material','shader:flat; color:#14171d; opacity:.96; transparent:true; depthTest:false');
+  p.appendChild(bg);
+
+  const tt = document.createElement('a-entity');
+  tt.setAttribute('text', `value:${title}; width:2.4; align:center; color:#ffb238`);
+  tt.setAttribute('position','0 .28 0.01');
+  p.appendChild(tt);
+
+  const urlTxt = document.createElement('a-entity');
+  urlTxt.setAttribute('text', `value:${url}; width:2.2; align:center; color:#cfe1ff`);
+  urlTxt.setAttribute('position','0 .12 0.01');
+  p.appendChild(urlTxt);
+
+  // buttons
+  const btns = [
+    {label:'Open in new tab', action: ()=>window.open(url,'_blank')},
+    {label:'Close', action: ()=>p.parentNode.removeChild(p)}
+  ];
+  btns.forEach((b,i)=>{
+    const holder = document.createElement('a-entity');
+    holder.setAttribute('position', `${i===0?-0.45:0.45} -0.18 0.02`);
+    holder.setAttribute('class','uiclick clickable');
+
+    const btn = document.createElement('a-plane');
+    btn.setAttribute('width','.9'); btn.setAttribute('height','.22');
+    btn.setAttribute('material','shader:flat; color:#222833; opacity:.98; transparent:true; depthTest:false');
+    btn.setAttribute('class','uiclick clickable');
+    holder.appendChild(btn);
+
+    const lab = document.createElement('a-entity');
+    lab.setAttribute('text', `value:${b.label}; width:1.4; align:center; color:#e8f0ff`);
+    lab.setAttribute('position','0 0 0.01'); lab.setAttribute('class','uiclick clickable');
+    holder.appendChild(lab);
+
+    holder.addEventListener('click', b.action);
+    p.appendChild(holder);
+  });
+
+  document.querySelector('a-scene').appendChild(p);
+}
+
+function showInfo(head, body){
+  const old = document.querySelector('#helpPanel');
+  if(old) old.parentNode.removeChild(old);
+
+  const p = document.createElement('a-entity');
+  p.id = 'helpPanel';
+  p.setAttribute('position','0 1.52 -2.05');
+  p.setAttribute('look-at','#cam');
+
+  const bg = document.createElement('a-plane');
+  bg.setAttribute('width','1.8'); bg.setAttribute('height','0.8');
+  bg.setAttribute('material','shader:flat; color:#151a1f; opacity:.96; transparent:true; depthTest:false');
+  p.appendChild(bg);
+
+  const tt = document.createElement('a-entity');
+  tt.setAttribute('text', `value:${head}; width:2.4; align:center; color:#ffb238`);
+  tt.setAttribute('position','0 .25 0.01');
+  p.appendChild(tt);
+
+  const bodyEnt = document.createElement('a-entity');
+  bodyEnt.setAttribute('text', `value:${body}; width:1.6; align:center; color:#d9e6ff; wrapCount:34`);
+  bodyEnt.setAttribute('position','0 .02 0.01');
+  p.appendChild(bodyEnt);
+
+  const close = document.createElement('a-entity');
+  close.setAttribute('position','0 -0.25 0.02');
+  close.setAttribute('class','uiclick clickable');
+  const cp = document.createElement('a-plane');
+  cp.setAttribute('width','.8'); cp.setAttribute('height','.22');
+  cp.setAttribute('material','shader:flat; color:#222833; opacity:.98; transparent:true; depthTest:false');
+  cp.setAttribute('class','uiclick clickable');
+  const cl = document.createElement('a-entity');
+  cl.setAttribute('text', 'value:Close; width:1.2; align:center; color:#e8f0ff');
+  cl.setAttribute('position','0 0 0.01'); cl.setAttribute('class','uiclick clickable');
+  close.appendChild(cp); close.appendChild(cl);
+  close.addEventListener('click', ()=>p.parentNode.removeChild(p));
+  p.appendChild(close);
+
+  document.querySelector('a-scene').appendChild(p);
+}
+
+/* Close picker when clicking empty space (raycasting against scene) */
+document.addEventListener('click', (e)=>{
+  const t = e.target;
+  if(t && (t.classList && (t.classList.contains('uiclick') || t.classList.contains('orbbtn')))) return;
+  const picker = $('#picker');
+  if(picker && picker.getAttribute('visible')) picker.setAttribute('visible', false);
+});
+</script>
 </body>
 </html>
