@@ -2,43 +2,23 @@
   "backgrounds": [
     {
       "name": "Park Steps 360",
-      "img": "assets/Park360.jpg",
-      "fallback": "#0a0d08",
-      "ambient": "#aaccff",
-      "ambInt": 0.50,
-      "keyInt": 0.90
+      "img": "assets/Park360.jpg"
     },
     {
       "name": "Forest 360",
-      "img": "assets/Forrest360.jpg",
-      "fallback": "#0b1408",
-      "ambient": "#b6d6ff",
-      "ambInt": 0.55,
-      "keyInt": 0.95
+      "img": "assets/Forrest360.jpg"
     },
     {
       "name": "Future City 360",
-      "img": "assets/Futurecity360.jpg",
-      "fallback": "#0a0d12",
-      "ambient": "#b6c9ff",
-      "ambInt": 0.48,
-      "keyInt": 0.90
+      "img": "assets/Futurecity360.jpg"
     },
     {
       "name": "Neon Nightclub 360",
-      "img": "assets/Neonnightclub.jpg",
-      "fallback": "#0b0810",
-      "ambient": "#88aaff",
-      "ambInt": 0.45,
-      "keyInt": 0.85
+      "img": "assets/Neonnightclub.jpg"
     },
     {
       "name": "Floating Sky Monastery 8K",
-      "img": "assets/floating_sky_monastery_upscaled_8k.jpg",
-      "fallback": "#0e1013",
-      "ambient": "#9fc7ff",
-      "ambInt": 0.52,
-      "keyInt": 0.90
+      "img": "assets/floating_sky_monastery_upscaled_8k.jpg"
     }
   ]
 }
