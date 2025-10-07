@@ -28,7 +28,7 @@
   </div>
   <div class="toast"><div id="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div></div>
 
-  <!-- Brighter renderer: disable color management & bias exposure upward -->
+  <!-- Brighter renderer -->
   <a-scene renderer="colorManagement:false toneMapping:none sortObjects:true"
            background="color:#000">
     <a-assets id="assets"></a-assets>
@@ -37,26 +37,32 @@
     <a-entity id="rig" position="0 0 0">
       <a-entity id="cam" camera look-controls wasd-controls="acceleration:20" position="0 1.6 0"
                 raycaster="objects:.clickable,.orbbtn,.uiclick" cursor="fuse:true; fuseTimeout:900">
-        <a-entity position="0 0 -0.8" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
-                  material="color:#fff; shader:flat; opacity:.95"></a-entity>
+        <!-- cursor halo for contrast -->
+        <a-entity id="cursorHalo" position="0 0 -0.76"
+                  geometry="primitive:ring; radiusInner:0.016; radiusOuter:0.026"
+                  material="shader:flat; color:#000; opacity:.85; transparent:true; depthTest:false"></a-entity>
+        <!-- white cursor on top of everything -->
+        <a-entity id="cursorRing" position="0 0 -0.75"
+                  geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
+                  material="shader:flat; color:#ffffff; opacity:.98; transparent:false; depthTest:false"></a-entity>
       </a-entity>
     </a-entity>
 
-    <!-- SKY for 360 images (unlit so images are full brightness) -->
+    <!-- SKY -->
     <a-sky id="sky" rotation="0 0 0" material="shader:flat; side:double; color:#000"></a-sky>
 
-    <!-- ORBS (JS builds them) -->
+    <!-- ORBS -->
     <a-entity id="orbLayer"></a-entity>
 
-    <!-- BACKGROUND PICKER PANEL -->
+    <!-- BACKGROUND PICKER -->
     <a-entity id="picker" position="0 1.55 -2.1" visible="true" look-at="#cam">
       <a-plane width="1.9" height="1.15"
-               material="shader:flat; color:#11151c; opacity:0.98; transparent:true; depthTest:false"
+               material="shader:flat; color:#11151c; opacity:0.98; transparent:true; depthTest:false; depthWrite:false"
                position="0 0 0.001"></a-plane>
 
-      <!-- Close button (explicit; no auto-hide) -->
+      <!-- Close -->
       <a-entity id="closePick" class="uiclick clickable" position="0.88 0.52 0.02">
-        <a-circle radius="0.06" material="shader:flat; color:#2a3240; opacity:.98; depthTest:false"></a-circle>
+        <a-circle radius="0.06" material="shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false"></a-circle>
         <a-entity position="0 0 0.01" text="value:×; width:1; align:center; color:#eaf0ff"></a-entity>
       </a-entity>
 
@@ -66,7 +72,6 @@
       <a-entity id="btnGrid" position="0 .02 0.03"></a-entity>
     </a-entity>
 
-    <!-- subtle ambient light (for orbs/labels only; sky is unlit) -->
     <a-entity light="type:ambient; intensity:0.55"></a-entity>
   </a-scene>
 
@@ -93,15 +98,22 @@ const tip = $('#tip');
 let media = null;
 let currentBgIndex = 0;
 
+/* On scene loaded, force cursor to render above UI */
+document.querySelector('a-scene').addEventListener('loaded', ()=>{
+  const halo = document.querySelector('#cursorHalo').object3D;
+  const ring = document.querySelector('#cursorRing').object3D;
+  halo.renderOrder = 10000;
+  ring.renderOrder = 10001;
+});
+
 /* load media.json */
 fetch('assets/media.json')
   .then(r => r.json())
   .then(data => {
     media = data;
     buildPickerButtons(media.backgrounds);
-    applyBackground(0);        // default first bg
-    buildOrbs();               // 6 orbs
-    // explicit close
+    applyBackground(0);
+    buildOrbs();
     $('#closePick').addEventListener('click', ()=> $('#picker').setAttribute('visible', false));
   })
   .catch(err => console.error('media.json load error', err));
@@ -128,7 +140,7 @@ function buildPickerButtons(list){
     const btn = document.createElement('a-plane');
     btn.setAttribute('width', w/2);
     btn.setAttribute('height', h);
-    btn.setAttribute('material','shader:flat; color:#1b212c; opacity:.99; transparent:true; depthTest:false');
+    btn.setAttribute('material','shader:flat; color:#1b212c; opacity:.99; transparent:true; depthTest:false; depthWrite:false');
     btn.setAttribute('class','uiclick clickable');
     holder.appendChild(btn);
 
@@ -138,7 +150,6 @@ function buildPickerButtons(list){
     label.setAttribute('class','uiclick clickable');
     holder.appendChild(label);
 
-    // keep panel OPEN after switching (so you can tap multiple backgrounds quickly)
     holder.addEventListener('click', (ev) => { ev.stopPropagation(); applyBackground(i); });
     btnGrid.appendChild(holder);
   }
@@ -149,11 +160,9 @@ function applyBackground(i){
   const bg = media.backgrounds[i];
   usingTxt.setAttribute('text', `value:Using 360 image: ${bg.name}; width:2.4; align:center; color:#72e27d`);
 
-  // remove old <img> if any
   const prev = $('#assets img[data-dyn="1"]');
   if(prev) prev.parentNode.removeChild(prev);
 
-  // preload + set sky
   const img = document.createElement('img');
   img.setAttribute('crossorigin','anonymous');
   img.setAttribute('data-dyn','1');
@@ -161,11 +170,10 @@ function applyBackground(i){
   img.src = bg.img;
   img.onload = () => {
     sky.setAttribute('src', '#bgtex');
-    sky.setAttribute('color', '#ffffff'); // ensure full bright
+    sky.setAttribute('color', '#ffffff');
   };
   $('#assets').appendChild(img);
 
-  // fallback while loading
   sky.removeAttribute('src');
   sky.setAttribute('color', bg.fallback || '#000');
 }
@@ -177,11 +185,11 @@ function buildOrbs(){
     {name:'Skins', type:'skins'},
     ...LINKS.map(l => ({name:l.name, url:l.url, type:'link'})),
     ...EXTRA_ORBS
-  ]; // 6 orbs
+  ];
 
-  const R = 2.6;            // a bit further out
-  const y = 1.15;           // slightly higher
-  const spread = Math.PI * 1.2;   // 216° arc
+  const R = 2.6;
+  const y = 1.15;
+  const spread = Math.PI * 1.2;
   const start = -spread/2;
 
   defs.forEach((def, idx) => {
@@ -189,15 +197,13 @@ function buildOrbs(){
     const x = Math.sin(t) * R;
     const z = -Math.cos(t) * R;
 
-    // glow halo (billboard) to help visibility on busy backgrounds
     const halo = document.createElement('a-circle');
     halo.setAttribute('radius','0.28');
     halo.setAttribute('position', `${x} ${y} ${z+0.001}`);
-    halo.setAttribute('material','shader:flat; color:#000000; opacity:.35; transparent:true; depthTest:false');
+    halo.setAttribute('material','shader:flat; color:#000000; opacity:.35; transparent:true; depthTest:false; depthWrite:false');
     halo.setAttribute('look-at','#cam');
     orbLayer.appendChild(halo);
 
-    // main sphere
     const orb = document.createElement('a-sphere');
     orb.setAttribute('class','orbbtn clickable');
     orb.setAttribute('position', `${x} ${y} ${z}`);
@@ -206,11 +212,10 @@ function buildOrbs(){
     orb.addEventListener('click', () => handleOrb(def));
     orbLayer.appendChild(orb);
 
-    // label (with dark plate for contrast)
     const plate = document.createElement('a-plane');
     plate.setAttribute('width','1.1'); plate.setAttribute('height','0.26');
     plate.setAttribute('position', `${x} ${y+.39} ${z+0.001}`);
-    plate.setAttribute('material','shader:flat; color:#0f1319; opacity:.75; transparent:true; depthTest:false');
+    plate.setAttribute('material','shader:flat; color:#0f1319; opacity:.75; transparent:true; depthTest:false; depthWrite:false');
     plate.setAttribute('look-at','#cam');
     orbLayer.appendChild(plate);
 
@@ -254,14 +259,13 @@ function openLinkPanel(title, url){
 
   const bg = document.createElement('a-plane');
   bg.setAttribute('width','1.9'); bg.setAttribute('height','0.95');
-  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false');
+  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false; depthWrite:false');
   p.appendChild(bg);
 
-  // close
   const close = document.createElement('a-entity');
   close.setAttribute('position','0.9 0.43 0.02'); close.setAttribute('class','uiclick clickable');
   const c1 = document.createElement('a-circle'); c1.setAttribute('radius','0.06');
-  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false');
+  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false');
   const c2 = document.createElement('a-entity');
   c2.setAttribute('position','0 0 0.01'); c2.setAttribute('text','value:×; width:1; align:center; color:#eaf0ff');
   close.appendChild(c1); close.appendChild(c2);
@@ -278,7 +282,6 @@ function openLinkPanel(title, url){
   urlTxt.setAttribute('position','0 .12 0.01');
   p.appendChild(urlTxt);
 
-  // buttons
   const btns = [
     {label:'Open in new tab', action: ()=>window.open(url,'_blank')},
     {label:'Close', action: ()=>p.parentNode.removeChild(p)}
@@ -290,7 +293,7 @@ function openLinkPanel(title, url){
 
     const btn = document.createElement('a-plane');
     btn.setAttribute('width','.95'); btn.setAttribute('height','.24');
-    btn.setAttribute('material','shader:flat; color:#222833; opacity:.98; transparent:true; depthTest:false');
+    btn.setAttribute('material','shader:flat; color:#222833; opacity:.98; transparent:true; depthTest:false; depthWrite:false');
     btn.setAttribute('class','uiclick clickable');
     holder.appendChild(btn);
 
@@ -317,13 +320,13 @@ function showInfo(head, body){
 
   const bg = document.createElement('a-plane');
   bg.setAttribute('width','1.9'); bg.setAttribute('height','0.85');
-  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false');
+  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false; depthWrite:false');
   p.appendChild(bg);
 
   const close = document.createElement('a-entity');
   close.setAttribute('position','0.9 0.39 0.02'); close.setAttribute('class','uiclick clickable');
   const c1 = document.createElement('a-circle'); c1.setAttribute('radius','0.06');
-  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false');
+  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false');
   const c2 = document.createElement('a-entity');
   c2.setAttribute('position','0 0 0.01'); c2.setAttribute('text','value:×; width:1; align:center; color:#eaf0ff');
   close.appendChild(c1); close.appendChild(c2);
