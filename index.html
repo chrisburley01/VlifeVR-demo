@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Vlife – Hybrid VR Experience</title>
   <link rel="icon" href="assets/Vlifelogo_1_.png"/>
-
-  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
-
   <style>
     :root{--gold:#ffd700;--text:#e7e7ea}
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
@@ -42,6 +39,7 @@
   <a-scene id="scene" renderer="antialias:true physicallyCorrectLights:true" background="color:#000">
     <a-assets timeout="30000"></a-assets>
 
+    <!-- camera + cursor + skins toggle -->
     <a-entity id="rig">
       <a-entity id="camera" camera look-controls wasd-controls-enabled="false" position="0 1.6 0"
         cursor="fuse:true; fuseTimeout:900; rayOrigin:entity"
@@ -58,30 +56,33 @@
       </a-entity>
     </a-entity>
 
+    <!-- double sky for crossfade -->
     <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
     <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
-    <!-- Skins panel -->
+    <!-- skins panel (smaller text + no z-fighting) -->
     <a-entity id="skinPanel" position="0 1.52 -2.7" visible="false">
-      <a-entity geometry="primitive:plane; width:2.45; height:1.38" material="color:#10131a; opacity:0.96"></a-entity>
+      <a-entity geometry="primitive:plane; width:2.45; height:1.42" material="color:#10131a; opacity:0.96"></a-entity>
 
-      <a-entity position="0 0.63 0.07"
-        text="value:Choose Background; align:center; width:2.6; color:#ffd700; wrapCount:22; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      <a-entity position="0 0.66 0.02"
+        text="value:Choose Background; align:center; width:2.4; wrapCount:26; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
-      <a-entity id="skinStatus" position="0 0.44 0.07"
-        text="value:; align:center; width:2.4; wrapCount:26; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
+      <a-entity id="skinStatus" position="0 0.50 0.02"
+        text="value:; align:center; width:2.3; wrapCount:28; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
-      <!-- 6 slots -->
-      <a-entity id="btn0" position="-0.82  0.08 0.10"></a-entity>
-      <a-entity id="btn1" position=" 0.00  0.08 0.10"></a-entity>
-      <a-entity id="btn2" position=" 0.82  0.08 0.10"></a-entity>
+      <!-- 6 buttons -->
+      <a-entity id="btn0" position="-0.82  0.08 0.02"></a-entity>
+      <a-entity id="btn1" position=" 0.00  0.08 0.02"></a-entity>
+      <a-entity id="btn2" position=" 0.82  0.08 0.02"></a-entity>
 
-      <a-entity id="btn3" position="-0.82 -0.46 0.10"></a-entity>
-      <a-entity id="btn4" position=" 0.00 -0.46 0.10"></a-entity>
-      <a-entity id="btn5" position=" 0.82 -0.46 0.10"></a-entity>
+      <a-entity id="btn3" position="-0.82 -0.46 0.02"></a-entity>
+      <a-entity id="btn4" position=" 0.00 -0.46 0.02"></a-entity>
+      <a-entity id="btn5" position=" 0.82 -0.46 0.02"></a-entity>
     </a-entity>
 
+    <!-- external link orbs -->
     <a-entity id="orbRing"></a-entity>
+
     <a-entity id="keyLight" light="type:point; intensity:0.9; distance:12" position="0 3 0"></a-entity>
     <a-entity id="ambLight" light="type:ambient; intensity:0.45; color:#ffffff"></a-entity>
   </a-scene>
@@ -111,44 +112,57 @@
 
     function openURL(u){ const a=document.createElement('a'); a.href=u; a.target='_blank'; a.rel='noopener'; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
 
+    // 🔥 Neon pulse orb
     function makeOrb(title,url){
       const g=document.createElement('a-entity');
+
       const orb=document.createElement('a-entity');
       orb.classList.add('clickable');
       orb.setAttribute('geometry','primitive:sphere; radius:0.25');
-      orb.setAttribute('material','color:#ffd700; metalness:0.7; roughness:0.25; emissive:#6a5200; emissiveIntensity:0.35; opacity:0.97');
-      orb.setAttribute('event-set__enter','_event:mouseenter; scale:1.2 1.2 1.2');
-      orb.setAttribute('event-set__leave','_event:mouseleave; scale:1 1 1');
+      orb.setAttribute('material','color:#ffd700; metalness:0.65; roughness:0.25; emissive:#8a6d00; emissiveIntensity:0.35; opacity:0.97');
+
+      // pulse scale
+      orb.setAttribute('animation__pulse','property=scale; to:1.08 1.08 1.08; dir=alternate; dur:1400; easing=easeInOutSine; loop:true');
+      // glow flicker
+      orb.setAttribute('animation__glow','property=material.emissiveIntensity; to:0.65; dir=alternate; dur:1200; easing=easeInOutSine; loop:true');
+
+      // label (smaller, no z-fight)
       const label=document.createElement('a-entity');
-      label.setAttribute('position','0 0.5 0.12');
-      label.setAttribute('text','value:'+title+'; align:center; width:3.2; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
-      ['click','pointerup','mouseup','touchend'].forEach(ev=>{ orb.addEventListener(ev,()=>openURL(url),{passive:true}); label.addEventListener(ev,()=>openURL(url),{passive:true}); });
+      label.setAttribute('position','0 0.48 0.02');
+      label.setAttribute('text','value:'+title+'; align:center; width:2.6; wrapCount:22; color:#ffd700; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
+
+      ['click','pointerup','mouseup','touchend'].forEach(ev=>{
+        orb.addEventListener(ev,()=>openURL(url),{passive:true});
+        label.addEventListener(ev,()=>openURL(url),{passive:true});
+      });
+
       g.appendChild(orb); g.appendChild(label); return g;
     }
 
+    // ring layout — keeps a gap in front so panel never overlaps
     function buildOrbRing(containerId, items, radius = 5.4, y = 1.3) {
       const ring = document.getElementById(containerId);
       ring.innerHTML = '';
-      const n = items.length;
-      if (!n) return;
+      const n = items.length; if (!n) return;
 
       const panelYaw = $('#skinPanel').object3D.rotation.y;
       const FRONT_GAP = THREE.MathUtils.degToRad(70);
       const EDGE = THREE.MathUtils.degToRad(4);
       const TAU = Math.PI * 2;
 
-      const usable = TAU - 2 * FRONT_GAP - 2 * EDGE;
+      const usable = TAU - 2*FRONT_GAP - 2*EDGE;
       const step = usable / n;
-      const start = panelYaw + FRONT_GAP + EDGE + step / 2;
+      const start = panelYaw + FRONT_GAP + EDGE + step/2;
 
-      for (let i = 0; i < n; i++) {
-        const a = start + i * step;
-        const x = Math.cos(a) * radius;
-        const z = -Math.sin(a) * radius;
-        const yaw = Math.atan2(-x, -z) * 180 / Math.PI;
+      for (let i=0;i<n;i++){
+        const a = start + i*step;
+        const x = Math.cos(a)*radius;
+        const z = -Math.sin(a)*radius;
+        const yaw = Math.atan2(-x,-z)*180/Math.PI;
+
         const g = makeOrb(items[i].title, items[i].url);
-        g.setAttribute('position', `${x} ${y} ${z}`);
-        g.setAttribute('rotation', `0 ${yaw} 0`);
+        g.setAttribute('position',`${x} ${y} ${z}`);
+        g.setAttribute('rotation',`0 ${yaw} 0`);
         ring.appendChild(g);
       }
     }
@@ -161,9 +175,7 @@
 
     let usingA = true;
     async function setImageSky(src, name, skinObj){
-      const skyA=$('#skyA'), skyB=$('#skyB');
-      sceneEl.object3D.background = null; sceneEl.object3D.environment = null;
-      applyLights(skinObj);
+      const skyA=$('#skyA'), skyB=$('#skyB'); applyLights(skinObj);
       const front = usingA ? skyB : skyA; const back = usingA ? skyA : skyB;
       if (src) { front.removeAttribute('color'); front.setAttribute('src', src); front.setAttribute('rotation','0 -90 0'); }
       else { front.removeAttribute('src'); front.setAttribute('color', skinObj?.fallback || '#10131a'); }
@@ -171,7 +183,7 @@
       const start=performance.now(), ms=900;
       const fade=(t)=>{ const k=Math.min(1,(t-start)/ms); front.setAttribute('material',`opacity:${k}; transparent:true`); back.setAttribute('material',`opacity:${1-k}; transparent:true`); if(k<1) requestAnimationFrame(fade); else { back.setAttribute('visible',false); usingA=!usingA; } };
       requestAnimationFrame(fade);
-      $('#skinStatus').setAttribute('text',`value:Using 360 image: ${name}; align:center; width:2.4; wrapCount:26; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+      $('#skinStatus').setAttribute('text',`value:Using 360 image: ${name}; align:center; width:2.3; wrapCount:28; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
       setTimeout(()=>{ const mesh=front.getObject3D('mesh'); const r=sceneEl.renderer; if(mesh&&mesh.material&&mesh.material.map&&r){ mesh.material.map.anisotropy=r.capabilities.getMaxAnisotropy(); mesh.material.map.needsUpdate=true; } }, 250);
     }
 
@@ -183,15 +195,15 @@
         const s=SKINS[idx];
 
         const card=document.createElement('a-entity');
-        card.setAttribute('geometry','primitive:plane; width:0.9; height:0.28');
-        card.setAttribute('material','color:#161a22; opacity:0.95');
+        card.setAttribute('geometry','primitive:plane; width:0.90; height:0.26');
+        card.setAttribute('material','color:#161a22; opacity:0.96');
         card.classList.add('clickable');
-        const choose=()=>{ $('#skinStatus').setAttribute('text',`value:Loading: ${s.name} …; align:center; width:2.4; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`); setImageSky(s.img, s.name, s); };
+        const choose=()=>{ $('#skinStatus').setAttribute('text',`value:Loading: ${s.name} …; align:center; width:2.3; color:#a8f0b0; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`); setImageSky(s.img, s.name, s); };
         ['click','pointerdown','touchend'].forEach(ev=>card.addEventListener(ev,choose,{passive:true}));
 
         const label=document.createElement('a-entity');
-        label.setAttribute('position','0 0 0.12');
-        label.setAttribute('text',`value:${s.name}; align:center; width:2.1; wrapCount:14; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
+        label.setAttribute('position','0 0 0.02');               /* anti z-fight */
+        label.setAttribute('text',`value:${s.name}; align:center; width:2.0; wrapCount:16; color:#dfe3ea; shader:msdf; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
         ['click','pointerdown','touchend'].forEach(ev=>label.addEventListener(ev,choose,{passive:true}));
 
         slot.appendChild(card); slot.appendChild(label);
