@@ -8,14 +8,34 @@
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://unpkg.com/aframe-event-set-component@5.0.1/dist/aframe-event-set-component.min.js"></script>
   <style>
-    :root{--gold:#ffd700;--text:#e7e7ea}
+    :root{--gold:#ffd700;--bg:#0b0d13;--text:#e7e7ea}
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    .gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),#000 70%);z-index:10}
-    .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;border:1px solid rgba(255,255,255,.15);border-radius:16px;text-align:center;color:var(--text);box-shadow:0 16px 72px rgba(0,0,0,.6)}
-    .btn{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#2b2500;border:none;border-radius:12px;padding:10px 18px;font-weight:700;cursor:pointer}
+
     .topright{position:fixed;right:16px;top:12px;display:flex;align-items:center;gap:10px;z-index:9}
     .brand{color:var(--gold);font-weight:800;letter-spacing:.6px;text-shadow:0 0 12px rgba(255,215,0,.4)}
     .badge{position:fixed;top:12px;left:12px;color:#bdbdc7;font-size:12px;background:rgba(0,0,0,.45);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);z-index:9}
+
+    /* Entry */
+    .gate{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(1200px 600px at 50% 100%,rgba(255,215,0,.06),#000 70%);z-index:10}
+    .gate-inner{max-width:720px;margin:0 16px;background:rgba(12,12,18,.72);padding:22px;border:1px solid rgba(255,255,255,.15);border-radius:16px;text-align:center;color:var(--text);box-shadow:0 16px 72px rgba(0,0,0,.6)}
+    .btn{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#2b2500;border:none;border-radius:12px;padding:10px 18px;font-weight:700;cursor:pointer}
+
+    /* Modal (for orbs) */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:11}
+    .modal{width:min(540px,92vw);background:rgba(16,18,24,.96);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:18px 18px 14px;color:#e8eaee;box-shadow:0 18px 90px rgba(0,0,0,.6)}
+    .modal h3{margin:4px 0 8px;font-size:18px;color:#ffd76a}
+    .modal p{margin:0 0 12px;color:#cfd3da}
+    .modal .row{display:flex;gap:10px;justify-content:flex-end}
+    .modal .b{padding:9px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04));color:#e7e7ea;font-weight:600;cursor:pointer}
+    .modal .b.primary{background:linear-gradient(180deg,#ffe58a,#e7c138);color:#251e00;border:none}
+
+    /* Mobile HUD “Skins” button near reticle */
+    .skinsHud{position:fixed;left:50%;bottom:68px;transform:translateX(-50%);z-index:8}
+    .chip{background:rgba(0,0,0,.55);backdrop-filter:blur(8px);color:#e8e8ef;border:1px solid rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;font-size:13px}
+
+    /* Label pill behind orb text (fallback when DOM modal hidden) */
+    .pill{background:rgba(12,14,18,.7);border:1px solid rgba(255,255,255,.12);padding:4px 8px;border-radius:10px}
+
   </style>
 </head>
 <body>
@@ -32,9 +52,23 @@
       <h1>Enter Vlife</h1>
       <p>Immersive 360° exploration. Tap “Skins” to switch backgrounds.</p>
       <button class="btn" id="enterBtn" type="button">Enter Experience</button>
-      <p style="margin-top:10px;font-size:12px;opacity:.8;">Gaze at gold orbs to open links.</p>
+      <p style="margin-top:10px;font-size:12px;opacity:.8;">Gaze/click gold orbs to preview links.</p>
     </div>
   </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="linkBackdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3 id="modalTitle">Link</h3>
+      <p id="modalDesc">Open this experience in a new tab?</p>
+      <div class="row">
+        <button class="b" id="modalCancel">Cancel</button>
+        <button class="b primary" id="modalGo">Visit</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="skinsHud"><span class="chip">Tip: use the “Skins” orb to change backgrounds</span></div>
 
   <a-scene id="scene" renderer="antialias:true physicallyCorrectLights:true" background="color:#000">
     <a-assets timeout="30000"></a-assets>
@@ -46,6 +80,7 @@
         <a-entity position="0 0 -1" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.015"
           material="shader:flat; opacity:0.9"></a-entity>
 
+        <!-- Skins mini-orb near reticle -->
         <a-entity id="skinsToggle" position="-0.75 -0.15 -0.85" class="clickable" visible="false">
           <a-entity geometry="primitive:sphere; radius:0.12"
             material="color:#ffd700; emissive:#ffd700; emissiveIntensity:0.5; opacity:0.95"></a-entity>
@@ -55,31 +90,27 @@
       </a-entity>
     </a-entity>
 
-    <!-- twin sky for crossfade -->
+    <!-- double sky for crossfade -->
     <a-sky id="skyA" color="#0b0d13" visible="true"  material="opacity:1; transparent:true"></a-sky>
     <a-sky id="skyB" color="#0b0d13" visible="false" material="opacity:0; transparent:true"></a-sky>
 
-    <!-- Skins panel (smaller, farther, anti z-fight) -->
+    <!-- Skins panel -->
     <a-entity id="skinPanel" position="0 1.5 -3.6" scale="0.95 0.95 0.95" visible="false">
       <a-entity geometry="primitive:plane; width:2.2; height:1.35" material="color:#10131a; opacity:0.96"></a-entity>
-
       <a-entity position="0 0.63 0.03"
         text="value:Choose Background; align:center; width:2.0; wrapCount:24; color:#ffd700; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
-
       <a-entity id="skinStatus" position="0 0.48 0.03"
         text="value:; align:center; width:1.95; wrapCount:26; color:#a8f0b0; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json"></a-entity>
 
-      <!-- 6 slots -->
       <a-entity id="btn0" position="-0.74  0.07 0.03"></a-entity>
       <a-entity id="btn1" position=" 0.00  0.07 0.03"></a-entity>
       <a-entity id="btn2" position=" 0.74  0.07 0.03"></a-entity>
-
       <a-entity id="btn3" position="-0.74 -0.45 0.03"></a-entity>
       <a-entity id="btn4" position=" 0.00 -0.45 0.03"></a-entity>
       <a-entity id="btn5" position=" 0.74 -0.45 0.03"></a-entity>
     </a-entity>
 
-    <!-- external link orbs -->
+    <!-- link orbs ring -->
     <a-entity id="orbRing"></a-entity>
 
     <a-entity id="keyLight" light="type:point; intensity:0.9; distance:12" position="0 3 0"></a-entity>
@@ -90,15 +121,26 @@
     const $ = s => document.querySelector(s);
     const sceneEl = $('#scene');
 
-    // further shrink for small screens
-    function tuneForMobile(){
-      if (window.innerWidth < 760){
-        const p = $('#skinPanel');
-        p.setAttribute('position','0 1.48 -3.9');
-        p.setAttribute('scale','0.88 0.88 0.88');
-      }
-    }
+    // Modal helpers
+    const linkBackdrop = $('#linkBackdrop');
+    const modalTitle = $('#modalTitle');
+    const modalDesc = $('#modalDesc');
+    const modalGo = $('#modalGo');
+    const modalCancel = $('#modalCancel');
+    let pendingURL = null;
 
+    function showModal(title, url, desc='Opens in a new tab'){
+      pendingURL = url;
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+      linkBackdrop.style.display = 'flex';
+    }
+    function hideModal(){ linkBackdrop.style.display = 'none'; pendingURL = null; }
+    modalCancel.onclick = hideModal;
+    modalGo.onclick = () => { if (pendingURL){ window.open(pendingURL,'_blank','noopener'); } hideModal(); };
+    linkBackdrop.addEventListener('click', e => { if (e.target === linkBackdrop) hideModal(); });
+
+    // renderer tweaks
     sceneEl.addEventListener('render-target-loaded', ()=>{
       const r = sceneEl.renderer; if (!r) return;
       r.outputEncoding = THREE.sRGBEncoding;
@@ -109,38 +151,64 @@
     async function getJSON(url){ try{ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch(e){ return null; } }
     let SKINS = [];
 
+    // Links
     const LINKS = [
-      {title:'YouTube VR Channel',  url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
-      {title:'360Cities',           url:'https://www.360cities.net/'},
-      {title:'Meta Quest TV',       url:'https://www.meta.com/quest/tv/'},
-      {title:'AirPano',             url:'https://www.airpano.com/'},
-      {title:'Vimeo 360',           url:'https://vimeo.com/channels/360videos'},
-      {title:'YouTube 360 Playlist',url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O'}
+      {title:'YouTube VR Channel',  url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ', desc:'Official YouTube VR/360 hub.'},
+      {title:'360Cities',           url:'https://www.360cities.net/', desc:'Explore community 360° panoramas.'},
+      {title:'Meta Quest TV',       url:'https://www.meta.com/quest/tv/', desc:'Curated VR video for Quest.'},
+      {title:'AirPano',             url:'https://www.airpano.com/', desc:'High-quality 360° photo tours.'},
+      {title:'Vimeo 360',           url:'https://vimeo.com/channels/360videos', desc:'Artistic 360° videos on Vimeo.'},
+      {title:'YouTube 360 Playlist',url:'https://www.youtube.com/playlist?list=PLU8wpH_LfhmtcxKMb1s46HUz8AVnLiY3O', desc:'Starter 360° playlist.'}
     ];
 
-    function openURL(u){ const a=document.createElement('a'); a.href=u; a.target='_blank'; a.rel='noopener'; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
-
-    // Neon pulse orb
-    function makeOrb(title,url){
+    // Create a high-contrast orb with glow + label
+    function makeOrb(title,url,desc){
       const g=document.createElement('a-entity');
 
+      // soft halo (always faces camera)
+      const halo=document.createElement('a-entity');
+      halo.setAttribute('geometry','primitive:plane; width:1.15; height:1.15');
+      halo.setAttribute('material','color:#ffd700; opacity:0.22; blending:additive; transparent:true; side:double');
+      halo.setAttribute('look-at','#camera');
+      halo.setAttribute('position','0 0 0');
+      halo.setAttribute('animation__pulse','property=material.opacity; to:0.38; dir=alternate; dur:1200; easing=easeInOutSine; loop:true');
+
+      // main bright core
       const orb=document.createElement('a-entity');
       orb.classList.add('clickable');
-      orb.setAttribute('geometry','primitive:sphere; radius:0.25');
-      orb.setAttribute('material','color:#ffd700; metalness:0.65; roughness:0.25; emissive:#8a6d00; emissiveIntensity:0.35; opacity:0.97');
-      orb.setAttribute('animation__pulse','property=scale; to:1.08 1.08 1.08; dir=alternate; dur:1400; easing=easeInOutSine; loop:true');
-      orb.setAttribute('animation__glow','property=material.emissiveIntensity; to:0.65; dir=alternate; dur:1200; easing=easeInOutSine; loop:true');
+      orb.setAttribute('geometry','primitive:sphere; radius:0.26');
+      orb.setAttribute('material','color:#ffd700; metalness:0.55; roughness:0.2; emissive:#e7c23a; emissiveIntensity:0.75; opacity:0.98');
+      orb.setAttribute('animation__breath','property=scale; to:1.09 1.09 1.09; dir=alternate; dur:1500; easing=easeInOutSine; loop:true');
+
+      // slim rim
+      const ring=document.createElement('a-entity');
+      ring.setAttribute('geometry','primitive:torus; radius:0.36; radiusTubular:0.01; segmentsTubular:40');
+      ring.setAttribute('material','color:#fff1a8; emissive:#ffd700; emissiveIntensity:0.7; metalness:0.1; roughness:0.2');
+
+      // readable label (dark pill + text)
+      const labelBg=document.createElement('a-entity');
+      labelBg.setAttribute('geometry','primitive:plane; width:1.8; height:0.33');
+      labelBg.setAttribute('material','color:#0e1218; opacity:0.8; transparent:true');
+      labelBg.setAttribute('position','0 0.55 0.03');
 
       const label=document.createElement('a-entity');
-      label.setAttribute('position','0 0.48 0.03');
-      label.setAttribute('text','value:'+title+'; align:center; width:2.2; wrapCount:22; color:#ffd700; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
+      label.setAttribute('position','0 0.55 0.04');
+      label.setAttribute('text','value:'+title+'; align:center; width:2.0; wrapCount:24; color:#ffd700; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json');
 
+      const open = ()=>showModal(title,url,desc || 'Opens external link');
       ['click','pointerup','mouseup','touchend'].forEach(ev=>{
-        orb.addEventListener(ev,()=>openURL(url),{passive:true});
-        label.addEventListener(ev,()=>openURL(url),{passive:true});
+        orb.addEventListener(ev,open,{passive:true});
+        label.addEventListener(ev,open,{passive:true});
+        labelBg.addEventListener(ev,open,{passive:true});
+        halo.addEventListener(ev,open,{passive:true});
       });
 
-      g.appendChild(orb); g.appendChild(label); return g;
+      g.appendChild(halo);
+      g.appendChild(orb);
+      g.appendChild(ring);
+      g.appendChild(labelBg);
+      g.appendChild(label);
+      return g;
     }
 
     function buildOrbRing(containerId, items, radius = 5.4, y = 1.3) {
@@ -163,7 +231,7 @@
         const z = -Math.sin(a)*radius;
         const yaw = Math.atan2(-x,-z)*180/Math.PI;
 
-        const g = makeOrb(items[i].title, items[i].url);
+        const g = makeOrb(items[i].title, items[i].url, items[i].desc);
         g.setAttribute('position',`${x} ${y} ${z}`);
         g.setAttribute('rotation',`0 ${yaw} 0`);
         ring.appendChild(g);
@@ -205,7 +273,7 @@
         ['click','pointerdown','touchend'].forEach(ev=>card.addEventListener(ev,choose,{passive:true}));
 
         const label=document.createElement('a-entity');
-        label.setAttribute('position','0 0 0.03');          // anti z-fight
+        label.setAttribute('position','0 0 0.03');
         label.setAttribute('text',`value:${s.name}; align:center; width:0.74; wrapCount:14; color:#dfe3ea; shader:msdf; side:front; font:https://cdn.aframe.io/fonts/Roboto-msdf.json`);
         ['click','pointerdown','touchend'].forEach(ev=>label.addEventListener(ev,choose,{passive:true}));
 
@@ -213,12 +281,19 @@
       });
     }
 
+    function tuneForMobile(){
+      if (window.innerWidth < 760){
+        const p = $('#skinPanel');
+        p.setAttribute('position','0 1.48 -3.9');
+        p.setAttribute('scale','0.88 0.88 0.88');
+      }
+    }
+
     async function init(){
       tuneForMobile();
       const media = await getJSON('assets/media.json');
       SKINS = (media && (media.backgrounds || media.skins)) || [];
       buildSkinPanel();
-
       if (SKINS[0]) setImageSky(SKINS[0].img, SKINS[0].name, SKINS[0]);
 
       $('#skinsToggle').setAttribute('visible', true);
