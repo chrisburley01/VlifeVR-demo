@@ -28,23 +28,20 @@
   </div>
   <div class="toast"><div id="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div></div>
 
-  <!-- Brighter renderer -->
   <a-scene renderer="colorManagement:false toneMapping:none sortObjects:true"
            background="color:#000">
     <a-assets id="assets"></a-assets>
 
-    <!-- Camera + cursor -->
+    <!-- Camera + always-on-top cursor -->
     <a-entity id="rig" position="0 0 0">
       <a-entity id="cam" camera look-controls wasd-controls="acceleration:20" position="0 1.6 0"
                 raycaster="objects:.clickable,.orbbtn,.uiclick" cursor="fuse:true; fuseTimeout:900">
-        <!-- cursor halo for contrast -->
         <a-entity id="cursorHalo" position="0 0 -0.76"
                   geometry="primitive:ring; radiusInner:0.016; radiusOuter:0.026"
                   material="shader:flat; color:#000; opacity:.85; transparent:true; depthTest:false"></a-entity>
-        <!-- white cursor on top of everything -->
         <a-entity id="cursorRing" position="0 0 -0.75"
                   geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
-                  material="shader:flat; color:#ffffff; opacity:.98; transparent:false; depthTest:false"></a-entity>
+                  material="shader:flat; color:#fff; opacity:.98; transparent:false; depthTest:false"></a-entity>
       </a-entity>
     </a-entity>
 
@@ -54,22 +51,25 @@
     <!-- ORBS -->
     <a-entity id="orbLayer"></a-entity>
 
-    <!-- BACKGROUND PICKER -->
-    <a-entity id="picker" position="0 1.55 -2.1" visible="true" look-at="#cam">
-      <a-plane width="1.9" height="1.15"
+    <!-- BACKGROUND PICKER (taller + header above buttons) -->
+    <a-entity id="picker" position="0 1.7 -2.3" visible="true" look-at="#cam">
+      <!-- panel taller -->
+      <a-plane width="2.15" height="1.55"
                material="shader:flat; color:#11151c; opacity:0.98; transparent:true; depthTest:false; depthWrite:false"
                position="0 0 0.001"></a-plane>
 
       <!-- Close -->
-      <a-entity id="closePick" class="uiclick clickable" position="0.88 0.52 0.02">
-        <a-circle radius="0.06" material="shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false"></a-circle>
+      <a-entity id="closePick" class="uiclick clickable" position="1.01 0.7 0.02">
+        <a-circle radius="0.065" material="shader:flat; color:#2a3240; opacity:.98; depthTest:false; depthWrite:false"></a-circle>
         <a-entity position="0 0 0.01" text="value:×; width:1; align:center; color:#eaf0ff"></a-entity>
       </a-entity>
 
-      <a-entity position="0 .42 0.02" text="value:Choose Background; width:2.9; align:center; color:#ffb238"></a-entity>
-      <a-entity id="usingTxt" position="0 .28 0.02" text="value:Using 360 image: —; width:2.6; align:center; color:#72e27d"></a-entity>
+      <!-- Title block sits above buttons -->
+      <a-entity position="0 0.63 0.02" text="value:Choose Background; width:3.1; align:center; color:#ffb238"></a-entity>
+      <a-entity id="usingTxt" position="0 0.48 0.02" text="value:Using 360 image: —; width:2.9; align:center; color:#72e27d"></a-entity>
 
-      <a-entity id="btnGrid" position="0 .02 0.03"></a-entity>
+      <!-- Buttons start lower so no overlap -->
+      <a-entity id="btnGrid" position="0 -0.05 0.03"></a-entity>
     </a-entity>
 
     <a-entity light="type:ambient; intensity:0.55"></a-entity>
@@ -98,7 +98,7 @@ const tip = $('#tip');
 let media = null;
 let currentBgIndex = 0;
 
-/* On scene loaded, force cursor to render above UI */
+/* Keep cursor above everything */
 document.querySelector('a-scene').addEventListener('loaded', ()=>{
   const halo = document.querySelector('#cursorHalo').object3D;
   const ring = document.querySelector('#cursorRing').object3D;
@@ -122,7 +122,7 @@ fetch('assets/media.json')
 function buildPickerButtons(list){
   btnGrid.innerHTML = '';
   const cols = 2;
-  const w = 1.6, h = .28, gapY = .08;
+  const w = 1.8, h = .28, gapY = .1;
   const rows = Math.ceil(list.length / cols);
 
   for(let i=0;i<list.length;i++){
@@ -145,7 +145,7 @@ function buildPickerButtons(list){
     holder.appendChild(btn);
 
     const label = document.createElement('a-entity');
-    label.setAttribute('text', `value:${bg.name}; width:1.45; align:center; color:#e7efff`);
+    label.setAttribute('text', `value:${bg.name}; width:1.6; align:center; color:#e7efff`);
     label.setAttribute('position','0 0 0.01');
     label.setAttribute('class','uiclick clickable');
     holder.appendChild(label);
@@ -158,7 +158,7 @@ function buildPickerButtons(list){
 function applyBackground(i){
   currentBgIndex = i;
   const bg = media.backgrounds[i];
-  usingTxt.setAttribute('text', `value:Using 360 image: ${bg.name}; width:2.4; align:center; color:#72e27d`);
+  usingTxt.setAttribute('text', `value:Using 360 image: ${bg.name}; width:2.8; align:center; color:#72e27d`);
 
   const prev = $('#assets img[data-dyn="1"]');
   if(prev) prev.parentNode.removeChild(prev);
@@ -187,9 +187,10 @@ function buildOrbs(){
     ...EXTRA_ORBS
   ];
 
-  const R = 2.6;
-  const y = 1.15;
-  const spread = Math.PI * 1.2;
+  /* push orbs much farther out & slightly lower */
+  const R = 4.8;          // increased from 2.6 (≈ double distance)
+  const y = 1.05;
+  const spread = Math.PI * 1.35;  // a bit wider fan for more spacing
   const start = -spread/2;
 
   defs.forEach((def, idx) => {
@@ -198,7 +199,7 @@ function buildOrbs(){
     const z = -Math.cos(t) * R;
 
     const halo = document.createElement('a-circle');
-    halo.setAttribute('radius','0.28');
+    halo.setAttribute('radius','0.30');
     halo.setAttribute('position', `${x} ${y} ${z+0.001}`);
     halo.setAttribute('material','shader:flat; color:#000000; opacity:.35; transparent:true; depthTest:false; depthWrite:false');
     halo.setAttribute('look-at','#cam');
@@ -207,21 +208,21 @@ function buildOrbs(){
     const orb = document.createElement('a-sphere');
     orb.setAttribute('class','orbbtn clickable');
     orb.setAttribute('position', `${x} ${y} ${z}`);
-    orb.setAttribute('radius', '0.22');
+    orb.setAttribute('radius', '0.24');
     orb.setAttribute('material', 'shader:flat; color:#ffd84a; emissive:#b38500; metalness:0; roughness:.15');
     orb.addEventListener('click', () => handleOrb(def));
     orbLayer.appendChild(orb);
 
     const plate = document.createElement('a-plane');
-    plate.setAttribute('width','1.1'); plate.setAttribute('height','0.26');
-    plate.setAttribute('position', `${x} ${y+.39} ${z+0.001}`);
+    plate.setAttribute('width','1.15'); plate.setAttribute('height','0.28');
+    plate.setAttribute('position', `${x} ${y+.41} ${z+0.001}`);
     plate.setAttribute('material','shader:flat; color:#0f1319; opacity:.75; transparent:true; depthTest:false; depthWrite:false');
     plate.setAttribute('look-at','#cam');
     orbLayer.appendChild(plate);
 
     const label = document.createElement('a-entity');
-    label.setAttribute('text', `value:${def.name}; width:1.5; align:center; color:#ffd27a`);
-    label.setAttribute('position', `${x} ${y+.39} ${z+0.002}`);
+    label.setAttribute('text', `value:${def.name}; width:1.6; align:center; color:#ffd27a`);
+    label.setAttribute('position', `${x} ${y+.41} ${z+0.002}`);
     label.setAttribute('look-at','#cam');
     orbLayer.appendChild(label);
   });
@@ -254,7 +255,7 @@ function openLinkPanel(title, url){
 
   const p = document.createElement('a-entity');
   p.id = 'linkPanel';
-  p.setAttribute('position','0 1.5 -2.05');
+  p.setAttribute('position','0 1.55 -2.25');
   p.setAttribute('look-at','#cam');
 
   const bg = document.createElement('a-plane');
@@ -315,7 +316,7 @@ function showInfo(head, body){
 
   const p = document.createElement('a-entity');
   p.id = 'helpPanel';
-  p.setAttribute('position','0 1.52 -2.05');
+  p.setAttribute('position','0 1.58 -2.25');
   p.setAttribute('look-at','#cam');
 
   const bg = document.createElement('a-plane');
