@@ -1,29 +1,347 @@
-{
-  "backgrounds": [
-    {
-      "name": "Park Steps 360",
-      "img": "assets/Park360.jpg",
-      "fallback": "#121a12"
-    },
-    {
-      "name": "Forest 360",
-      "img": "assets/Forrest360.jpg",
-      "fallback": "#0f1a12"
-    },
-    {
-      "name": "Future City 360",
-      "img": "assets/Futurecity360.jpg",
-      "fallback": "#0b0e18"
-    },
-    {
-      "name": "Neon Nightclub 360",
-      "img": "assets/Neonnightclub.jpg",
-      "fallback": "#101018"
-    },
-    {
-      "name": "Floating Sky Monastery 8K",
-      "img": "assets/floating_sky_monastery_upscaled_8k.jpg",
-      "fallback": "#0f1015"
-    }
-  ]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Vlife – Hybrid VR MVP</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png"/>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+  <style>
+    :root { --gold:#ffd84a; --bg:#0b0f10; --text:#e8eaf0; }
+    html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .brand { position:fixed; top:14px; right:18px; display:flex; gap:8px; align-items:center; z-index:9 }
+    .brand img{width:32px;height:32px;border-radius:8px;object-fit:contain; box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
+    .brand b{color:#ffe58a;text-shadow:0 0 10px rgba(255,215,0,.45); letter-spacing:.5px}
+    .pill{ position:fixed; top:16px; left:16px; color:#cfd2da; font-weight:600; background:rgba(0,0,0,.55);
+           border:1px solid rgba(255,255,255,.14); padding:8px 12px; border-radius:12px; z-index:9 }
+    .toast{ position:fixed; left:16px; right:16px; bottom:18px; z-index:9; display:flex; justify-content:center }
+    .toast > div{ max-width:720px; width:100%; color:#e9eef6; background:rgba(0,0,0,.55);
+                  border:1px solid rgba(255,255,255,.14); padding:12px 14px; border-radius:12px; }
+  </style>
+</head>
+<body>
+  <div class="pill">Hybrid VR MVP · 360° / HDR</div>
+  <div class="brand">
+    <img src="assets/Vlifelogo_1_.png" alt="VLIFE"/>
+    <b>VLIFE</b>
+  </div>
+  <div class="toast"><div id="tip">Tip: look at the <b>Skins</b> orb to change backgrounds. Gaze at gold orbs to open previews.</div></div>
+
+  <!-- Brighter renderer: disable color management & bias exposure upward -->
+  <a-scene renderer="colorManagement:false toneMapping:none sortObjects:true"
+           background="color:#000">
+    <a-assets id="assets"></a-assets>
+
+    <!-- Camera + cursor -->
+    <a-entity id="rig" position="0 0 0">
+      <a-entity id="cam" camera look-controls wasd-controls="acceleration:20" position="0 1.6 0"
+                raycaster="objects:.clickable,.orbbtn,.uiclick" cursor="fuse:true; fuseTimeout:900">
+        <a-entity position="0 0 -0.8" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
+                  material="color:#fff; shader:flat; opacity:.95"></a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- SKY for 360 images (unlit so images are full brightness) -->
+    <a-sky id="sky" rotation="0 0 0" material="shader:flat; side:double; color:#000"></a-sky>
+
+    <!-- ORBS (JS builds them) -->
+    <a-entity id="orbLayer"></a-entity>
+
+    <!-- BACKGROUND PICKER PANEL -->
+    <a-entity id="picker" position="0 1.55 -2.1" visible="true" look-at="#cam">
+      <a-plane width="1.9" height="1.15"
+               material="shader:flat; color:#11151c; opacity:0.98; transparent:true; depthTest:false"
+               position="0 0 0.001"></a-plane>
+
+      <!-- Close button (explicit; no auto-hide) -->
+      <a-entity id="closePick" class="uiclick clickable" position="0.88 0.52 0.02">
+        <a-circle radius="0.06" material="shader:flat; color:#2a3240; opacity:.98; depthTest:false"></a-circle>
+        <a-entity position="0 0 0.01" text="value:×; width:1; align:center; color:#eaf0ff"></a-entity>
+      </a-entity>
+
+      <a-entity position="0 .42 0.02" text="value:Choose Background; width:2.9; align:center; color:#ffb238"></a-entity>
+      <a-entity id="usingTxt" position="0 .28 0.02" text="value:Using 360 image: —; width:2.6; align:center; color:#72e27d"></a-entity>
+
+      <a-entity id="btnGrid" position="0 .02 0.03"></a-entity>
+    </a-entity>
+
+    <!-- subtle ambient light (for orbs/labels only; sky is unlit) -->
+    <a-entity light="type:ambient; intensity:0.55"></a-entity>
+  </a-scene>
+
+<script>
+/* --------------------------- CONFIG --------------------------- */
+const LINKS = [
+  {name:'YouTube VR Channel', url:'https://m.youtube.com/channel/UCzuqhhs6NWbgTzMuM09WKDQ'},
+  {name:'Meta Quest TV',      url:'https://www.meta.com/experiences/quest-tv/'},
+  {name:'360Cities',          url:'https://www.360cities.net/'}
+];
+const EXTRA_ORBS = [
+  {name:'Reset', type:'reset'},
+  {name:'Help',  type:'help'}
+];
+/* -------------------------------------------------------------- */
+
+const $ = s => document.querySelector(s);
+const sky = $('#sky');
+const btnGrid = $('#btnGrid');
+const usingTxt = $('#usingTxt');
+const orbLayer = $('#orbLayer');
+const tip = $('#tip');
+
+let media = null;
+let currentBgIndex = 0;
+
+/* load media.json */
+fetch('assets/media.json')
+  .then(r => r.json())
+  .then(data => {
+    media = data;
+    buildPickerButtons(media.backgrounds);
+    applyBackground(0);        // default first bg
+    buildOrbs();               // 6 orbs
+    // explicit close
+    $('#closePick').addEventListener('click', ()=> $('#picker').setAttribute('visible', false));
+  })
+  .catch(err => console.error('media.json load error', err));
+
+/* --------- BACKGROUND PICKER ---------- */
+function buildPickerButtons(list){
+  btnGrid.innerHTML = '';
+  const cols = 2;
+  const w = 1.6, h = .28, gapY = .08;
+  const rows = Math.ceil(list.length / cols);
+
+  for(let i=0;i<list.length;i++){
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = (col===0 ? -w/4 : w/4);
+    const y = ((rows-1)/2 - row) * (h + gapY);
+
+    const bg = list[i];
+
+    const holder = document.createElement('a-entity');
+    holder.setAttribute('position', `${x} ${y} 0`);
+    holder.setAttribute('class','uiclick clickable');
+
+    const btn = document.createElement('a-plane');
+    btn.setAttribute('width', w/2);
+    btn.setAttribute('height', h);
+    btn.setAttribute('material','shader:flat; color:#1b212c; opacity:.99; transparent:true; depthTest:false');
+    btn.setAttribute('class','uiclick clickable');
+    holder.appendChild(btn);
+
+    const label = document.createElement('a-entity');
+    label.setAttribute('text', `value:${bg.name}; width:1.45; align:center; color:#e7efff`);
+    label.setAttribute('position','0 0 0.01');
+    label.setAttribute('class','uiclick clickable');
+    holder.appendChild(label);
+
+    // keep panel OPEN after switching (so you can tap multiple backgrounds quickly)
+    holder.addEventListener('click', (ev) => { ev.stopPropagation(); applyBackground(i); });
+    btnGrid.appendChild(holder);
+  }
 }
+
+function applyBackground(i){
+  currentBgIndex = i;
+  const bg = media.backgrounds[i];
+  usingTxt.setAttribute('text', `value:Using 360 image: ${bg.name}; width:2.4; align:center; color:#72e27d`);
+
+  // remove old <img> if any
+  const prev = $('#assets img[data-dyn="1"]');
+  if(prev) prev.parentNode.removeChild(prev);
+
+  // preload + set sky
+  const img = document.createElement('img');
+  img.setAttribute('crossorigin','anonymous');
+  img.setAttribute('data-dyn','1');
+  img.id = 'bgtex';
+  img.src = bg.img;
+  img.onload = () => {
+    sky.setAttribute('src', '#bgtex');
+    sky.setAttribute('color', '#ffffff'); // ensure full bright
+  };
+  $('#assets').appendChild(img);
+
+  // fallback while loading
+  sky.removeAttribute('src');
+  sky.setAttribute('color', bg.fallback || '#000');
+}
+
+/* ------------------ ORBS ------------------- */
+function buildOrbs(){
+  orbLayer.innerHTML = '';
+  const defs = [
+    {name:'Skins', type:'skins'},
+    ...LINKS.map(l => ({name:l.name, url:l.url, type:'link'})),
+    ...EXTRA_ORBS
+  ]; // 6 orbs
+
+  const R = 2.6;            // a bit further out
+  const y = 1.15;           // slightly higher
+  const spread = Math.PI * 1.2;   // 216° arc
+  const start = -spread/2;
+
+  defs.forEach((def, idx) => {
+    const t = start + (idx * (spread/(defs.length-1)));
+    const x = Math.sin(t) * R;
+    const z = -Math.cos(t) * R;
+
+    // glow halo (billboard) to help visibility on busy backgrounds
+    const halo = document.createElement('a-circle');
+    halo.setAttribute('radius','0.28');
+    halo.setAttribute('position', `${x} ${y} ${z+0.001}`);
+    halo.setAttribute('material','shader:flat; color:#000000; opacity:.35; transparent:true; depthTest:false');
+    halo.setAttribute('look-at','#cam');
+    orbLayer.appendChild(halo);
+
+    // main sphere
+    const orb = document.createElement('a-sphere');
+    orb.setAttribute('class','orbbtn clickable');
+    orb.setAttribute('position', `${x} ${y} ${z}`);
+    orb.setAttribute('radius', '0.22');
+    orb.setAttribute('material', 'shader:flat; color:#ffd84a; emissive:#b38500; metalness:0; roughness:.15');
+    orb.addEventListener('click', () => handleOrb(def));
+    orbLayer.appendChild(orb);
+
+    // label (with dark plate for contrast)
+    const plate = document.createElement('a-plane');
+    plate.setAttribute('width','1.1'); plate.setAttribute('height','0.26');
+    plate.setAttribute('position', `${x} ${y+.39} ${z+0.001}`);
+    plate.setAttribute('material','shader:flat; color:#0f1319; opacity:.75; transparent:true; depthTest:false');
+    plate.setAttribute('look-at','#cam');
+    orbLayer.appendChild(plate);
+
+    const label = document.createElement('a-entity');
+    label.setAttribute('text', `value:${def.name}; width:1.5; align:center; color:#ffd27a`);
+    label.setAttribute('position', `${x} ${y+.39} ${z+0.002}`);
+    label.setAttribute('look-at','#cam');
+    orbLayer.appendChild(label);
+  });
+}
+
+function handleOrb(def){
+  if(def.type === 'skins'){
+    $('#picker').setAttribute('visible', true);
+    tip.innerHTML = 'Choose a background above. Use the × to close.';
+    return;
+  }
+  if(def.type === 'reset'){
+    applyBackground(0);
+    tip.innerHTML = 'Reset to default background.';
+    return;
+  }
+  if(def.type === 'help'){
+    showInfo('How to use', 'Gaze at gold orbs to open actions. Use the Skins orb to change the 360° background. Tap the × on any panel to close it.');
+    return;
+  }
+  if(def.type === 'link' && def.url){
+    openLinkPanel(def.name, def.url);
+  }
+}
+
+/* --------------- PANELS (links/help) ---------------- */
+function openLinkPanel(title, url){
+  const old = document.querySelector('#linkPanel');
+  if(old) old.parentNode.removeChild(old);
+
+  const p = document.createElement('a-entity');
+  p.id = 'linkPanel';
+  p.setAttribute('position','0 1.5 -2.05');
+  p.setAttribute('look-at','#cam');
+
+  const bg = document.createElement('a-plane');
+  bg.setAttribute('width','1.9'); bg.setAttribute('height','0.95');
+  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false');
+  p.appendChild(bg);
+
+  // close
+  const close = document.createElement('a-entity');
+  close.setAttribute('position','0.9 0.43 0.02'); close.setAttribute('class','uiclick clickable');
+  const c1 = document.createElement('a-circle'); c1.setAttribute('radius','0.06');
+  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false');
+  const c2 = document.createElement('a-entity');
+  c2.setAttribute('position','0 0 0.01'); c2.setAttribute('text','value:×; width:1; align:center; color:#eaf0ff');
+  close.appendChild(c1); close.appendChild(c2);
+  close.addEventListener('click', ()=>p.parentNode.removeChild(p));
+  p.appendChild(close);
+
+  const tt = document.createElement('a-entity');
+  tt.setAttribute('text', `value:${title}; width:2.6; align:center; color:#ffb238`);
+  tt.setAttribute('position','0 .28 0.01');
+  p.appendChild(tt);
+
+  const urlTxt = document.createElement('a-entity');
+  urlTxt.setAttribute('text', `value:${url}; width:2.2; align:center; color:#cfe1ff`);
+  urlTxt.setAttribute('position','0 .12 0.01');
+  p.appendChild(urlTxt);
+
+  // buttons
+  const btns = [
+    {label:'Open in new tab', action: ()=>window.open(url,'_blank')},
+    {label:'Close', action: ()=>p.parentNode.removeChild(p)}
+  ];
+  btns.forEach((b,i)=>{
+    const holder = document.createElement('a-entity');
+    holder.setAttribute('position', `${i===0?-0.45:0.45} -0.2 0.02`);
+    holder.setAttribute('class','uiclick clickable');
+
+    const btn = document.createElement('a-plane');
+    btn.setAttribute('width','.95'); btn.setAttribute('height','.24');
+    btn.setAttribute('material','shader:flat; color:#222833; opacity:.98; transparent:true; depthTest:false');
+    btn.setAttribute('class','uiclick clickable');
+    holder.appendChild(btn);
+
+    const lab = document.createElement('a-entity');
+    lab.setAttribute('text', `value:${b.label}; width:1.5; align:center; color:#e8f0ff`);
+    lab.setAttribute('position','0 0 0.01'); lab.setAttribute('class','uiclick clickable');
+    holder.appendChild(lab);
+
+    holder.addEventListener('click', b.action);
+    p.appendChild(holder);
+  });
+
+  document.querySelector('a-scene').appendChild(p);
+}
+
+function showInfo(head, body){
+  const old = document.querySelector('#helpPanel');
+  if(old) old.parentNode.removeChild(old);
+
+  const p = document.createElement('a-entity');
+  p.id = 'helpPanel';
+  p.setAttribute('position','0 1.52 -2.05');
+  p.setAttribute('look-at','#cam');
+
+  const bg = document.createElement('a-plane');
+  bg.setAttribute('width','1.9'); bg.setAttribute('height','0.85');
+  bg.setAttribute('material','shader:flat; color:#11151c; opacity:.98; transparent:true; depthTest:false');
+  p.appendChild(bg);
+
+  const close = document.createElement('a-entity');
+  close.setAttribute('position','0.9 0.39 0.02'); close.setAttribute('class','uiclick clickable');
+  const c1 = document.createElement('a-circle'); c1.setAttribute('radius','0.06');
+  c1.setAttribute('material','shader:flat; color:#2a3240; opacity:.98; depthTest:false');
+  const c2 = document.createElement('a-entity');
+  c2.setAttribute('position','0 0 0.01'); c2.setAttribute('text','value:×; width:1; align:center; color:#eaf0ff');
+  close.appendChild(c1); close.appendChild(c2);
+  close.addEventListener('click', ()=>p.parentNode.removeChild(p));
+  p.appendChild(close);
+
+  const tt = document.createElement('a-entity');
+  tt.setAttribute('text', `value:${head}; width:2.6; align:center; color:#ffb238`);
+  tt.setAttribute('position','0 .25 0.01');
+  p.appendChild(tt);
+
+  const bodyEnt = document.createElement('a-entity');
+  bodyEnt.setAttribute('text', `value:${body}; width:1.7; align:center; color:#d9e6ff; wrapCount:38`);
+  bodyEnt.setAttribute('position','0 .02 0.01');
+  p.appendChild(bodyEnt);
+
+  document.querySelector('a-scene').appendChild(p);
+}
+</script>
+</body>
+</html>
