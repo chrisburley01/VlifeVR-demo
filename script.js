@@ -1,7 +1,6 @@
 /* ---- Orb + Billboard components ---- */
 AFRAME.registerComponent('orb', {
   init: function () {
-    // nice big hitbox for raycaster
     this.el.setAttribute('geometry', 'primitive: sphere; radius: 0.2');
     this.el.setAttribute('material', 'color: #ffd100; emissive: #ffd100; emissiveIntensity: 0.95; metalness: 0.1; roughness: 0.4');
     this.el.setAttribute('animation__pulse', 'property: scale; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true; to: 1.35 1.35 1.35');
@@ -9,6 +8,7 @@ AFRAME.registerComponent('orb', {
     this.el.addEventListener('mouseleave', () => this.el.object3D.scale.set(1,1,1));
   }
 });
+
 AFRAME.registerComponent('billboard', {
   tick: function () {
     const cam = this.cam || (this.cam = document.querySelector('a-camera'));
@@ -17,7 +17,7 @@ AFRAME.registerComponent('billboard', {
   }
 });
 
-/* ---- 6 demo 360 video links (override via assets/links.json if you like) ---- */
+/* ---- 6 demo 360 video links (override via assets/links.json) ---- */
 let ORB_LINKS = [
   { title: 'YouTube 360',                 url: 'https://www.youtube.com/360' },
   { title: 'Vimeo 360',                   url: 'https://vimeo.com/360' },
@@ -58,43 +58,57 @@ function toggleMenu() {
 window.setBackground = setBackground;
 window.toggleMenu = toggleMenu;
 
-/* ---- Turn an orb into its own link panel (morph) ---- */
+/* ---------- Orb → Floating Panel (raised above orb) ---------- */
+
 function expandOrbToPanel(orbEl, link) {
-  // store original state so we can restore
+  // save original state to restore later
   if (!orbEl.__vlifeOriginal) {
     orbEl.__vlifeOriginal = {
       geom: orbEl.getAttribute('geometry'),
       mat: orbEl.getAttribute('material'),
-      scale: orbEl.getAttribute('scale') || '1 1 1'
+      scale: orbEl.getAttribute('scale') || '1 1 1',
+      pos: Object.assign({}, orbEl.getAttribute('position'))
     };
   }
 
-  // clear children (if any)
+  // lift the whole orb entity upwards so panel sits "above" it
+  const lift = 0.55; // metres above original
+  const p = orbEl.__vlifeOriginal.pos;
+  orbEl.setAttribute('position', `${p.x} ${p.y + lift} ${p.z}`);
+
+  // clear old children (if any)
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
 
-  // make the orb itself a little pedestal plane with content
-  orbEl.setAttribute('geometry', 'primitive: plane; width: 1.1; height: 0.5');
-  orbEl.setAttribute('material', 'color: #000; opacity: 0.8; transparent: true');
-  orbEl.setAttribute('scale', '1 1 1');
+  // convert to panel
+  const panelW = 1.05, panelH = 0.42;
+  orbEl.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: ${panelH}`);
+  orbEl.setAttribute('material', 'color: #000; opacity: 0.80; transparent: true');
 
-  // title
+  // header strip
+  const header = document.createElement('a-entity');
+  header.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: 0.08`);
+  header.setAttribute('material', 'color: #ffd100; opacity: 0.95');
+  header.setAttribute('position', `0 ${panelH/2 - 0.04} 0.01`);
+  orbEl.appendChild(header);
+
+  // title on header
   const title = document.createElement('a-entity');
-  title.setAttribute('text', `value: ${link.title}; align: center; color: #ffd100; width: 2`);
-  title.setAttribute('position', '0 0.15 0.01');
+  title.setAttribute('text', `value: ${link.title}; align: center; color: #111; width: 2`);
+  title.setAttribute('position', '0 ' + (panelH/2 - 0.04) + ' 0.02');
   orbEl.appendChild(title);
 
-  // url (wrapped)
+  // url text
   const url = document.createElement('a-entity');
-  url.setAttribute('text', `value: ${link.url}; align: center; color: #fff; width: 1.9; wrapCount: 28`);
-  url.setAttribute('position', '0 0.02 0.01');
+  url.setAttribute('text', `value: ${link.url}; align: center; color: #fff; width: 1.7; wrapCount: 26`);
+  url.setAttribute('position', '0 0.03 0.02');
   orbEl.appendChild(url);
 
   // open button
   const openBtn = document.createElement('a-entity');
   openBtn.setAttribute('class', 'linkbtn');
-  openBtn.setAttribute('geometry', 'primitive: plane; width: 0.45; height: 0.16');
+  openBtn.setAttribute('geometry', 'primitive: plane; width: 0.44; height: 0.16');
   openBtn.setAttribute('material', 'color: #0f2353; opacity: 0.95');
-  openBtn.setAttribute('position', '0 -0.16 0.02');
+  openBtn.setAttribute('position', '0 -0.13 0.02');
   const label = document.createElement('a-entity');
   label.setAttribute('text', 'value: Open; align: center; color: #fff; width: 1');
   label.setAttribute('position', '0 0 0.01');
@@ -104,34 +118,37 @@ function expandOrbToPanel(orbEl, link) {
   });
   orbEl.appendChild(openBtn);
 
-  // close to revert
+  // close (top-right)
   const closeBtn = document.createElement('a-entity');
   closeBtn.setAttribute('class', 'linkbtn');
-  closeBtn.setAttribute('text', 'value: ✕; align: center; color: #fff; width: 1');
-  closeBtn.setAttribute('position', '0.52 0.22 0.03');
+  closeBtn.setAttribute('geometry', 'primitive: plane; width: 0.12; height: 0.12');
+  closeBtn.setAttribute('material', 'color: #000; opacity: 0.001; transparent: true'); // invisible hit area
+  closeBtn.setAttribute('position', (panelW/2 - 0.08) + ' ' + (panelH/2 - 0.08) + ' 0.03');
+  const closeGlyph = document.createElement('a-entity');
+  closeGlyph.setAttribute('text', 'value: ✕; align: center; color: #fff; width: 1.2');
+  closeGlyph.setAttribute('position', '0 0 0.01');
+  closeBtn.appendChild(closeGlyph);
   closeBtn.addEventListener('click', () => restoreOrb(orbEl));
   orbEl.appendChild(closeBtn);
 }
 
 function restoreOrb(orbEl) {
   if (!orbEl.__vlifeOriginal) return;
-  // remove children (panel bits)
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
-  // restore sphere
   orbEl.setAttribute('geometry', orbEl.__vlifeOriginal.geom);
   orbEl.setAttribute('material', orbEl.__vlifeOriginal.mat);
   orbEl.setAttribute('scale', orbEl.__vlifeOriginal.scale);
+  const p = orbEl.__vlifeOriginal.pos;
+  orbEl.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
 }
 
-/* ---- Bind gaze+tap to each orb (after scene is loaded) ---- */
+/* ---- Bind gaze+tap to each orb ---- */
 function bindOrbEvents() {
   const orbs = document.querySelectorAll('.hotspot');
   orbs.forEach((el) => {
     const idx = parseInt(el.getAttribute('data-key') || '0', 10);
     const link = ORB_LINKS[Math.max(0, Math.min(5, idx))] || ORB_LINKS[0];
-
-    // click fires after gaze fuse OR mouse/tap
-    el.addEventListener('click', () => expandOrbToPanel(el, link));
+    el.addEventListener('click', () => expandOrbToPanel(el, link)); // fires after gaze fuse OR tap
   });
 }
 
