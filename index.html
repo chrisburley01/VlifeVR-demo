@@ -6,18 +6,19 @@
   <title>VLife 360 Experience</title>
   <link rel="icon" href="assets/Vlifelogo_1_.png" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=5" />
 </head>
 <body>
+  <!-- Logo -->
   <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
 
-  <!-- Hamburger (appears after first pick) -->
+  <!-- Hamburger (menu + links) -->
   <button id="hamburger" aria-label="Open menu" class="hidden" onclick="toggleMenu()">☰</button>
 
-  <!-- Menu -->
+  <!-- Overlay menu -->
   <div id="menuPanel">
     <h2>Choose Background</h2>
-    <div class="status" id="statusText">Using 360 image: Forest 360</div>
+    <div class="status" id="statusText">Using 360 image: Park 360</div>
 
     <div class="btn-row">
       <button class="btn" onclick="setBackground('Park360')">Park Steps 360</button>
@@ -28,11 +29,15 @@
       <button class="btn" onclick="setBackground('Neonnightclub')">Neon Nightclub 360</button>
     </div>
     <div class="btn-row">
-      <button class="btn" onclick="setBackground('floating_sky_monastery_upscaled_8')">Floating Sky Monastery 8K</button>
+      <button class="btn" onclick="setBackground('floating_sky_monastery_upscaled_8k')">Floating Sky Monastery 8K</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn outline" onclick="toggleLinksBoard()">🔗 Show Links Board</button>
     </div>
   </div>
 
-  <!-- AR/VR -->
+  <!-- AR/VR buttons -->
   <div class="mode-buttons">
     <button onclick="enterAR()">AR</button>
     <button onclick="enterVR()">VR</button>
@@ -41,34 +46,42 @@
   <!-- Scene -->
   <a-scene id="scene" embedded vr-mode-ui="enabled: true" loading-screen="enabled: false">
     <a-assets>
-      <!-- ⚠️ use exact filenames you already have (case-sensitive) -->
+      <!-- match your filenames (case-sensitive) -->
       <img id="Park360" src="assets/Park360.jpg" />
       <img id="Forrest360" src="assets/Forrest360.jpg" />
       <img id="Futurecity360" src="assets/Futurecity360.jpg" />
       <img id="Neonnightclub" src="assets/Neonnightclub.jpg" />
-      <img id="floating_sky_monastery_upscaled_8" src="assets/floating_sky_monastery_upscaled_8.jpg" />
+      <img id="floating_sky_monastery_upscaled_8k" src="assets/floating_sky_monastery_upscaled_8k.jpg" />
     </a-assets>
 
-    <!-- camera + cursor -->
+    <!-- Camera + cursor -->
     <a-entity id="rig" position="0 1.6 0">
       <a-camera wasd-controls-enabled="false">
-        <a-cursor id="cursor" raycaster="objects: .hotspot" fuse="false"></a-cursor>
+        <a-cursor id="cursor" raycaster="objects: .hotspot, .linkbtn" fuse="false"></a-cursor>
       </a-camera>
     </a-entity>
 
-    <a-sky id="sky" src="#Forrest360" rotation="0 -90 0" radius="5000"></a-sky>
+    <!-- Sky -->
+    <a-sky id="sky" src="#Park360" rotation="0 -90 0" radius="5000"></a-sky>
 
-    <!-- ORB RING (6 orbs) -->
+    <!-- ORB ring (6) -->
     <a-entity id="orb-ring">
       <a-entity class="hotspot" orb billboard data-bg="Park360"       position=" 3 1.6  0"></a-entity>
       <a-entity class="hotspot" orb billboard data-bg="Forrest360"    position=" 1.5 1.6  2.598"></a-entity>
       <a-entity class="hotspot" orb billboard data-bg="Futurecity360" position="-1.5 1.6  2.598"></a-entity>
       <a-entity class="hotspot" orb billboard data-bg="Neonnightclub" position="-3 1.6  0"></a-entity>
-      <a-entity class="hotspot" orb billboard data-bg="floating_sky_monastery_upscaled_8" position="-1.5 1.6 -2.598"></a-entity>
+      <a-entity class="hotspot" orb billboard data-bg="floating_sky_monastery_upscaled_8k" position="-1.5 1.6 -2.598"></a-entity>
       <a-entity class="hotspot" orb billboard data-bg="Park360"       position=" 1.5 1.6 -2.598"></a-entity>
+    </a-entity>
+
+    <!-- 🔳 In-world LINKS BOARD (spawned at runtime from assets/media.json) -->
+    <a-entity id="linksBoard"
+      position="0 1.6 -2"
+      visible="false"
+      link-board="src: assets/media.json; width: 1.4; rowHeight: 0.18; maxRows: 7">
     </a-entity>
   </a-scene>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=5"></script>
 </body>
 </html>
