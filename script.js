@@ -1,3 +1,7 @@
+/* ===== Config ===== */
+const AUTO_CLOSE_MS = 8000;      // auto-close after 8 seconds
+const LOOK_AWAY_GRACE_MS = 1200; // how long you can look away before closing
+
 /* ---- Orb + Billboard components ---- */
 AFRAME.registerComponent('orb', {
   init: function () {
@@ -8,7 +12,6 @@ AFRAME.registerComponent('orb', {
     this.el.addEventListener('mouseleave', () => this.el.object3D.scale.set(1,1,1));
   }
 });
-
 AFRAME.registerComponent('billboard', {
   tick: function () {
     const cam = this.cam || (this.cam = document.querySelector('a-camera'));
@@ -17,14 +20,14 @@ AFRAME.registerComponent('billboard', {
   }
 });
 
-/* ---- 6 demo 360 video links (override via assets/links.json) ---- */
+/* ---- Demo links (override via assets/links.json) ---- */
 let ORB_LINKS = [
-  { title: 'YouTube 360',                 url: 'https://www.youtube.com/360' },
-  { title: 'Vimeo 360',                   url: 'https://vimeo.com/360' },
-  { title: 'AirPano 360 Videos',          url: 'https://www.airpano.com/video/' },
-  { title: 'National Geographic 360',     url: 'https://www.youtube.com/playlist?list=PLivjPDlt6ApQUgZgY2hLpcZ3g4Zz4icZT' },
-  { title: 'NYT – The Daily 360',         url: 'https://www.nytimes.com/spotlight/the-daily-360' },
-  { title: 'GoPro 360 (YouTube)',         url: 'https://www.youtube.com/@GoPro/search?query=360' }
+  { title: 'YouTube 360',             url: 'https://www.youtube.com/360' },
+  { title: 'Vimeo 360',               url: 'https://vimeo.com/360' },
+  { title: 'AirPano 360 Videos',      url: 'https://www.airpano.com/video/' },
+  { title: 'National Geographic 360', url: 'https://www.youtube.com/playlist?list=PLivjPDlt6ApQUgZgY2hLpcZ3g4Zz4icZT' },
+  { title: 'NYT – The Daily 360',     url: 'https://www.nytimes.com/spotlight/the-daily-360' },
+  { title: 'GoPro 360 (YouTube)',     url: 'https://www.youtube.com/@GoPro/search?query=360' }
 ];
 fetch('assets/links.json')
   .then(r => r.ok ? r.json() : Promise.reject())
@@ -58,10 +61,10 @@ function toggleMenu() {
 window.setBackground = setBackground;
 window.toggleMenu = toggleMenu;
 
-/* ---------- Orb → Floating Panel (raised above orb) ---------- */
+/* ---------- Orb → Floating Panel (raised above orb) + Auto/Look-away close ---------- */
 
 function expandOrbToPanel(orbEl, link) {
-  // save original state to restore later
+  // save original state
   if (!orbEl.__vlifeOriginal) {
     orbEl.__vlifeOriginal = {
       geom: orbEl.getAttribute('geometry'),
@@ -71,12 +74,12 @@ function expandOrbToPanel(orbEl, link) {
     };
   }
 
-  // lift the whole orb entity upwards so panel sits "above" it
-  const lift = 0.55; // metres above original
+  // lift panel above the orb
+  const lift = 0.55;
   const p = orbEl.__vlifeOriginal.pos;
   orbEl.setAttribute('position', `${p.x} ${p.y + lift} ${p.z}`);
 
-  // clear old children (if any)
+  // clear children
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
 
   // convert to panel
@@ -84,20 +87,19 @@ function expandOrbToPanel(orbEl, link) {
   orbEl.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: ${panelH}`);
   orbEl.setAttribute('material', 'color: #000; opacity: 0.80; transparent: true');
 
-  // header strip
+  // header strip + title
   const header = document.createElement('a-entity');
   header.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: 0.08`);
   header.setAttribute('material', 'color: #ffd100; opacity: 0.95');
   header.setAttribute('position', `0 ${panelH/2 - 0.04} 0.01`);
   orbEl.appendChild(header);
 
-  // title on header
   const title = document.createElement('a-entity');
   title.setAttribute('text', `value: ${link.title}; align: center; color: #111; width: 2`);
   title.setAttribute('position', '0 ' + (panelH/2 - 0.04) + ' 0.02');
   orbEl.appendChild(title);
 
-  // url text
+  // url
   const url = document.createElement('a-entity');
   url.setAttribute('text', `value: ${link.url}; align: center; color: #fff; width: 1.7; wrapCount: 26`);
   url.setAttribute('position', '0 0.03 0.02');
@@ -122,7 +124,7 @@ function expandOrbToPanel(orbEl, link) {
   const closeBtn = document.createElement('a-entity');
   closeBtn.setAttribute('class', 'linkbtn');
   closeBtn.setAttribute('geometry', 'primitive: plane; width: 0.12; height: 0.12');
-  closeBtn.setAttribute('material', 'color: #000; opacity: 0.001; transparent: true'); // invisible hit area
+  closeBtn.setAttribute('material', 'color: #000; opacity: 0.001; transparent: true');
   closeBtn.setAttribute('position', (panelW/2 - 0.08) + ' ' + (panelH/2 - 0.08) + ' 0.03');
   const closeGlyph = document.createElement('a-entity');
   closeGlyph.setAttribute('text', 'value: ✕; align: center; color: #fff; width: 1.2');
@@ -130,11 +132,47 @@ function expandOrbToPanel(orbEl, link) {
   closeBtn.appendChild(closeGlyph);
   closeBtn.addEventListener('click', () => restoreOrb(orbEl));
   orbEl.appendChild(closeBtn);
+
+  /* --- Auto-close + look-away timers --- */
+  resetOrbTimers(orbEl); // start fresh timers
+
+  // keep timers alive while hovering the panel
+  const keepAlive = () => resetOrbTimers(orbEl);
+  ['mouseenter', 'mousemove'].forEach(evt => {
+    orbEl.addEventListener(evt, keepAlive);
+    openBtn.addEventListener(evt, keepAlive);
+    closeBtn.addEventListener(evt, keepAlive);
+  });
+
+  // if gaze leaves the panel, start grace countdown; if it returns, cancel
+  let awayTimer = null;
+  const startAway = () => {
+    if (awayTimer) return;
+    awayTimer = setTimeout(() => restoreOrb(orbEl), LOOK_AWAY_GRACE_MS);
+  };
+  const cancelAway = () => { if (awayTimer) { clearTimeout(awayTimer); awayTimer = null; } resetOrbTimers(orbEl); };
+
+  orbEl.addEventListener('mouseleave', startAway);
+  orbEl.addEventListener('cursor-leave', startAway);
+  orbEl.addEventListener('mouseenter', cancelAway);
+}
+
+/* timers stored per-orb */
+function resetOrbTimers(orbEl) {
+  if (orbEl.__autoClose) clearTimeout(orbEl.__autoClose);
+  orbEl.__autoClose = setTimeout(() => restoreOrb(orbEl), AUTO_CLOSE_MS);
 }
 
 function restoreOrb(orbEl) {
-  if (!orbEl.__vlifeOriginal) return;
+  if (!orbEl || !orbEl.__vlifeOriginal) return;
+  // clear timers
+  if (orbEl.__autoClose) clearTimeout(orbEl.__autoClose);
+  orbEl.__autoClose = null;
+
+  // remove children (panel UI)
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
+
+  // restore sphere + position
   orbEl.setAttribute('geometry', orbEl.__vlifeOriginal.geom);
   orbEl.setAttribute('material', orbEl.__vlifeOriginal.mat);
   orbEl.setAttribute('scale', orbEl.__vlifeOriginal.scale);
@@ -144,8 +182,7 @@ function restoreOrb(orbEl) {
 
 /* ---- Bind gaze+tap to each orb ---- */
 function bindOrbEvents() {
-  const orbs = document.querySelectorAll('.hotspot');
-  orbs.forEach((el) => {
+  document.querySelectorAll('.hotspot').forEach((el) => {
     const idx = parseInt(el.getAttribute('data-key') || '0', 10);
     const link = ORB_LINKS[Math.max(0, Math.min(5, idx))] || ORB_LINKS[0];
     el.addEventListener('click', () => expandOrbToPanel(el, link)); // fires after gaze fuse OR tap
