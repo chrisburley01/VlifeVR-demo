@@ -61,4 +61,11 @@ a-scene {
 #logo { position: absolute; top: 20px; left: 20px; width: 120px; z-index: 11; }
 
 /* ORBS styling (glow) */
-.orb
+.orb {
+  geometry: primitive: sphere; radius: 0.12;
+  material: color: #ffd100; emissive: #ffd100; emissiveIntensity: 0.9; metalness: 0.1; roughness: 0.4;
+  animation__pulse: property: scale; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true; to: 1.3 1.3 1.3;
+  event-set__enter: _event: mouseenter; scale: 1.5 1.5 1.5;
+  event-set__leave: _event: mouseleave; scale: 1 1 1;
+  billboard: true;
+}
