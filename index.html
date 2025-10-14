@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VLife 360 – Orbs + Dwell Links</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
   <button id="hamburger" aria-label="Open menu" class="hidden" onclick="toggleMenu()">☰</button>
@@ -28,32 +28,35 @@
 
   <a-scene id="scene" embedded vr-mode-ui="enabled: true" loading-screen="enabled: false">
     <a-assets>
-      <img id="Park360" src="assets/Park360.jpg" />
+      <img id="Park360"  src="assets/Park360.jpg" />
       <img id="Forrest360" src="assets/Forrest360.jpg" />
       <img id="Futurecity360" src="assets/Futurecity360.jpg" />
       <img id="Neonnightclub" src="assets/Neonnightclub.jpg" />
       <img id="floating_sky_monastery_upscaled_8k" src="assets/floating_sky_monastery_upscaled_8k.jpg" />
     </a-assets>
 
-    <!-- Camera + cursor:
-         - gaze fuse for VR (1.2s)
-         - mouse ray for desktop/mobile
-         - visible ring so you can see the fuse -->
+    <!-- Camera + TWO cursors: gaze (fuse) + mouse/touch -->
     <a-entity id="rig" position="0 1.6 0">
       <a-camera wasd-controls-enabled="false">
-        <a-cursor id="cursor"
+        <!-- Visible gaze cursor (head look) -->
+        <a-cursor id="gazeCursor"
           position="0 0 -1"
           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
           material="shader: flat; color: #fff"
-          cursor="fuse: true; fuseTimeout: 1200; rayOrigin: mouse"
-          raycaster="objects: .hotspot; far: 10000; interval: 0">
+          cursor="fuse: true; fuseTimeout: 1200; rayOrigin: entity"
+          raycaster="objects: .hotspot, .linkbtn; far: 10000; interval: 0">
         </a-cursor>
+        <!-- Invisible mouse/touch cursor so taps/clicks work too -->
+        <a-entity id="mouseCursor"
+          cursor="rayOrigin: mouse"
+          raycaster="objects: .hotspot, .linkbtn; far: 10000; interval: 0">
+        </a-entity>
       </a-camera>
     </a-entity>
 
     <a-sky id="sky" src="#Park360" rotation="0 -90 0" radius="5000"></a-sky>
 
-    <!-- ORB ring (6) -->
+    <!-- ORB ring (6) — each has title+url bound in script -->
     <a-entity id="orb-ring">
       <a-entity class="hotspot" orb billboard data-key="0" position=" 3 1.6  0"></a-entity>
       <a-entity class="hotspot" orb billboard data-key="1" position=" 1.5 1.6  2.598"></a-entity>
@@ -62,24 +65,8 @@
       <a-entity class="hotspot" orb billboard data-key="4" position="-1.5 1.6 -2.598"></a-entity>
       <a-entity class="hotspot" orb billboard data-key="5" position=" 1.5 1.6 -2.598"></a-entity>
     </a-entity>
-
-    <!-- Link panel (shows after dwell/hover) -->
-    <a-entity id="linkPanel" visible="false" position="0 1.5 -1.8">
-      <a-entity geometry="primitive: plane; width: 1.45; height: 0.55"
-                material="color: #000; opacity: 0.75; transparent: true"></a-entity>
-      <a-entity id="panelTitle" position="0 0.18 0.01"
-                text="value: ; align: center; color: #ffd100; width: 2"></a-entity>
-      <a-entity id="panelUrl" position="0 0.02 0.01"
-                text="value: ; align: center; color: #fff; width: 1.9; wrapCount: 30"></a-entity>
-      <a-entity id="openBtn" class="linkbtn" position="0 -0.17 0.02"
-                geometry="primitive: plane; width: 0.5; height: 0.16"
-                material="color: #0f2353; opacity: 0.95">
-        <a-entity position="0 0 0.01"
-                  text="value: Open; align: center; color: #fff; width: 1"></a-entity>
-      </a-entity>
-    </a-entity>
   </a-scene>
 
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=9"></script>
 </body>
 </html>
