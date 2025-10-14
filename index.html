@@ -2,125 +2,37 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VLife 360 Experience</title>
-    <link rel="icon" href="assets/walkers-logo.png" />
+    <link rel="icon" href="assets/Vlifelogo_1_.png" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <style>
-      html,
-      body {
-        margin: 0;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-        font-family: "Helvetica Neue", Arial, sans-serif;
-      }
-
-      a-scene {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
-      }
-
-      #menuPanel {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.75);
-        color: white;
-        text-align: center;
-        padding: 20px 30px;
-        border-radius: 12px;
-        z-index: 10;
-        max-width: 90%;
-      }
-
-      #menuPanel h2 {
-        margin-top: 0;
-        color: #f7901e; /* Walkers orange */
-        font-size: 1.3rem;
-      }
-
-      .status {
-        color: #5fff7b;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-
-      .btn {
-        display: inline-block;
-        margin: 6px;
-        padding: 8px 14px;
-        background: #0f2353; /* Walkers deep blue */
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.95rem;
-        transition: background 0.2s ease;
-      }
-
-      .btn:hover {
-        background: #002c77;
-      }
-
-      .mode-buttons {
-        position: absolute;
-        bottom: 20px;
-        right: 20px;
-        z-index: 20;
-      }
-
-      .mode-buttons button {
-        margin-left: 10px;
-        padding: 8px 14px;
-        font-size: 1rem;
-        background: #002c77;
-        color: #fff;
-        border: none;
-        border-radius: 6px;
-      }
-
-      .mode-buttons button:hover {
-        background: #0f2353;
-      }
-
-      #logo {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        width: 120px;
-        z-index: 15;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
 
   <body>
-    <img id="logo" src="assets/walkers-logo.png" alt="Walkers Transport" />
+    <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
 
     <div id="menuPanel">
       <h2>Choose Background</h2>
-      <div class="status" id="statusText">Using 360 image: Park Steps 360</div>
+      <div class="status" id="statusText">Using 360 image: Park 360</div>
       <div>
-        <button class="btn" onclick="setBackground('park-steps')">
+        <button class="btn" onclick="setBackground('Park360')">
           Park Steps 360
         </button>
-        <button class="btn" onclick="setBackground('forest')">Forest 360</button>
+        <button class="btn" onclick="setBackground('Forrest360')">
+          Forest 360
+        </button>
       </div>
       <div>
-        <button class="btn" onclick="setBackground('future-city')">
+        <button class="btn" onclick="setBackground('Futurecity360')">
           Future City 360
         </button>
-        <button class="btn" onclick="setBackground('neon-nightclub')">
+        <button class="btn" onclick="setBackground('Neonnightclub')">
           Neon Nightclub 360
         </button>
       </div>
       <div>
-        <button class="btn" onclick="setBackground('floating-sky')">
+        <button class="btn" onclick="setBackground('floating_sky_monastery_upscaled_8')">
           Floating Sky Monastery 8K
         </button>
       </div>
@@ -136,47 +48,18 @@
       embedded
       vr-mode-ui="enabled: true"
       loading-screen="enabled: false"
-      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;"
     >
       <a-assets>
-        <img id="park-steps" src="assets/park-steps-360.jpg" />
-        <img id="forest" src="assets/forest-360.jpg" />
-        <img id="future-city" src="assets/future-city-360.jpg" />
-        <img id="neon-nightclub" src="assets/neon-nightclub-360.jpg" />
-        <img id="floating-sky" src="assets/floating-sky-monastery-8k.jpg" />
+        <img id="Park360" src="assets/Park360.jpg" />
+        <img id="Forrest360" src="assets/Forrest360.jpg" />
+        <img id="Futurecity360" src="assets/Futurecity360.jpg" />
+        <img id="Neonnightclub" src="assets/Neonnightclub.jpg" />
+        <img id="floating_sky_monastery_upscaled_8" src="assets/floating_sky_monastery_upscaled_8.jpg" />
       </a-assets>
 
-      <a-sky
-        id="sky"
-        src="#park-steps"
-        rotation="0 -90 0"
-        radius="5000"
-      ></a-sky>
+      <a-sky id="sky" src="#Park360" rotation="0 -90 0" radius="5000"></a-sky>
     </a-scene>
 
-    <script>
-      const sky = document.getElementById("sky");
-      const statusText = document.getElementById("statusText");
-
-      function setBackground(bg) {
-        sky.setAttribute("src", "#" + bg);
-        const labelMap = {
-          "park-steps": "Park Steps 360",
-          forest: "Forest 360",
-          "future-city": "Future City 360",
-          "neon-nightclub": "Neon Nightclub 360",
-          "floating-sky": "Floating Sky Monastery 8K",
-        };
-        statusText.textContent = "Using 360 image: " + labelMap[bg];
-      }
-
-      function enterVR() {
-        document.querySelector("a-scene").enterVR();
-      }
-
-      function enterAR() {
-        document.querySelector("a-scene").enterAR();
-      }
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
