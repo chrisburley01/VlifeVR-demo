@@ -1,84 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VLife 360 Experience</title>
-    <link rel="icon" href="assets/Vlifelogo_1_.png" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <link rel="stylesheet" href="style.css" />
-  </head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VLife 360 Experience</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png" />
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <link rel="stylesheet" href="style.css?v=3" />
+</head>
+<body>
+  <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
 
-  <body>
-    <!-- Logo -->
-    <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
+  <!-- Hamburger (appears after first pick) -->
+  <button id="hamburger" aria-label="Open menu" class="hidden" onclick="toggleMenu()">☰</button>
 
-    <!-- Menu panel (collapses to hamburger after first choice) -->
-    <button id="hamburger" aria-label="Open menu" class="hidden" onclick="toggleMenu()">
-      ☰
-    </button>
+  <!-- Menu -->
+  <div id="menuPanel">
+    <h2>Choose Background</h2>
+    <div class="status" id="statusText">Using 360 image: Forest 360</div>
 
-    <div id="menuPanel">
-      <h2>Choose Background</h2>
-      <div class="status" id="statusText">Using 360 image: Park 360</div>
-
-      <div class="btn-row">
-        <button class="btn" onclick="setBackground('Park360')">Park Steps 360</button>
-        <button class="btn" onclick="setBackground('Forrest360')">Forest 360</button>
-      </div>
-      <div class="btn-row">
-        <button class="btn" onclick="setBackground('Futurecity360')">Future City 360</button>
-        <button class="btn" onclick="setBackground('Neonnightclub')">Neon Nightclub 360</button>
-      </div>
-      <div class="btn-row">
-        <button class="btn" onclick="setBackground('floating_sky_monastery_upscaled_8')">
-          Floating Sky Monastery 8K
-        </button>
-      </div>
+    <div class="btn-row">
+      <button class="btn" onclick="setBackground('Park360')">Park Steps 360</button>
+      <button class="btn" onclick="setBackground('Forrest360')">Forest 360</button>
     </div>
-
-    <!-- AR/VR buttons -->
-    <div class="mode-buttons">
-      <button onclick="enterAR()">AR</button>
-      <button onclick="enterVR()">VR</button>
+    <div class="btn-row">
+      <button class="btn" onclick="setBackground('Futurecity360')">Future City 360</button>
+      <button class="btn" onclick="setBackground('Neonnightclub')">Neon Nightclub 360</button>
     </div>
+    <div class="btn-row">
+      <button class="btn" onclick="setBackground('floating_sky_monastery_upscaled_8')">Floating Sky Monastery 8K</button>
+    </div>
+  </div>
 
-    <!-- Scene -->
-    <a-scene id="scene" embedded vr-mode-ui="enabled: true" loading-screen="enabled: false">
-      <a-assets>
-        <img id="Park360" src="assets/Park360.jpg" />
-        <img id="Forrest360" src="assets/Forrest360.jpg" />
-        <img id="Futurecity360" src="assets/Futurecity360.jpg" />
-        <img id="Neonnightclub" src="assets/Neonnightclub.jpg" />
-        <img id="floating_sky_monastery_upscaled_8" src="assets/floating_sky_monastery_upscaled_8.jpg" />
-      </a-assets>
+  <!-- AR/VR -->
+  <div class="mode-buttons">
+    <button onclick="enterAR()">AR</button>
+    <button onclick="enterVR()">VR</button>
+  </div>
 
-      <!-- Camera + cursor for clicking orbs on mobile/desktop -->
-      <a-entity id="rig" position="0 1.6 0">
-        <a-camera wasd-controls-enabled="false">
-          <a-cursor
-            id="cursor"
-            raycaster="objects: .hotspot"
-            fuse="false"
-          ></a-cursor>
-        </a-camera>
-      </a-entity>
+  <!-- Scene -->
+  <a-scene id="scene" embedded vr-mode-ui="enabled: true" loading-screen="enabled: false">
+    <a-assets>
+      <!-- ⚠️ use exact filenames you already have (case-sensitive) -->
+      <img id="Park360" src="assets/Park360.jpg" />
+      <img id="Forrest360" src="assets/Forrest360.jpg" />
+      <img id="Futurecity360" src="assets/Futurecity360.jpg" />
+      <img id="Neonnightclub" src="assets/Neonnightclub.jpg" />
+      <img id="floating_sky_monastery_upscaled_8" src="assets/floating_sky_monastery_upscaled_8.jpg" />
+    </a-assets>
 
-      <!-- Sky -->
-      <a-sky id="sky" src="#Park360" rotation="0 -90 0" radius="5000"></a-sky>
+    <!-- camera + cursor -->
+    <a-entity id="rig" position="0 1.6 0">
+      <a-camera wasd-controls-enabled="false">
+        <a-cursor id="cursor" raycaster="objects: .hotspot" fuse="false"></a-cursor>
+      </a-camera>
+    </a-entity>
 
-      <!-- 🔶 ORBS: evenly spaced ring around user (6 orbs) -->
-      <a-entity id="orb-ring">
-        <!-- Positions are on a circle radius=3m at user eye height -->
-        <a-entity class="hotspot orb" data-bg="Park360"       position=" 3 1.6  0"></a-entity>
-        <a-entity class="hotspot orb" data-bg="Forrest360"    position=" 1.5 1.6  2.598"></a-entity>
-        <a-entity class="hotspot orb" data-bg="Futurecity360" position="-1.5 1.6  2.598"></a-entity>
-        <a-entity class="hotspot orb" data-bg="Neonnightclub" position="-3 1.6  0"></a-entity>
-        <a-entity class="hotspot orb" data-bg="floating_sky_monastery_upscaled_8" position="-1.5 1.6 -2.598"></a-entity>
-        <a-entity class="hotspot orb" data-bg="Park360"       position=" 1.5 1.6 -2.598"></a-entity>
-      </a-entity>
-    </a-scene>
+    <a-sky id="sky" src="#Forrest360" rotation="0 -90 0" radius="5000"></a-sky>
 
-    <script src="script.js"></script>
-  </body>
+    <!-- ORB RING (6 orbs) -->
+    <a-entity id="orb-ring">
+      <a-entity class="hotspot" orb billboard data-bg="Park360"       position=" 3 1.6  0"></a-entity>
+      <a-entity class="hotspot" orb billboard data-bg="Forrest360"    position=" 1.5 1.6  2.598"></a-entity>
+      <a-entity class="hotspot" orb billboard data-bg="Futurecity360" position="-1.5 1.6  2.598"></a-entity>
+      <a-entity class="hotspot" orb billboard data-bg="Neonnightclub" position="-3 1.6  0"></a-entity>
+      <a-entity class="hotspot" orb billboard data-bg="floating_sky_monastery_upscaled_8" position="-1.5 1.6 -2.598"></a-entity>
+      <a-entity class="hotspot" orb billboard data-bg="Park360"       position=" 1.5 1.6 -2.598"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <script src="script.js?v=3"></script>
+</body>
 </html>
