@@ -1,10 +1,9 @@
-
 html, body { margin: 0; height: 100%; overflow: hidden; background: #000; font-family: "Helvetica Neue", Arial, sans-serif; }
 a-scene { position: fixed; inset: 0; z-index: 0; }
 
 /* Panel */
 #menuPanel {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
   background: rgba(0,0,0,.75); color: #fff; text-align: center;
   padding: 20px 30px; border-radius: 12px; z-index: 10; max-width: 92%;
 }
@@ -13,8 +12,7 @@ a-scene { position: fixed; inset: 0; z-index: 0; }
 .btn-row { margin: 6px 0; }
 .btn { display: inline-block; margin: 6px; padding: 10px 16px; background:#0f2353; color:#fff; border:0; border-radius:8px; font-size:1rem; }
 .btn:hover { background:#002c77; }
-.btn.outline { background: transparent; border: 2px solid #f7901e; color: #f7901e; }
-.btn.outline:hover { background: rgba(247,144,30,.15); }
+.hint { margin-top: 10px; opacity: .85; }
 
 /* Hamburger */
 #hamburger {
