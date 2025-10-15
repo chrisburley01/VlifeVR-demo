@@ -1,5 +1,10 @@
 /* =========================================================
-   VLife 360 – full script.js (with Welcome splash + logo)
+   VLife 360 – full script.js (v15)
+   - Welcome splash + menu collapse
+   - Orbs (gaze or tap)
+   - Panel spawns ABOVE the orb as a separate entity (billboard)
+   - No marquee; just neat wrapping
+   - Auto-close (8s) + look-away close (1.2s, armed after 300ms)
 ========================================================= */
 
 /* ---------- Components ---------- */
@@ -56,16 +61,17 @@ const labelMap = {
 
 /* ---------- Welcome splash control ---------- */
 function showMenuAfterSplash() {
+  if (!welcome) return;
   welcome.classList.add('fadeout');
   setTimeout(() => {
     welcome.classList.add('hidden');
-    menuPanel.classList.remove('hidden');
+    menuPanel?.classList.remove('hidden');
   }, 480);
 }
 if (enterBtn) enterBtn.addEventListener('click', showMenuAfterSplash);
-// Safety: auto-enter after 2.5s
+// auto-enter after 2.5s
 setTimeout(() => {
-  if (!welcome.classList.contains('hidden')) showMenuAfterSplash();
+  if (welcome && !welcome.classList.contains('hidden')) showMenuAfterSplash();
 }, 2500);
 
 /* ---------- Menu: set background & collapse panel ---------- */
@@ -93,122 +99,99 @@ window.setBackground = setBackground;
 window.toggleMenu = toggleMenu;
 
 /* =========================================================
-   Helpers for display + marquee
+   Orb -> floating panel (separate entity; hides orbs while open)
 ========================================================= */
-function trimUrlForDisplay(u, max = 44) {
-  try {
-    const url = new URL(u);
-    const base = url.host;
-    const path = (url.pathname + url.search).replace(/\/+$/,'');
-    const shown = (base + path);
-    return shown.length > max ? shown.slice(0, max - 1) + '…' : shown;
-  } catch { return u.length > max ? u.slice(0, max - 1) + '…' : u; }
+
+// hide/show all orbs convenience
+function setOrbsVisible(visible) {
+  document.querySelectorAll('.hotspot').forEach(o => o.setAttribute('visible', visible));
 }
 
-function startMarquee(textEntity, fullText, windowChars, stepMs = 120, spacer = '   •   ') {
-  stopMarquee(textEntity);
-  if (!fullText || fullText.length <= windowChars) {
-    textEntity.setAttribute('text', 'value', fullText || '');
-    return;
-  }
-  const scroll = fullText + spacer + fullText;
-  let i = 0;
-  const tick = () => {
-    const slice = scroll.slice(i, i + windowChars);
-    textEntity.setAttribute('text', 'value', slice);
-    i = (i + 1) % (fullText.length + spacer.length);
-    textEntity.__marqueeTimer = setTimeout(tick, stepMs);
-  };
-  tick();
-}
-function stopMarquee(textEntity) {
-  if (textEntity && textEntity.__marqueeTimer) {
-    clearTimeout(textEntity.__marqueeTimer);
-    textEntity.__marqueeTimer = null;
-  }
-}
-
-/* =========================================================
-   Orb -> BIG floating panel (above orb) with marquee
-========================================================= */
 function expandOrbToPanel(orbEl, link) {
-  if (!orbEl.__vlifeOriginal) {
-    orbEl.__vlifeOriginal = {
-      geom:  orbEl.getAttribute('geometry'),
-      mat:   orbEl.getAttribute('material'),
-      scale: orbEl.getAttribute('scale') || '1 1 1',
-      pos:   Object.assign({}, orbEl.getAttribute('position'))
-    };
+  // clear any previous panel for this orb
+  if (orbEl.__panelEl) {
+    try { orbEl.__panelEl.parentNode.removeChild(orbEl.__panelEl); } catch(e){}
+    orbEl.__panelEl = null;
   }
-
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  const lift = 1.2; // metres above orb line
-  const p = orbEl.__vlifeOriginal.pos;
-  orbEl.setAttribute('position', `${p.x} ${p.y + lift} ${p.z}`);
+  // compute world position of the orb and place panel above it
+  const worldPos = new THREE.Vector3();
+  orbEl.object3D.getWorldPosition(worldPos);
+  const lift = 1.2; // metres above
+  worldPos.y += lift;
 
-  while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
+  // hide all orbs so nothing can overlap the panel
+  setOrbsVisible(false);
 
-  const panelRoot = document.createElement('a-entity');
-  orbEl.appendChild(panelRoot);
+  // create a standalone panel in world space
+  const panel = document.createElement('a-entity');
+  panel.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z}`);
+  panel.setAttribute('billboard', ''); // always face camera
+  scene.appendChild(panel);
+  orbEl.__panelEl = panel;
 
-  const panelW = 2.40, panelH = 0.84;
-  const headerH = 0.12;
+  // geometry constants (large)
+  const panelW = 2.40, panelH = 0.84, headerH = 0.12;
 
+  // background
   const bg = document.createElement('a-entity');
   bg.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: ${panelH}`);
-  bg.setAttribute('material', 'color: #000; opacity: 0.82; transparent: true');
+  bg.setAttribute('material', 'color: #000; opacity: 0.84; transparent: true');
   bg.setAttribute('position', '0 0 0.005');
-  panelRoot.appendChild(bg);
+  panel.appendChild(bg);
 
+  // header bar
   const header = document.createElement('a-entity');
   header.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: ${headerH}`);
-  header.setAttribute('material', 'color: #ffd100; opacity: 0.96');
+  header.setAttribute('material', 'color: #ffd100; opacity: 0.98');
   header.setAttribute('position', `0 ${panelH/2 - headerH/2} 0.01`);
-  panelRoot.appendChild(header);
+  panel.appendChild(header);
 
+  // Title (no marquee; just wide text)
   const titleEntity = document.createElement('a-entity');
-  titleEntity.setAttribute('text', `value: ${link.title}; align: center; color: #111; width: 3.2; zOffset: 0.01`);
+  titleEntity.setAttribute('text', `value: ${link.title}; align: center; color: #111; width: 3.4; zOffset: 0.01`);
   titleEntity.setAttribute('position', `0 ${panelH/2 - headerH/2} 0.015`);
-  panelRoot.appendChild(titleEntity);
-  startMarquee(titleEntity, link.title || '', 34, 120);
+  panel.appendChild(titleEntity);
 
+  // URL (wrap neatly)
   const urlEntity = document.createElement('a-entity');
-  urlEntity.setAttribute('text', `value: ${trimUrlForDisplay(link.url, 44)}; align: center; color: #fff; width: 2.6; wrapCount: 36; zOffset: 0.01`);
+  urlEntity.setAttribute('text', `value: ${link.url}; align: center; color: #fff; width: 2.8; wrapCount: 40; zOffset: 0.01`);
   urlEntity.setAttribute('position', '0 0.16 0.015');
-  panelRoot.appendChild(urlEntity);
-  startMarquee(urlEntity, link.url || '', 44, 90);
+  panel.appendChild(urlEntity);
 
+  // Open button (large)
   const openBtn = document.createElement('a-entity');
   openBtn.setAttribute('class', 'linkbtn');
-  openBtn.setAttribute('geometry', 'primitive: plane; width: 0.80; height: 0.22');
+  openBtn.setAttribute('geometry', 'primitive: plane; width: 0.90; height: 0.24');
   openBtn.setAttribute('material', 'color: #0f2353; opacity: 0.96');
   openBtn.setAttribute('position', '0 -0.22 0.02');
   const label = document.createElement('a-entity');
-  label.setAttribute('text', 'value: Open; align: center; color: #fff; width: 1.4; zOffset: 0.01');
+  label.setAttribute('text', 'value: Open; align: center; color: #fff; width: 1.6; zOffset: 0.01');
   label.setAttribute('position', '0 0 0.01');
   openBtn.appendChild(label);
   openBtn.addEventListener('click', () => {
     const u = (link.url || '').trim();
     if (u) { try { window.open(u, '_blank'); } catch(e) { location.href = u; } }
   });
-  panelRoot.appendChild(openBtn);
+  panel.appendChild(openBtn);
 
+  // Close (top-right)
   const closeBtn = document.createElement('a-entity');
   closeBtn.setAttribute('class', 'linkbtn');
-  closeBtn.setAttribute('geometry', 'primitive: plane; width: 0.16; height: 0.16');
+  closeBtn.setAttribute('geometry', 'primitive: plane; width: 0.18; height: 0.18');
   closeBtn.setAttribute('material', 'color: #000; opacity: 0.001; transparent: true');
-  closeBtn.setAttribute('position', `${panelW/2 - 0.11} ${panelH/2 - 0.11} 0.03`);
+  closeBtn.setAttribute('position', `${panelW/2 - 0.12} ${panelH/2 - 0.12} 0.03`);
   const closeGlyph = document.createElement('a-entity');
-  closeGlyph.setAttribute('text', 'value: ✕; align: center; color: #fff; width: 1.6; zOffset: 0.01');
+  closeGlyph.setAttribute('text', 'value: ✕; align: center; color: #fff; width: 1.8; zOffset: 0.01');
   closeGlyph.setAttribute('position', '0 0 0.01');
   closeBtn.appendChild(closeGlyph);
-  closeBtn.addEventListener('click', () => restoreOrb(orbEl));
-  panelRoot.appendChild(closeBtn);
+  closeBtn.addEventListener('click', () => restorePanel(orbEl));
+  panel.appendChild(closeBtn);
 
-  // auto-close + look-away (armed after 300ms to avoid jitter)
-  orbEl.__autoCloseTimer = setTimeout(() => restoreOrb(orbEl), 8000);
+  // --- timers: auto-close + look-away with 300ms lockout ---
+  orbEl.__autoCloseTimer = setTimeout(() => restorePanel(orbEl), 8000);
   let lookAwayArmed = false;
   setTimeout(() => { lookAwayArmed = true; }, 300);
 
@@ -216,34 +199,23 @@ function expandOrbToPanel(orbEl, link) {
   const startLookAway  = () => {
     if (!lookAwayArmed) return;
     clearTimeout(orbEl.__lookAwayTimer);
-    orbEl.__lookAwayTimer = setTimeout(() => restoreOrb(orbEl), 1200);
+    orbEl.__lookAwayTimer = setTimeout(() => restorePanel(orbEl), 1200);
   };
-  panelRoot.addEventListener('mouseenter', cancelLookAway);
-  panelRoot.addEventListener('mouseleave', startLookAway);
-
-  // keep refs to stop marquees on restore
-  orbEl.__panelNodes = { titleEntity, urlEntity };
+  panel.addEventListener('mouseenter', cancelLookAway);
+  panel.addEventListener('mouseleave', startLookAway);
 }
 
-/* ---------- Restore orb ---------- */
-function restoreOrb(orbEl) {
-  if (!orbEl?.__vlifeOriginal) return;
+function restorePanel(orbEl) {
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  if (orbEl.__panelNodes) {
-    stopMarquee(orbEl.__panelNodes.titleEntity);
-    stopMarquee(orbEl.__panelNodes.urlEntity);
-    orbEl.__panelNodes = null;
+  if (orbEl.__panelEl) {
+    try { orbEl.__panelEl.parentNode.removeChild(orbEl.__panelEl); } catch(e){}
+    orbEl.__panelEl = null;
   }
 
-  while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
-
-  orbEl.setAttribute('geometry', orbEl.__vlifeOriginal.geom);
-  orbEl.setAttribute('material', orbEl.__vlifeOriginal.mat);
-  orbEl.setAttribute('scale',    orbEl.__vlifeOriginal.scale);
-  const p = orbEl.__vlifeOriginal.pos;
-  orbEl.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
+  // show orbs again
+  setOrbsVisible(true);
 }
 
 /* ---------- Bind (gaze fuse or tap) ---------- */
