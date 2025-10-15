@@ -3,16 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VLife 360 – Orbs + Dwell Links</title>
+  <title>VLife 360</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
-  <button id="hamburger" aria-label="Open menu" class="hidden" onclick="toggleMenu()">☰</button>
 
-  <div id="menuPanel">
+  <!-- Persistent VLife logo (main UI, top-left) -->
+  <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
+
+  <!-- Hamburger (hidden until menu collapses) -->
+  <button id="hamburger" class="hidden" aria-label="Open menu" onclick="toggleMenu()">☰</button>
+
+  <!-- Front-door Welcome Splash -->
+  <div id="welcomeSplash">
+    <img class="splash-logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
+    <h1>Welcome to VLife</h1>
+    <p class="tagline">Step inside and explore 360° worlds</p>
+    <button class="splash-enter" id="enterBtn">Enter</button>
+    <p class="hint">or wait a moment…</p>
+  </div>
+
+  <!-- Main menu (shown after splash) -->
+  <div id="menuPanel" class="hidden">
     <h2>Choose Background</h2>
     <div class="status" id="statusText">Using 360: Park 360</div>
+
     <div class="btn-row">
       <button class="btn" onclick="setBackground('Park360')">Park 360</button>
       <button class="btn" onclick="setBackground('Forrest360')">Forest 360</button>
@@ -26,6 +42,7 @@
     </div>
   </div>
 
+  <!-- Scene -->
   <a-scene id="scene" embedded vr-mode-ui="enabled: true" loading-screen="enabled: false">
     <a-assets>
       <img id="Park360"  src="assets/Park360.jpg" />
@@ -38,7 +55,7 @@
     <!-- Camera + TWO cursors: gaze (fuse) + mouse/touch -->
     <a-entity id="rig" position="0 1.6 0">
       <a-camera wasd-controls-enabled="false">
-        <!-- Visible gaze cursor (head look) -->
+        <!-- Visible gaze cursor -->
         <a-cursor id="gazeCursor"
           position="0 0 -1"
           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
@@ -46,7 +63,7 @@
           cursor="fuse: true; fuseTimeout: 1200; rayOrigin: entity"
           raycaster="objects: .hotspot, .linkbtn; far: 10000; interval: 0">
         </a-cursor>
-        <!-- Invisible mouse/touch cursor so taps/clicks work too -->
+        <!-- Invisible mouse/touch cursor -->
         <a-entity id="mouseCursor"
           cursor="rayOrigin: mouse"
           raycaster="objects: .hotspot, .linkbtn; far: 10000; interval: 0">
@@ -56,7 +73,7 @@
 
     <a-sky id="sky" src="#Park360" rotation="0 -90 0" radius="5000"></a-sky>
 
-    <!-- ORB ring (6) — each has title+url bound in script -->
+    <!-- ORB ring (6) -->
     <a-entity id="orb-ring">
       <a-entity class="hotspot" orb billboard data-key="0" position=" 3 1.6  0"></a-entity>
       <a-entity class="hotspot" orb billboard data-key="1" position=" 1.5 1.6  2.598"></a-entity>
@@ -67,6 +84,6 @@
     </a-entity>
   </a-scene>
 
-  <script src="script.js?v=9"></script>
+  <script src="script.js?v=14"></script>
 </body>
 </html>
