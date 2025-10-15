@@ -1,11 +1,10 @@
 /* =========================================================
-   VLife • Chateau Library – script.js (chateau1)
-   - Big hall + 4 corridors (triple size)
-   - Chateau style: stone walls, wood floors, sconces, chandeliers
-   - Posters fixed to face the corridor (rotation bug fixed)
-   - Tap-to-teleport (slow glide, deadzone, arm delay)
-   - Mini-map overlay (top-down plan with player arrow)
-   - Door panel previews (YouTube thumbnails) with Open button
+   VLife • Chateau Library – script.js (chateau1.1)
+   - Main hall: stone tile floor (no textures needed)
+   - All walls: paneled stone (baseboard, chair rail, panels, cornice)
+   - Corridors keep wood floors
+   - Posters only on frames (fixed rotation as before)
+   - Tap-to-teleport, mini-map, door panel previews
 ========================================================= */
 
 /* ---- Teleport behaviour ---- */
@@ -178,40 +177,98 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   return root;
 }
 
-/* ---- Build the chateau: hall, corridors, sconces, chandeliers, frames ---- */
+/* ---------- Chateau build (paneled walls + tiled hall) ---------- */
 (function buildChateau(){
-  // Lighting: hemisphere + warm chandeliers + sconces
+  // Lights
   const hemi = document.createElement('a-entity');
   hemi.setAttribute('light','type: hemisphere; intensity: 0.9; color: #dfe8ff; groundColor:#433;');
   hemi.setAttribute('position','0 3 0'); env.appendChild(hemi);
 
-  // Hall floor (wood) + walls (stone)
-  const floorHall=document.createElement('a-entity');
-  floorHall.classList.add('teleport');
-  floorHall.setAttribute('geometry',`primitive: plane; width:${HALL_W}; height:${HALL_D}`);
-  floorHall.setAttribute('material','src:#texWood; repeat:6 6; color:#a06d3b; metalness:0.1; roughness:0.9');
-  floorHall.setAttribute('rotation','-90 0 0'); env.appendChild(floorHall);
+  // === MAIN HALL FLOOR (stone tiles) ===
+  // Build a grid of small planes so nothing stretches.
+  const tileSize = 1.2; // meters
+  const tilesX = Math.ceil(HALL_W / tileSize);
+  const tilesZ = Math.ceil(HALL_D / tileSize);
+  const hallFloorGroup = document.createElement('a-entity'); hallFloorGroup.classList.add('teleport');
+  hallFloorGroup.setAttribute('rotation','-90 0 0'); env.appendChild(hallFloorGroup);
 
-  const wallColor='#b5b1a6';
-  function mkWall(x,y,z,w,h,d){
-    const wall=document.createElement('a-box');
+  for (let ix=0; ix<tilesX; ix++){
+    for (let iz=0; iz<tilesZ; iz++){
+      const px = -HALL_W/2 + tileSize/2 + ix*tileSize;
+      const pz = -HALL_D/2 + tileSize/2 + iz*tileSize;
+      const tile = document.createElement('a-plane');
+      tile.setAttribute('width', tileSize);
+      tile.setAttribute('height', tileSize);
+      // slight color variation tile-to-tile
+      const tint = 190 + Math.floor(Math.random()*20); // warm stone
+      tile.setAttribute('material', `color: rgb(${tint}, ${tint-8}, ${tint-20}); metalness:0.05; roughness:1`);
+      tile.setAttribute('position', `${px} 0 ${pz}`);
+      hallFloorGroup.appendChild(tile);
+    }
+  }
+
+  // === HALL WALLS (paneled stone) ===
+  function paneledWall(x,y,z, w,h,d, face){
+    // base solid wall
+    const wall = document.createElement('a-box');
     wall.setAttribute('position',`${x} ${y} ${z}`);
     wall.setAttribute('width',`${w}`); wall.setAttribute('height',`${h}`); wall.setAttribute('depth',`${d}`);
-    wall.setAttribute('material','src:#texStone; repeat:4 1; color:#bfbab0; metalness:0.05; roughness:1');
-    env.appendChild(wall);
-  }
-  mkWall(0, HALL_H/2, -HALL_D/2, HALL_W, HALL_H, WALL_T);
-  mkWall(0, HALL_H/2,  HALL_D/2, HALL_W, HALL_H, WALL_T);
-  mkWall( HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D);
-  mkWall(-HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D);
+    wall.setAttribute('color','#cfc8bc'); env.appendChild(wall);
 
-  // Ceiling (dark timber)
+    // baseboard, chair-rail, cornice
+    const baseH=0.18, chairH=1.0, cornH=0.16;
+    function strip(px,py,pz, sx,sy,sz, c){
+      const s=document.createElement('a-box');
+      s.setAttribute('position',`${px} ${py} ${pz}`); s.setAttribute('width',`${sx}`); s.setAttribute('height',`${sy}`); s.setAttribute('depth',`${sz}`);
+      s.setAttribute('color',c); env.appendChild(s);
+    }
+    // orientation helpers
+    const alongX = (face==='N' || face==='S');
+    // strips run along width (w) for N/S, along depth (d) for E/W
+    if (alongX){
+      strip(0, baseH/2, z + (face==='N'?-d/2:d/2), w, baseH, 0.05, '#b9b1a2');
+      strip(0, chairH, z + (face==='N'?-d/2:d/2), w, 0.06, 0.05, '#b9b1a2');
+      strip(0, h - cornH/2, z + (face==='N'?-d/2:d/2), w, cornH, 0.06, '#b9b1a2');
+    } else {
+      strip(x + (face==='E'?d/2:-d/2), baseH/2, 0, 0.05, baseH, HALL_D, '#b9b1a2');
+      strip(x + (face==='E'?d/2:-d/2), chairH, 0, 0.05, 0.06, HALL_D, '#b9b1a2');
+      strip(x + (face==='E'?d/2:-d/2), h - cornH/2, 0, 0.06, cornH, HALL_D, '#b9b1a2');
+    }
+
+    // vertical panels (insets): darker tone, slightly offset outwards
+    const panelColor = '#b7afa1';
+    const gap = 0.25, panelW = 1.4, panelH = 1.2, panelY = 1.45;
+    const count = Math.floor((alongX?w:HALL_D - 0.6) / (panelW + gap));
+    for (let i=0;i<count;i++){
+      const offset = -((count-1)*(panelW+gap))/2 + i*(panelW+gap);
+      const plane = document.createElement('a-plane');
+      plane.setAttribute('width', panelW);
+      plane.setAttribute('height', panelH);
+      plane.setAttribute('material', `color:${panelColor}`);
+      if (alongX){
+        plane.setAttribute('position', `${offset} ${panelY} ${z + (face==='N'?-d/2-0.005:d/2+0.005)}`);
+        plane.setAttribute('rotation', `0 ${face==='N'?0:180} 0`);
+      } else {
+        plane.setAttribute('position', `${x + (face==='E'?d/2+0.005:-d/2-0.005)} ${panelY} ${offset}`);
+        plane.setAttribute('rotation', `0 ${face==='E'?-90:90} 0`);
+      }
+      env.appendChild(plane);
+    }
+  }
+
+  // Build four hall sides
+  paneledWall(0, HALL_H/2, -HALL_D/2, HALL_W, HALL_H, WALL_T, 'N'); // north (back)
+  paneledWall(0, HALL_H/2,  HALL_D/2, HALL_W, HALL_H, WALL_T, 'S'); // south (front)
+  paneledWall( HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, 'E'); // east (right)
+  paneledWall(-HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, 'W'); // west (left)
+
+  // Ceiling (dark timber tone)
   const ceil=document.createElement('a-plane');
   ceil.setAttribute('rotation','90 0 0'); ceil.setAttribute('position',`0 ${HALL_H} 0`);
   ceil.setAttribute('width',`${HALL_W}`); ceil.setAttribute('height',`${HALL_D}`);
-  ceil.setAttribute('material','src:#texWood; repeat:5 5; color:#5a3b1d; metalness:0; roughness:1'); env.appendChild(ceil);
+  ceil.setAttribute('material','color:#5a3b1d; metalness:0; roughness:1'); env.appendChild(ceil);
 
-  // Chandeliers (simple spheres + warm lights)
+  // Chandeliers
   function chandelier(x,z){
     const y=HALL_H-0.6;
     const bulb=document.createElement('a-sphere');
@@ -224,12 +281,13 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   }
   chandelier(-3, -3); chandelier(3, -3); chandelier(-3, 3); chandelier(3, 3); chandelier(0,0);
 
-  // Corridors (stone + wood floors)
+  // === CORRIDORS ===
   function mkCorridor(axis){
     const grp=document.createElement('a-entity'); env.appendChild(grp);
     const alongX=(axis==='x+'||axis==='x-'); const sign=axis.includes('+')?1:-1;
     const startX=alongX?sign*(HALL_W/2):0; const startZ=alongX?0:sign*(HALL_D/2);
 
+    // wood floor (you liked this)
     const floor=document.createElement('a-entity'); floor.classList.add('teleport');
     if(alongX){
       floor.setAttribute('geometry',`primitive: plane; width:${COR_L}; height:${COR_W}`);
@@ -238,41 +296,43 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
       floor.setAttribute('geometry',`primitive: plane; width:${COR_W}; height:${COR_L}`);
       floor.setAttribute('rotation','-90 0 0'); floor.setAttribute('position',`0 0 ${startZ+sign*(COR_L/2)}`);
     }
-    floor.setAttribute('material','src:#texWood; repeat:8 1; color:#996636; metalness:0.1; roughness:0.9'); grp.appendChild(floor);
+    floor.setAttribute('material','color:#986135; metalness:0.1; roughness:0.9');
+    grp.appendChild(floor);
 
-    function wall(x,y,z,w,h,d){
-      const box=document.createElement('a-box');
-      box.setAttribute('position',`${x} ${y} ${z}`); box.setAttribute('width',`${w}`); box.setAttribute('height',`${h}`); box.setAttribute('depth',`${d}`);
-      box.setAttribute('material','src:#texStone; repeat:8 1; color:#c7c1b5; metalness:0.05; roughness:1'); grp.appendChild(box);
+    // paneled stone walls (no images)
+    function strip(px,py,pz, sx,sy,sz, c){
+      const s=document.createElement('a-box');
+      s.setAttribute('position',`${px} ${py} ${pz}`); s.setAttribute('width',`${sx}`); s.setAttribute('height',`${sy}`); s.setAttribute('depth',`${sz}`);
+      s.setAttribute('color',c); grp.appendChild(s);
     }
+    const wallTone='#cfc8bc', trim='#b9b1a2';
     if(alongX){
       const zA =  COR_W/2 + WALL_T/2, zB = -COR_W/2 - WALL_T/2;
-      wall(startX + sign*(COR_L/2), COR_H/2, zA, COR_L, COR_H, WALL_T);
-      wall(startX + sign*(COR_L/2), COR_H/2, zB, COR_L, COR_H, WALL_T);
+      strip(startX + sign*(COR_L/2), HALL_H/2, zA, COR_L, HALL_H, WALL_T, wallTone);
+      strip(startX + sign*(COR_L/2), HALL_H/2, zB, COR_L, HALL_H, WALL_T, wallTone);
     }else{
       const xA =  COR_W/2 + WALL_T/2, xB = -COR_W/2 - WALL_T/2;
-      wall(xA, COR_H/2, startZ + sign*(COR_L/2), WALL_T, COR_H, COR_L);
-      wall(xB, COR_H/2, startZ + sign*(COR_L/2), WALL_T, COR_H, COR_L);
+      strip(xA, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L, wallTone);
+      strip(xB, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L, wallTone);
     }
 
-    // Sconces every ~5m
+    // sconces
     const step=5;
     if(alongX){
       for(let x = startX+sign*2.0; Math.abs(x-startX)<COR_L-1.5; x+=sign*step){
-        sconce(x, 2.0,  COR_W/2 + WALL_T/2 + 0.01, 180); // faces -z
-        sconce(x, 2.0, -COR_W/2 - WALL_T/2 - 0.01,   0); // faces +z
+        sconce(x, 2.0,  COR_W/2 + WALL_T/2 + 0.01, 180);
+        sconce(x, 2.0, -COR_W/2 - WALL_T/2 - 0.01,   0);
       }
     }else{
       for(let z = startZ+sign*2.0; Math.abs(z-startZ)<COR_L-1.5; z+=sign*step){
-        sconce( COR_W/2 + WALL_T/2 + 0.01, 2.0, z, -90); // faces -x
-        sconce(-COR_W/2 - WALL_T/2 - 0.01, 2.0, z,  90); // faces +x
+        sconce( COR_W/2 + WALL_T/2 + 0.01, 2.0, z, -90);
+        sconce(-COR_W/2 - WALL_T/2 - 0.01, 2.0, z,  90);
       }
     }
 
     return {alongX, sign, startX, startZ};
   }
 
-  // Sconce = small emissive disk + point light
   function sconce(x,y,z,yaw){
     const plate=document.createElement('a-cylinder');
     plate.setAttribute('radius','0.08'); plate.setAttribute('height','0.02');
@@ -289,12 +349,8 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
 
   const corridors = [ mkCorridor('x+'), mkCorridor('x-'), mkCorridor('z+'), mkCorridor('z-') ];
 
-  // Frames along corridor walls  ——— FIXED ROTATION
-  // Planes face +Z by default. We rotate so they face INTO the corridor:
-  //  • For walls at z>0  → face -Z → yaw = 180
-  //  • For walls at z<0  → face +Z → yaw =   0
-  //  • For walls at x>0  → face -X → yaw = -90
-  //  • For walls at x<0  → face +X → yaw =  90
+  // === FRAMES (only place that shows images) ===
+  // Planes face +Z by default -> rotate to face into corridor.
   const step = 3.2, margin = 1.6; let linkIdx = 0;
 
   function addFrame(pos, yawDeg){
@@ -329,7 +385,6 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   corridors.forEach(({alongX, sign, startX, startZ})=>{
     const y=1.6;
     if (alongX){
-      // walls at z = ±
       const zpos =  COR_W/2 + WALL_T/2;
       const zneg = -COR_W/2 - WALL_T/2;
       const yawPos = 180;  // z>0 → face -Z
@@ -339,7 +394,6 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
         addFrame({x, y, z: zneg}, yawNeg);
       }
     } else {
-      // walls at x = ±
       const xpos =  COR_W/2 + WALL_T/2;
       const xneg = -COR_W/2 - WALL_T/2;
       const yawPos = -90; // x>0 → face -X
@@ -358,7 +412,6 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   const W = map.width, H = map.height;
 
   function worldToMap(x, z){
-    // Scale world (hall+corridors) into map
     const maxX = (HALL_W/2 + COR_L), maxZ = (HALL_D/2 + COR_L);
     return {
       mx: Math.round( W * (x + maxX) / (2*maxX) ),
@@ -377,22 +430,19 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
 
     // corridors
     function rect(x1,z1,x2,z2){ const a=worldToMap(x1,z1), b=worldToMap(x2,z2); mctx.strokeRect(a.mx,a.mz,b.mx-a.mx,b.mz-a.mz); }
-    // +X / -X
     rect( HALL_W/2, -COR_W/2,  HALL_W/2+COR_L,  COR_W/2);
     rect(-HALL_W/2-COR_L, -COR_W/2, -HALL_W/2,  COR_W/2);
-    // +Z / -Z
     rect(-COR_W/2,  HALL_D/2,  COR_W/2,  HALL_D/2+COR_L);
     rect(-COR_W/2, -HALL_D/2-COR_L,  COR_W/2, -HALL_D/2);
 
     // player arrow
     const p = rig.object3D.position;
-    const r = camEl.object3D.rotation.y; // yaw in radians
+    const r = camEl.object3D.rotation.y;
     const {mx,my} = {mx:worldToMap(p.x,p.z).mx, my:worldToMap(p.x,p.z).mz};
     const len = 10;
 
     mctx.fillStyle = '#ffcf6b';
     mctx.beginPath();
-    // triangle pointing forward
     mctx.moveTo(mx + Math.sin(r)*len,  my - Math.cos(r)*len);
     mctx.lineTo(mx + Math.sin(r + 2.5)*8, my - Math.cos(r + 2.5)*8);
     mctx.lineTo(mx + Math.sin(r - 2.5)*8, my - Math.cos(r - 2.5)*8);
