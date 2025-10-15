@@ -2,86 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>VLife • Room v1</title>
+  <title>VLife • Gallery Library (Room v2)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=room1" />
+  <link rel="stylesheet" href="style.css?v=room2" />
 </head>
 <body>
   <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
   <button id="hamburger" onclick="toggleHelp()">?</button>
   <div id="help" class="hidden">
-    <h3>VLife • Room</h3>
-    <p>Look at the floor and tap to teleport. Gaze/tap posters or the orb.</p>
+    <h3>VLife • Gallery Library</h3>
+    <p>Tap/gaze the floor to move. Look at a frame and tap/gaze to preview & open.</p>
   </div>
 
   <a-scene id="scene" renderer="antialias: true; colorManagement: true" loading-screen="enabled:false">
-    <a-assets>
-      <!-- Replace these with your own later -->
-      <img id="poster1" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop" crossorigin="anonymous" />
-      <img id="poster2" src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop" crossorigin="anonymous" />
-      <audio id="ambience" src="https://cdn.jsdelivr.net/gh/anars/blank-audio/10-seconds-of-silence.mp3"></audio>
-    </a-assets>
+    <a-assets id="assets"></a-assets>
 
     <!-- Lighting -->
-    <a-entity light="type: ambient; intensity: 0.55; color: #fff"></a-entity>
-    <a-entity light="type: directional; intensity: 0.7; castShadow: true" position="2 4 1"></a-entity>
+    <a-entity light="type: ambient; intensity: 0.5; color: #fff"></a-entity>
+    <a-entity light="type: directional; intensity: 0.85; castShadow: true" position="4 6 3"></a-entity>
 
     <!-- Camera rig with dual cursors -->
-    <a-entity id="rig" position="0 1.6 2.2">
+    <a-entity id="rig" position="0 1.6 6">
       <a-camera id="cam" wasd-controls-enabled="false" look-controls="touchEnabled: true">
+        <!-- Gaze cursor -->
         <a-cursor id="gazeCursor"
           position="0 0 -1"
           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
           material="shader: flat; color: #fff"
           cursor="fuse: true; fuseTimeout: 1100; rayOrigin: entity"
-          raycaster="objects: .teleport, .interact; far: 30; interval: 0">
+          raycaster="objects: .teleport, .interact; far: 60; interval: 0">
         </a-cursor>
+        <!-- Mouse/touch cursor -->
         <a-entity id="mouseCursor"
           cursor="rayOrigin: mouse"
-          raycaster="objects: .teleport, .interact; far: 30; interval: 0">
+          raycaster="objects: .teleport, .interact; far: 60; interval: 0">
         </a-entity>
       </a-camera>
     </a-entity>
 
-    <!-- Room (6×6×3m) -->
-    <!-- Floor (teleportable) -->
-    <a-entity id="floor" class="teleport" geometry="primitive: plane; width: 6; height: 6"
-              material="color: #1b1d24; metalness: 0.1; roughness: 0.9"
-              rotation="-90 0 0" position="0 0 0"></a-entity>
-
-    <!-- Walls -->
-    <a-box position="0 1.5 -3" depth="0.05" height="3" width="6" color="#0e111a"></a-box>
-    <a-box position="0 1.5  3" depth="0.05" height="3" width="6" color="#0e111a"></a-box>
-    <a-box position="-3 1.5 0" depth="6" height="3" width="0.05" color="#0e111a"></a-box>
-    <a-box position=" 3 1.5 0" depth="6" height="3" width="0.05" color="#0e111a"></a-box>
-    <!-- Ceiling -->
-    <a-plane rotation="90 0 0" position="0 3 0" width="6" height="6"
-             material="color:#141824; metalness:0; roughness:1"></a-plane>
-
-    <!-- Rug for depth cue -->
-    <a-ring position="0 0.01 0" rotation="-90 0 0"
-            radius-inner="0.4" radius-outer="0.8"
-            material="color:#253048; opacity:0.8; transparent:true"></a-ring>
-
-    <!-- Interactive: Posters (left wall) -->
-    <a-plane class="interact poster" src="#poster1" width="1.4" height="0.9"
-             position="-2.1 1.6 -1.2" rotation="0 90 0"></a-plane>
-
-    <a-plane class="interact poster" src="#poster2" width="1.4" height="0.9"
-             position="-2.1 1.0  1.2" rotation="0 90 0"></a-plane>
-
-    <!-- Interactive: Orb (right wall) -->
-    <a-entity class="interact orb" geometry="primitive: sphere; radius: 0.16"
-              material="color:#ffd100; emissive:#ffd100; emissiveIntensity:0.9"
-              position="2.1 1.4 0" ></a-entity>
-
-    <!-- Soft window light (fake window) -->
-    <a-plane position="0 2.0 -2.99" width="2.2" height="1.1"
-             material="color:#7fb9ff; opacity:0.12; transparent:true"></a-plane>
-
+    <!-- Room shell is built from script.js -->
   </a-scene>
 
-  <script src="script.js?v=room1"></script>
+  <script src="script.js?v=room2"></script>
 </body>
 </html>
