@@ -1,25 +1,36 @@
 /* =========================================================
-   VLife • Library – script.js (lib1.1)
+   VLife • Library – script.js (lib1.2)
    - Triple-size hall + corridors
-   - Brighter lighting + scene background
-   - Smooth teleport
-   - Wall posters → door panel with YouTube thumbnails
-   - No optional chaining (Samsung Internet friendly)
+   - Smooth teleport (tap-only by default)
+   - Gaze/tap posters → door panel with YouTube thumbnails
+   - Brighter lighting & safe JS for mobile
 ========================================================= */
 
-/* UI */
-function toggleHelp(){ document.getElementById('help').classList.toggle('hidden'); }
+/* ---------- Teleport behaviour (tweak here) ---------- */
+const TELEPORT_VIA_GAZE      = false; // tap-only by default
+const TELEPORT_DURATION_MS   = 900;   // slower glide
+const TELEPORT_DEADZONE_M    = 0.25;  // ignore tiny moves
+const TELEPORT_ARM_DELAY_MS  = 1200;  // prevent accidental first move
 
-/* Elements */
+/* ---------- Elements & UI ---------- */
+function toggleHelp(){ document.getElementById('help').classList.toggle('hidden'); }
 var scene = document.getElementById('scene');
 var env   = document.getElementById('env');
 var rig   = document.getElementById('rig');
 
-/* Dimensions */
+/* Adjust gaze raycaster to avoid floor teleport targets unless enabled */
+(function adjustGazeRaycaster(){
+  var gaze = document.getElementById('gazeCursor');
+  if (!gaze) return;
+  var objs = TELEPORT_VIA_GAZE ? '.teleport, .interact' : '.interact';
+  gaze.setAttribute('raycaster', 'objects: '+objs+'; far: 60; interval: 0');
+})();
+
+/* ---------- Dimensions (triple room) ---------- */
 var HALL_W = 18, HALL_D = 18, HALL_H = 4.5, WALL_T = 0.06;
 var COR_W  = 3.0, COR_H  = HALL_H, COR_L  = 14.0;
 
-/* Links (YouTube = guaranteed thumbnail) */
+/* ---------- Links (YouTube = guaranteed thumbnail) ---------- */
 var LINKS = [
   { title: 'Grand Canyon 360',   url: 'https://www.youtube.com/watch?v=CSvFpBOe8eY' },
   { title: 'Roller Coaster 360', url: 'https://www.youtube.com/watch?v=VR1b7GdQf2I' },
@@ -29,7 +40,7 @@ var LINKS = [
   { title: 'Mountain Flight 360',url: 'https://www.youtube.com/watch?v=GoB9aSxUjYw' }
 ];
 
-/* Utils */
+/* ---------- Utils ---------- */
 function parseYouTubeId(u){
   try{
     var url = new URL(u);
@@ -47,30 +58,33 @@ function worldPosOf(el, lift){
   return v;
 }
 
-/* Teleport (attach once to scene, but only react for .teleport) */
+/* ---------- Smooth teleport on .teleport (tap-only by default) ---------- */
 (function setupTeleport(){
-  var lerpMs = 320;
+  const lerpMs = TELEPORT_DURATION_MS;
+  let armed = false;
+  setTimeout(function(){ armed = true; }, TELEPORT_ARM_DELAY_MS);
 
   function moveTo(x, z){
-    var halfHallX = HALL_W/2 - 0.4;
-    var halfHallZ = HALL_D/2 - 0.4;
+    // clamp within large bounds (hall + corridors)
+    const halfHallX = HALL_W/2 - 0.4;
+    const halfHallZ = HALL_D/2 - 0.4;
 
-    var tx = x, tz = z;
+    let tx = x, tz = z;
     function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
-    var inHall = (Math.abs(x) <= halfHallX && Math.abs(z) <= halfHallZ);
+    const inHall = (Math.abs(x) <= halfHallX && Math.abs(z) <= halfHallZ);
 
     if (inHall) {
       tx = clamp(x, -halfHallX, halfHallX);
       tz = clamp(z, -halfHallZ, halfHallZ);
     } else {
-      var inXStrip = (Math.abs(z) <= COR_W/2 - 0.2);
-      var inZStrip = (Math.abs(x) <= COR_W/2 - 0.2);
+      const inXStrip = (Math.abs(z) <= COR_W/2 - 0.2);
+      const inZStrip = (Math.abs(x) <= COR_W/2 - 0.2);
       if (inXStrip) {
-        var limitX = halfHallX + COR_L;
+        const limitX = halfHallX + COR_L;
         tx = clamp(x, -limitX, limitX);
         tz = clamp(z, -COR_W/2 + 0.2, COR_W/2 - 0.2);
       } else if (inZStrip) {
-        var limitZ = halfHallZ + COR_L;
+        const limitZ = halfHallZ + COR_L;
         tz = clamp(z, -limitZ, limitZ);
         tx = clamp(x, -COR_W/2 + 0.2, COR_W/2 - 0.2);
       } else {
@@ -79,31 +93,39 @@ function worldPosOf(el, lift){
       }
     }
 
-    var start = rig.object3D.position.clone();
-    var end   = new THREE.Vector3(tx, start.y, tz);
-    var t0 = performance.now();
+    // deadzone (ignore tiny moves)
+    const cur = rig.object3D.position;
+    const dx = tx - cur.x, dz = tz - cur.z;
+    if (Math.hypot(dx, dz) < TELEPORT_DEADZONE_M) return;
+
+    // smooth ease-in-out
+    const start = cur.clone();
+    const end   = new THREE.Vector3(tx, start.y, tz);
+    const t0 = performance.now();
 
     function step(){
-      var t = (performance.now() - t0) / lerpMs;
-      var k = t >= 1 ? 1 : (1 - Math.cos(Math.min(1,t)*Math.PI)) / 2;
-      var p = start.clone().lerp(end, k);
+      const t = (performance.now() - t0) / lerpMs;
+      const k = t >= 1 ? 1 : (1 - Math.cos(Math.min(1,t)*Math.PI)) / 2;
+      const p = start.clone().lerp(end, k);
       rig.object3D.position.copy(p);
       if (t < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
   }
 
+  // Only react to clicks on teleport surfaces
   scene.addEventListener('click', function(evt){
-    var target = evt.target;
+    if (!armed) return; // prevent accidental first move
+    const target = evt.target;
     if (!target || !target.classList || !target.classList.contains('teleport')) return;
-    var d = evt.detail || {};
-    var inter = d.intersection || (d.intersections && d.intersections[0]);
+    const d = evt.detail || {};
+    const inter = d.intersection || (d.intersections && d.intersections[0]);
     if (!inter) return;
     moveTo(inter.point.x, inter.point.z);
   });
 })();
 
-/* Door panel (centered, billboard) */
+/* ---------- Door panel (centered, billboard, auto-close) ---------- */
 function spawnDoorPanel(worldPos, title, url, imgSrc){
   var W=3.2, H=1.8, headerH=0.16;
 
@@ -186,7 +208,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   return root;
 }
 
-/* Build: brighter materials + lights so nothing is black */
+/* ---------- Build: brighter hall + corridors + posters ---------- */
 (function buildLibrary(){
   // Lights
   var hemi = document.createElement('a-entity');
@@ -199,7 +221,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   dir.setAttribute('position','3 6 2');
   env.appendChild(dir);
 
-  // Hall floor (lighter color)
+  // Hall floor
   var floorHall = document.createElement('a-entity');
   floorHall.classList.add('teleport');
   floorHall.setAttribute('geometry', 'primitive: plane; width:'+HALL_W+'; height:'+HALL_D);
@@ -207,7 +229,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   floorHall.setAttribute('rotation','-90 0 0');
   env.appendChild(floorHall);
 
-  // Walls (slightly lighter than before)
+  // Walls
   var wallColor = '#111827';
   function mkWall(x,y,z, w,h,d){
     var wall = document.createElement('a-box');
@@ -241,7 +263,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   rug.setAttribute('material','color:#30405f; opacity:0.9; transparent:true');
   env.appendChild(rug);
 
-  // Corridors (+X, -X, +Z, -Z)
+  // Corridors
   function mkCorridor(axis){
     var grp = document.createElement('a-entity'); env.appendChild(grp);
     var alongX = (axis === 'x+' || axis === 'x-');
@@ -288,7 +310,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
 
   var corridors = [ mkCorridor('x+'), mkCorridor('x-'), mkCorridor('z+'), mkCorridor('z-') ];
 
-  // Frames along walls
+  // Frames along corridor walls
   var step = 3.2, margin = 1.6, linkIdx = 0;
   function addFrame(pos, yawDeg){
     var link = LINKS[linkIdx % LINKS.length]; linkIdx++;
