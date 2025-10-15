@@ -1,6 +1,93 @@
-/* ==== helpers for display + marquee ==== */
+/* =========================================================
+   VLife 360 – full script.js
+   - Orb components
+   - Link data (with optional /assets/links.json override)
+   - Menu collapse -> hamburger
+   - Orb -> BIG floating link panel w/ marquee
+   - Auto-close + look-away close
+   - Binding (gaze fuse or tap)
+========================================================= */
 
-// Trim for initial fit (we still run marquee if it overflows)
+/* ---------- Components ---------- */
+AFRAME.registerComponent('orb', {
+  init: function () {
+    // Visible yellow orb with generous hitbox
+    this.el.setAttribute('geometry', 'primitive: sphere; radius: 0.2');
+    this.el.setAttribute('material', 'color: #ffd100; emissive: #ffd100; emissiveIntensity: 0.95; metalness: 0.1; roughness: 0.4');
+    this.el.setAttribute('animation__pulse', 'property: scale; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true; to: 1.35 1.35 1.35');
+    this.el.addEventListener('mouseenter', () => this.el.object3D.scale.set(1.6,1.6,1.6));
+    this.el.addEventListener('mouseleave', () => this.el.object3D.scale.set(1,1,1));
+  }
+});
+
+AFRAME.registerComponent('billboard', {
+  tick: function () {
+    const cam = this.cam || (this.cam = document.querySelector('a-camera'));
+    if (!cam) return;
+    this.el.object3D.lookAt(cam.object3D.position);
+  }
+});
+
+/* ---------- Link data (override with /assets/links.json) ---------- */
+let ORB_LINKS = [
+  { title: 'YouTube 360',             url: 'https://www.youtube.com/360' },
+  { title: 'Vimeo 360',               url: 'https://vimeo.com/360' },
+  { title: 'AirPano 360 Videos',      url: 'https://www.airpano.com/video/' },
+  { title: 'National Geographic 360', url: 'https://www.youtube.com/playlist?list=PLivjPDlt6ApQUgZgY2hLpcZ3g4Zz4icZT' },
+  { title: 'NYT – The Daily 360',     url: 'https://www.nytimes.com/spotlight/the-daily-360' },
+  { title: 'GoPro 360 (YouTube)',     url: 'https://www.youtube.com/@GoPro/search?query=360' }
+];
+
+fetch('assets/links.json')
+  .then(r => (r.ok ? r.json() : Promise.reject()))
+  .then(d => { if (Array.isArray(d) && d.length >= 6) ORB_LINKS = d.slice(0,6); })
+  .catch(()=>{ /* keep defaults */ });
+
+/* ---------- UI elements ---------- */
+const scene      = document.getElementById('scene');
+const sky        = document.getElementById('sky');
+const statusText = document.getElementById('statusText');
+const menuPanel  = document.getElementById('menuPanel');
+const hamburger  = document.getElementById('hamburger');
+
+/* Background labels for status line */
+const labelMap = {
+  Park360: 'Park 360',
+  Forrest360: 'Forest 360',
+  Futurecity360: 'Future City 360',
+  Neonnightclub: 'Neon Nightclub 360',
+  floating_sky_monastery_upscaled_8k: 'Floating Sky Monastery 8K'
+};
+
+/* ---------- Menu: set background & collapse panel ---------- */
+function setBackground(bg) {
+  sky.setAttribute('src', '#' + bg);
+  if (statusText) statusText.textContent = 'Using 360: ' + (labelMap[bg] || bg);
+
+  if (!menuPanel.classList.contains('hidden')) {
+    menuPanel.classList.add('collapsing');
+    setTimeout(() => {
+      menuPanel.classList.remove('collapsing');
+      menuPanel.classList.add('hidden');
+      hamburger.classList.remove('hidden');
+    }, 260);
+  } else {
+    hamburger.classList.remove('hidden');
+  }
+}
+function toggleMenu() {
+  const willShow = menuPanel.classList.contains('hidden');
+  menuPanel.classList.toggle('hidden', !willShow ? true : false);
+  hamburger.classList.toggle('hidden', willShow ? true : false);
+}
+window.setBackground = setBackground;
+window.toggleMenu = toggleMenu;
+
+/* =========================================================
+   Helpers for display + marquee
+========================================================= */
+
+// Trim for initial fit (Open button still uses full URL)
 function trimUrlForDisplay(u, max = 44) {
   try {
     const url = new URL(u);
@@ -12,18 +99,17 @@ function trimUrlForDisplay(u, max = 44) {
 }
 
 /**
- * Start a marquee that scrolls text inside a fixed-length window.
- * We simulate “clipping” by only rendering a substring of the full string.
+ * Start a marquee that scrolls text inside a character window.
+ * We emulate clipping by showing a moving substring.
  * Call stopMarquee(entity) to cancel.
  */
 function startMarquee(textEntity, fullText, windowChars, stepMs = 120, spacer = '   •   ') {
   stopMarquee(textEntity);
-  // If it fits, just set once and bail
-  if (fullText.length <= windowChars) {
-    textEntity.setAttribute('text', 'value', fullText);
+  if (!fullText || fullText.length <= windowChars) {
+    textEntity.setAttribute('text', 'value', fullText || '');
     return;
   }
-  const scroll = fullText + spacer + fullText; // loopable
+  const scroll = fullText + spacer + fullText;
   let i = 0;
   const tick = () => {
     const slice = scroll.slice(i, i + windowChars);
@@ -40,9 +126,14 @@ function stopMarquee(textEntity) {
   }
 }
 
-/* ---------- Orb → BIG Floating Panel (raised higher, marquee text) ---------- */
+/* =========================================================
+   Orb -> BIG floating panel (above orb) with marquee
+   - appears 1.2 m above the orb
+   - auto-closes after 8 s
+   - closes 1.2 s after look-away (armed after 300 ms to avoid jitter)
+========================================================= */
 function expandOrbToPanel(orbEl, link) {
-  // save state once
+  // remember original so we can restore
   if (!orbEl.__vlifeOriginal) {
     orbEl.__vlifeOriginal = {
       geom:  orbEl.getAttribute('geometry'),
@@ -56,7 +147,7 @@ function expandOrbToPanel(orbEl, link) {
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  // raise panel above the orb line (higher so the orb line never overlaps)
+  // raise panel above the orb line (higher so the orb never overlaps)
   const lift = 1.2; // metres
   const p = orbEl.__vlifeOriginal.pos;
   orbEl.setAttribute('position', `${p.x} ${p.y + lift} ${p.z}`);
@@ -68,8 +159,8 @@ function expandOrbToPanel(orbEl, link) {
   const panelRoot = document.createElement('a-entity');
   orbEl.appendChild(panelRoot);
 
-  // >>> BIGGER BOXES <<<
-  const panelW = 2.40, panelH = 0.84;         // ~2× previous size
+  // BIGGER BOXES
+  const panelW = 2.40, panelH = 0.84;
   const headerH = 0.12;
 
   // background
@@ -86,23 +177,21 @@ function expandOrbToPanel(orbEl, link) {
   header.setAttribute('position', `0 ${panelH/2 - headerH/2} 0.01`);
   panelRoot.appendChild(header);
 
-  // Title text (marquee if long)
+  // Title (marquee if long)
   const titleEntity = document.createElement('a-entity');
   titleEntity.setAttribute('text', `value: ${link.title}; align: center; color: #111; width: 3.2; zOffset: 0.01`);
   titleEntity.setAttribute('position', `0 ${panelH/2 - headerH/2} 0.015`);
   panelRoot.appendChild(titleEntity);
-  // Title window: ~34 chars at this size
-  startMarquee(titleEntity, link.title, 34, 120);
+  startMarquee(titleEntity, link.title || '', 34, 120);
 
-  // URL area (two lines look nicer on big panel—use wrap + marquee window)
+  // URL (display + marquee)
   const urlEntity = document.createElement('a-entity');
   urlEntity.setAttribute('text', `value: ${trimUrlForDisplay(link.url, 44)}; align: center; color: #fff; width: 2.6; wrapCount: 36; zOffset: 0.01`);
   urlEntity.setAttribute('position', '0 0.16 0.015');
   panelRoot.appendChild(urlEntity);
-  // If the true URL is longer than our display window, run a marquee window too.
-  startMarquee(urlEntity, link.url, 44, 90);
+  startMarquee(urlEntity, link.url || '', 44, 90);
 
-  // >>> BIGGER OPEN BUTTON <<<
+  // Open button (bigger)
   const openBtn = document.createElement('a-entity');
   openBtn.setAttribute('class', 'linkbtn');
   openBtn.setAttribute('geometry', 'primitive: plane; width: 0.80; height: 0.22');
@@ -113,7 +202,8 @@ function expandOrbToPanel(orbEl, link) {
   label.setAttribute('position', '0 0 0.01');
   openBtn.appendChild(label);
   openBtn.addEventListener('click', () => {
-    try { window.open(link.url, '_blank'); } catch(e) { location.href = link.url; }
+    const u = (link.url || '').trim();
+    if (u) { try { window.open(u, '_blank'); } catch(e) { location.href = u; } }
   });
   panelRoot.appendChild(openBtn);
 
@@ -130,9 +220,10 @@ function expandOrbToPanel(orbEl, link) {
   closeBtn.addEventListener('click', () => restoreOrb(orbEl));
   panelRoot.appendChild(closeBtn);
 
-  // --- auto-close + look-away (with 300ms lockout to avoid jitter) ---
+  // --- timers: auto-close + look-away with 300ms lockout ---
   orbEl.__autoCloseTimer = setTimeout(() => restoreOrb(orbEl), 8000);
-  let lookAwayArmed = false;
+
+  let lookAwayArmed = false; // ignore jitter just after open
   setTimeout(() => { lookAwayArmed = true; }, 300);
 
   const cancelLookAway = () => { if (lookAwayArmed) clearTimeout(orbEl.__lookAwayTimer); };
@@ -141,25 +232,28 @@ function expandOrbToPanel(orbEl, link) {
     clearTimeout(orbEl.__lookAwayTimer);
     orbEl.__lookAwayTimer = setTimeout(() => restoreOrb(orbEl), 1200);
   };
+
   panelRoot.addEventListener('mouseenter', cancelLookAway);
   panelRoot.addEventListener('mouseleave', startLookAway);
 
-  // Keep reference to clean up marquee timers on restore
+  // keep refs to stop marquees on restore
   orbEl.__panelNodes = { titleEntity, urlEntity };
 }
 
+/* ---------- Restore orb ---------- */
 function restoreOrb(orbEl) {
   if (!orbEl?.__vlifeOriginal) return;
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  // stop marquees if running
+  // stop marquees
   if (orbEl.__panelNodes) {
     stopMarquee(orbEl.__panelNodes.titleEntity);
     stopMarquee(orbEl.__panelNodes.urlEntity);
     orbEl.__panelNodes = null;
   }
 
+  // clear children
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
 
   // restore sphere + original position
@@ -169,3 +263,23 @@ function restoreOrb(orbEl) {
   const p = orbEl.__vlifeOriginal.pos;
   orbEl.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
 }
+
+/* =========================================================
+   Bind: gaze fuse or tap triggers the panel
+   (Dual cursors are set in index.html)
+========================================================= */
+function bindOrbEvents() {
+  document.querySelectorAll('.hotspot').forEach((el) => {
+    const idx  = parseInt(el.getAttribute('data-key') || '0', 10);
+    const link = ORB_LINKS[Math.max(0, Math.min(5, idx))] || ORB_LINKS[0];
+    el.addEventListener('click', () => expandOrbToPanel(el, link)); // fires after gaze fuse or tap
+  });
+}
+
+if (scene?.hasLoaded) bindOrbEvents();
+else scene?.addEventListener('loaded', bindOrbEvents);
+
+/* ---------- Optional: ESC toggles menu on desktop ---------- */
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') toggleMenu();
+});
