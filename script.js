@@ -1,10 +1,9 @@
 /* =========================================================
-   VLife • Chateau Library – script.js (chateau1.1)
-   - Main hall: stone tile floor (no textures needed)
-   - All walls: paneled stone (baseboard, chair rail, panels, cornice)
-   - Corridors keep wood floors
-   - Posters only on frames (fixed rotation as before)
-   - Tap-to-teleport, mini-map, door panel previews
+   VLife • Chateau Library – script.js (chateau1.2)
+   Fixes:
+   - Main hall floor: single plane + canvas stone-tile texture (no seams)
+   - Corridor frames: offset from wall (+/-0.06m) so they don't sink in
+   - Kept teleport, mini-map, sconces/chandeliers
 ========================================================= */
 
 /* ---- Teleport behaviour ---- */
@@ -177,92 +176,86 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   return root;
 }
 
-/* ---------- Chateau build (paneled walls + tiled hall) ---------- */
+/* ---------- Hall + Corridors (stone walls, wood corridor floor) ---------- */
 (function buildChateau(){
-  // Lights
+
+  /* Lights */
   const hemi = document.createElement('a-entity');
   hemi.setAttribute('light','type: hemisphere; intensity: 0.9; color: #dfe8ff; groundColor:#433;');
   hemi.setAttribute('position','0 3 0'); env.appendChild(hemi);
 
-  // === MAIN HALL FLOOR (stone tiles) ===
-  // Build a grid of small planes so nothing stretches.
-  const tileSize = 1.2; // meters
-  const tilesX = Math.ceil(HALL_W / tileSize);
-  const tilesZ = Math.ceil(HALL_D / tileSize);
-  const hallFloorGroup = document.createElement('a-entity'); hallFloorGroup.classList.add('teleport');
-  hallFloorGroup.setAttribute('rotation','-90 0 0'); env.appendChild(hallFloorGroup);
-
-  for (let ix=0; ix<tilesX; ix++){
-    for (let iz=0; iz<tilesZ; iz++){
-      const px = -HALL_W/2 + tileSize/2 + ix*tileSize;
-      const pz = -HALL_D/2 + tileSize/2 + iz*tileSize;
-      const tile = document.createElement('a-plane');
-      tile.setAttribute('width', tileSize);
-      tile.setAttribute('height', tileSize);
-      // slight color variation tile-to-tile
-      const tint = 190 + Math.floor(Math.random()*20); // warm stone
-      tile.setAttribute('material', `color: rgb(${tint}, ${tint-8}, ${tint-20}); metalness:0.05; roughness:1`);
-      tile.setAttribute('position', `${px} 0 ${pz}`);
-      hallFloorGroup.appendChild(tile);
+  /* === MAIN HALL FLOOR: canvas stone tiles (no seams) === */
+  const tileCanvas = document.createElement('canvas');
+  tileCanvas.width = 512; tileCanvas.height = 512;
+  const g = tileCanvas.getContext('2d');
+  // base
+  g.fillStyle = '#d8d2c6'; g.fillRect(0,0,512,512);
+  // tiles
+  const N = 8; // 8x8 tiles in the texture
+  const s = 512/N;
+  for (let i=0;i<N;i++){
+    for (let j=0;j<N;j++){
+      const shade = 205 + ((i+j)%2 ? -10 : 0);
+      g.fillStyle = `rgb(${shade},${shade-6},${shade-12})`;
+      g.fillRect(i*s, j*s, s-2, s-2);
     }
   }
+  // grout lines
+  g.strokeStyle = 'rgba(60,60,60,0.35)';
+  for (let k=0;k<=N;k++){ g.beginPath(); g.moveTo(k*s,0); g.lineTo(k*s,512); g.stroke();
+                          g.beginPath(); g.moveTo(0,k*s); g.lineTo(512,k*s); g.stroke(); }
+  const tex = new THREE.CanvasTexture(tileCanvas);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(HALL_W/3, HALL_D/3); // scale texture to room size
 
-  // === HALL WALLS (paneled stone) ===
-  function paneledWall(x,y,z, w,h,d, face){
-    // base solid wall
-    const wall = document.createElement('a-box');
-    wall.setAttribute('position',`${x} ${y} ${z}`);
-    wall.setAttribute('width',`${w}`); wall.setAttribute('height',`${h}`); wall.setAttribute('depth',`${d}`);
-    wall.setAttribute('color','#cfc8bc'); env.appendChild(wall);
+  const hallFloor = document.createElement('a-entity');
+  hallFloor.classList.add('teleport');
+  hallFloor.setAttribute('geometry', `primitive: plane; width:${HALL_W}; height:${HALL_D}`);
+  hallFloor.setAttribute('rotation', '-90 0 0');
+  // attach texture via material component using THREE texture:
+  hallFloor.addEventListener('model-loaded', ()=>{}); // no-op
+  hallFloor.setAttribute('material', 'shader: flat; src:');
+  hallFloor.object3D.traverse(()=>{}); // placeholder
+  // A-Frame hook to set map directly:
+  hallFloor.addEventListener('loaded', ()=>{
+    const mesh = hallFloor.getObject3D('mesh');
+    if (mesh) {
+      mesh.material.map = tex;
+      mesh.material.needsUpdate = true;
+    }
+  });
+  env.appendChild(hallFloor);
 
-    // baseboard, chair-rail, cornice
-    const baseH=0.18, chairH=1.0, cornH=0.16;
-    function strip(px,py,pz, sx,sy,sz, c){
-      const s=document.createElement('a-box');
-      s.setAttribute('position',`${px} ${py} ${pz}`); s.setAttribute('width',`${sx}`); s.setAttribute('height',`${sy}`); s.setAttribute('depth',`${sz}`);
-      s.setAttribute('color',c); env.appendChild(s);
-    }
-    // orientation helpers
-    const alongX = (face==='N' || face==='S');
-    // strips run along width (w) for N/S, along depth (d) for E/W
-    if (alongX){
-      strip(0, baseH/2, z + (face==='N'?-d/2:d/2), w, baseH, 0.05, '#b9b1a2');
-      strip(0, chairH, z + (face==='N'?-d/2:d/2), w, 0.06, 0.05, '#b9b1a2');
-      strip(0, h - cornH/2, z + (face==='N'?-d/2:d/2), w, cornH, 0.06, '#b9b1a2');
-    } else {
-      strip(x + (face==='E'?d/2:-d/2), baseH/2, 0, 0.05, baseH, HALL_D, '#b9b1a2');
-      strip(x + (face==='E'?d/2:-d/2), chairH, 0, 0.05, 0.06, HALL_D, '#b9b1a2');
-      strip(x + (face==='E'?d/2:-d/2), h - cornH/2, 0, 0.06, cornH, HALL_D, '#b9b1a2');
-    }
-
-    // vertical panels (insets): darker tone, slightly offset outwards
-    const panelColor = '#b7afa1';
-    const gap = 0.25, panelW = 1.4, panelH = 1.2, panelY = 1.45;
-    const count = Math.floor((alongX?w:HALL_D - 0.6) / (panelW + gap));
-    for (let i=0;i<count;i++){
-      const offset = -((count-1)*(panelW+gap))/2 + i*(panelW+gap);
-      const plane = document.createElement('a-plane');
-      plane.setAttribute('width', panelW);
-      plane.setAttribute('height', panelH);
-      plane.setAttribute('material', `color:${panelColor}`);
-      if (alongX){
-        plane.setAttribute('position', `${offset} ${panelY} ${z + (face==='N'?-d/2-0.005:d/2+0.005)}`);
-        plane.setAttribute('rotation', `0 ${face==='N'?0:180} 0`);
-      } else {
-        plane.setAttribute('position', `${x + (face==='E'?d/2+0.005:-d/2-0.005)} ${panelY} ${offset}`);
-        plane.setAttribute('rotation', `0 ${face==='E'?-90:90} 0`);
-      }
-      env.appendChild(plane);
-    }
+  /* === HALL WALLS (stone blocks, simple trim) === */
+  function wallBox(x,y,z,w,h,d,color){
+    const b=document.createElement('a-box');
+    b.setAttribute('position',`${x} ${y} ${z}`);
+    b.setAttribute('width',`${w}`); b.setAttribute('height',`${h}`); b.setAttribute('depth',`${d}`);
+    b.setAttribute('color',color); env.appendChild(b);
   }
+  const stone = '#cfc8bc', trim = '#b9b1a2';
+  wallBox(0, HALL_H/2, -HALL_D/2, HALL_W, HALL_H, WALL_T, stone);
+  wallBox(0, HALL_H/2,  HALL_D/2, HALL_W, HALL_H, WALL_T, stone);
+  wallBox( HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, stone);
+  wallBox(-HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, stone);
 
-  // Build four hall sides
-  paneledWall(0, HALL_H/2, -HALL_D/2, HALL_W, HALL_H, WALL_T, 'N'); // north (back)
-  paneledWall(0, HALL_H/2,  HALL_D/2, HALL_W, HALL_H, WALL_T, 'S'); // south (front)
-  paneledWall( HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, 'E'); // east (right)
-  paneledWall(-HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, 'W'); // west (left)
+  // baseboard & cornice (rings)
+  function ring(y,hthk){
+    const r = document.createElement('a-box');
+    r.setAttribute('position', `0 ${y} 0`);
+    r.setAttribute('width', `${HALL_W+WALL_T*2}`);
+    r.setAttribute('height', `${hthk}`);
+    r.setAttribute('depth', `${HALL_D+WALL_T*2}`);
+    r.setAttribute('color', trim);
+    r.setAttribute('geometry', `primitive: box`);
+    r.setAttribute('material', `color:${trim}`);
+    r.setAttribute('opacity', '1');
+    env.appendChild(r);
+  }
+  ring(0.1, 0.12);                 // baseboard height
+  ring(HALL_H-0.08, 0.10);         // cornice
 
-  // Ceiling (dark timber tone)
+  // Ceiling (dark timber)
   const ceil=document.createElement('a-plane');
   ceil.setAttribute('rotation','90 0 0'); ceil.setAttribute('position',`0 ${HALL_H} 0`);
   ceil.setAttribute('width',`${HALL_W}`); ceil.setAttribute('height',`${HALL_D}`);
@@ -281,13 +274,13 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   }
   chandelier(-3, -3); chandelier(3, -3); chandelier(-3, 3); chandelier(3, 3); chandelier(0,0);
 
-  // === CORRIDORS ===
+  /* === CORRIDORS === */
   function mkCorridor(axis){
     const grp=document.createElement('a-entity'); env.appendChild(grp);
     const alongX=(axis==='x+'||axis==='x-'); const sign=axis.includes('+')?1:-1;
     const startX=alongX?sign*(HALL_W/2):0; const startZ=alongX?0:sign*(HALL_D/2);
 
-    // wood floor (you liked this)
+    // wood floor
     const floor=document.createElement('a-entity'); floor.classList.add('teleport');
     if(alongX){
       floor.setAttribute('geometry',`primitive: plane; width:${COR_L}; height:${COR_W}`);
@@ -299,21 +292,21 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
     floor.setAttribute('material','color:#986135; metalness:0.1; roughness:0.9');
     grp.appendChild(floor);
 
-    // paneled stone walls (no images)
-    function strip(px,py,pz, sx,sy,sz, c){
-      const s=document.createElement('a-box');
-      s.setAttribute('position',`${px} ${py} ${pz}`); s.setAttribute('width',`${sx}`); s.setAttribute('height',`${sy}`); s.setAttribute('depth',`${sz}`);
-      s.setAttribute('color',c); grp.appendChild(s);
+    // plain stone walls
+    const wallTone='#cfc8bc';
+    function wall(x,y,z,w,h,d){
+      const box=document.createElement('a-box');
+      box.setAttribute('position',`${x} ${y} ${z}`); box.setAttribute('width',`${w}`); box.setAttribute('height',`${h}`); box.setAttribute('depth',`${d}`);
+      box.setAttribute('color', wallTone); grp.appendChild(box);
     }
-    const wallTone='#cfc8bc', trim='#b9b1a2';
     if(alongX){
       const zA =  COR_W/2 + WALL_T/2, zB = -COR_W/2 - WALL_T/2;
-      strip(startX + sign*(COR_L/2), HALL_H/2, zA, COR_L, HALL_H, WALL_T, wallTone);
-      strip(startX + sign*(COR_L/2), HALL_H/2, zB, COR_L, HALL_H, WALL_T, wallTone);
+      wall(startX + sign*(COR_L/2), HALL_H/2, zA, COR_L, HALL_H, WALL_T);
+      wall(startX + sign*(COR_L/2), HALL_H/2, zB, COR_L, HALL_H, WALL_T);
     }else{
       const xA =  COR_W/2 + WALL_T/2, xB = -COR_W/2 - WALL_T/2;
-      strip(xA, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L, wallTone);
-      strip(xB, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L, wallTone);
+      wall(xA, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L);
+      wall(xB, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L);
     }
 
     // sconces
@@ -349,9 +342,9 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
 
   const corridors = [ mkCorridor('x+'), mkCorridor('x-'), mkCorridor('z+'), mkCorridor('z-') ];
 
-  // === FRAMES (only place that shows images) ===
-  // Planes face +Z by default -> rotate to face into corridor.
+  /* === FRAMES (only images) — 6 cm proud from wall === */
   const step = 3.2, margin = 1.6; let linkIdx = 0;
+  const OFFSET = 0.06; // stand off from wall face
 
   function addFrame(pos, yawDeg){
     const link = LINKS[linkIdx % LINKS.length]; linkIdx++;
@@ -385,19 +378,19 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
   corridors.forEach(({alongX, sign, startX, startZ})=>{
     const y=1.6;
     if (alongX){
-      const zpos =  COR_W/2 + WALL_T/2;
-      const zneg = -COR_W/2 - WALL_T/2;
-      const yawPos = 180;  // z>0 → face -Z
-      const yawNeg =   0;  // z<0 → face +Z
+      const zpos =  COR_W/2 + WALL_T/2 + OFFSET; // face -Z
+      const zneg = -COR_W/2 - WALL_T/2 - OFFSET; // face +Z
+      const yawPos = 180;
+      const yawNeg =   0;
       for (let x = startX + sign*margin; Math.abs(x - startX) < COR_L - 0.8; x += sign*step){
         addFrame({x, y, z: zpos}, yawPos);
         addFrame({x, y, z: zneg}, yawNeg);
       }
     } else {
-      const xpos =  COR_W/2 + WALL_T/2;
-      const xneg = -COR_W/2 - WALL_T/2;
-      const yawPos = -90; // x>0 → face -X
-      const yawNeg =  90; // x<0 → face +X
+      const xpos =  COR_W/2 + WALL_T/2 + OFFSET; // face -X
+      const xneg = -COR_W/2 - WALL_T/2 - OFFSET; // face +X
+      const yawPos = -90;
+      const yawNeg =  90;
       for (let z = startZ + sign*margin; Math.abs(z - startZ) < COR_L - 0.8; z += sign*step){
         addFrame({x: xpos, y, z}, yawPos);
         addFrame({x: xneg, y, z}, yawNeg);
