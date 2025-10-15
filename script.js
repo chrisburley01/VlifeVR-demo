@@ -1,9 +1,10 @@
 /* =========================================================
-   VLife 360 – script.js (v17)
-   "Door" panel + auto preview (no uploads)
-   - YouTube auto thumbnail
-   - Fallback: domain card with favicon
-   - Subtle motion on preview
+   VLife 360 – script.js (v18)
+   - Welcome splash + menu collapse
+   - Orbs (gaze or tap)
+   - Hinged "door" panel with left hinge swing
+   - Auto previews (YouTube thumbnails)
+   - Auto-close (8s) + look-away (1.2s, armed after 300ms)
 ========================================================= */
 
 /* ---------- Components ---------- */
@@ -16,6 +17,7 @@ AFRAME.registerComponent('orb', {
     this.el.addEventListener('mouseleave', () => this.el.object3D.scale.set(1,1,1));
   }
 });
+
 AFRAME.registerComponent('billboard', {
   tick: function () {
     const cam = this.cam || (this.cam = document.querySelector('a-camera'));
@@ -24,15 +26,18 @@ AFRAME.registerComponent('billboard', {
   }
 });
 
-/* ---------- Link data (override with /assets/links.json) ---------- */
+/* ---------- Link data (override with /assets/links.json) ----------
+   All YouTube links here → guaranteed preview thumbnails
+------------------------------------------------------------------- */
 let ORB_LINKS = [
-  { title: 'YouTube 360',             url: 'https://www.youtube.com/360' },
-  { title: 'Vimeo 360',               url: 'https://vimeo.com/360' },
-  { title: 'AirPano 360 Videos',      url: 'https://www.airpano.com/video/' },
-  { title: 'National Geographic 360', url: 'https://www.youtube.com/playlist?list=PLivjPDlt6ApQUgZgY2hLpcZ3g4Zz4icZT' },
-  { title: 'NYT – The Daily 360',     url: 'https://www.nytimes.com/spotlight/the-daily-360' },
-  { title: 'GoPro 360 (YouTube)',     url: 'https://www.youtube.com/@GoPro/search?query=360' }
+  { title: 'YouTube 360 – Grand Canyon', url: 'https://www.youtube.com/watch?v=CSvFpBOe8eY' },
+  { title: 'YouTube 360 – Roller Coaster', url: 'https://www.youtube.com/watch?v=VR1b7GdQf2I' },
+  { title: 'YouTube 360 – Cities at Night', url: 'https://www.youtube.com/watch?v=v8VrmkG2FvE' },
+  { title: 'YouTube 360 – Ocean Dive', url: 'https://www.youtube.com/watch?v=6B9vLwYxGZ0' },
+  { title: 'YouTube 360 – Space Walk', url: 'https://www.youtube.com/watch?v=0qisGSwZym4' },
+  { title: 'YouTube 360 – Mountain Flight', url: 'https://www.youtube.com/watch?v=GoB9aSxUjYw' }
 ];
+
 fetch('assets/links.json')
   .then(r => (r.ok ? r.json() : Promise.reject()))
   .then(d => { if (Array.isArray(d) && d.length >= 6) ORB_LINKS = d.slice(0,6); })
@@ -92,7 +97,7 @@ window.setBackground = setBackground;
 window.toggleMenu = toggleMenu;
 
 /* =========================================================
-   Door panel + previews (no uploads)
+   Door panel helpers
 ========================================================= */
 
 // Hide/show all orbs when a panel is open
@@ -100,9 +105,7 @@ function setOrbsVisible(visible) {
   document.querySelectorAll('.hotspot').forEach(o => o.setAttribute('visible', visible));
 }
 
-// Try to build a preview image for a URL (no uploads)
-// - YouTube → thumbnail
-// - Others → favicon card
+// Parse a YouTube video ID for thumbnails
 function parseYouTubeId(u) {
   try {
     const url = new URL(u);
@@ -110,13 +113,14 @@ function parseYouTubeId(u) {
     if (url.hostname.includes('youtube.com')) {
       const v = url.searchParams.get('v');
       if (v) return v;
-      // playlist/shorts – no single id; return null
     }
   } catch(_) {}
   return null;
 }
+
+// Build a preview descriptor (image + host)
 function previewForLink(link) {
-  const out = { type: 'image', src: null, title: link.title || '', host: null, favicon: null };
+  const out = { src: null, host: '', favicon: null, title: link.title || '' };
   try {
     const u = new URL(link.url);
     out.host = u.host;
@@ -125,93 +129,95 @@ function previewForLink(link) {
   const yt = parseYouTubeId(link.url || '');
   if (yt) {
     out.src = `https://img.youtube.com/vi/${yt}/hqdefault.jpg`;
-    return out;
   }
-  // Fallback: no direct preview, use favicon-card pattern
   return out;
 }
 
-/* Create the door panel at a world position, with swing-open animation */
-function spawnDoorPanel(worldPos, link) {
-  const panel = document.createElement('a-entity');
-  panel.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z}`);
-  panel.setAttribute('billboard', '');
+/* Create hinged door structure:
+   panelRoot (billboard) @ worldPos
+     └─ hinge (rotates Y)
+         └─ door (offset by W/2 on +X; contains all content)
+*/
+function spawnHingedDoor(worldPos, link) {
+  const panelRoot = document.createElement('a-entity');
+  panelRoot.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z}`);
+  panelRoot.setAttribute('billboard', '');
+  scene.appendChild(panelRoot);
 
-  // Start closed (like a thin edge), rotate a bit, then swing open
-  panel.setAttribute('rotation', '0 20 0');
-  panel.setAttribute('scale', '0.01 1 1');
-  panel.setAttribute('animation__open_scale', 'property: scale; to: 1 1 1; dur: 380; easing: easeOutCubic');
-  panel.setAttribute('animation__open_rot', 'property: rotation; to: 0 0 0; dur: 380; easing: easeOutCubic');
-
-  // Sizes (door-size)
+  // Sizes (big door)
   const W = 3.2, H = 1.8, headerH = 0.16;
+
+  // Hinge: rotate from ~85° open (edge-on) to 0°
+  const hinge = document.createElement('a-entity');
+  hinge.setAttribute('rotation', `0 85 0`);
+  hinge.setAttribute('animation__open', 'property: rotation; to: 0 0 0; dur: 420; easing: easeOutCubic');
+  panelRoot.appendChild(hinge);
+
+  // Door content: centered plane, offset to the right so left edge sits on hinge
+  const door = document.createElement('a-entity');
+  door.setAttribute('position', `${W/2} 0 0`);
+  hinge.appendChild(door);
 
   // Backing plate
   const back = document.createElement('a-entity');
   back.setAttribute('geometry', `primitive: plane; width: ${W}; height: ${H}`);
   back.setAttribute('material', 'color: #000; opacity: 0.88; transparent: true');
   back.setAttribute('position', '0 0 0.002');
-  panel.appendChild(back);
+  door.appendChild(back);
 
   // Header strip
   const header = document.createElement('a-entity');
   header.setAttribute('geometry', `primitive: plane; width: ${W}; height: ${headerH}`);
   header.setAttribute('material', 'color: #ffd100; opacity: 0.98');
   header.setAttribute('position', `0 ${H/2 - headerH/2} 0.01`);
-  panel.appendChild(header);
+  door.appendChild(header);
 
   // Title text
   const title = document.createElement('a-entity');
   title.setAttribute('text', `value: ${link.title || ''}; align: center; color: #111; width: 5; zOffset: 0.01`);
-  title.setAttribute('position', `${0} ${H/2 - headerH/2} ${0.02}`);
-  panel.appendChild(title);
+  title.setAttribute('position', `0 ${H/2 - headerH/2} 0.02`);
+  door.appendChild(title);
 
-  // URL (white)
+  // URL
   const urlTxt = document.createElement('a-entity');
   urlTxt.setAttribute('text', `value: ${link.url || ''}; align: center; color: #fff; width: 4.6; wrapCount: 64; zOffset: 0.01`);
   urlTxt.setAttribute('position', `0 ${H/2 - headerH - 0.10} 0.02`);
-  panel.appendChild(urlTxt);
+  door.appendChild(urlTxt);
 
-  // Preview area (image or favicon card)
-  const preview = previewForLink(link);
-  if (preview.src) {
-    // Image preview
+  // Preview area
+  const prev = previewForLink(link);
+  if (prev.src) {
     const img = document.createElement('a-image');
-    img.setAttribute('src', preview.src);
+    img.setAttribute('src', prev.src);
     img.setAttribute('width', W - 0.4);
     img.setAttribute('height', H - headerH - 0.6);
     img.setAttribute('position', `0 ${0.05} 0.025`);
-    // gentle “rolling” motion
     img.setAttribute('animation__zoom', 'property: scale; dir: alternate; from: 1 1 1; to: 1.06 1.06 1; dur: 2600; easing: easeInOutSine; loop: true');
-    panel.appendChild(img);
+    door.appendChild(img);
   } else {
-    // Favicon + host “card”
     const card = document.createElement('a-entity');
     card.setAttribute('geometry', `primitive: plane; width: ${W - 0.4}; height: ${H - headerH - 0.6}`);
     card.setAttribute('material', 'color: #0b1a3a; opacity: 0.92; transparent: true');
     card.setAttribute('position', `0 ${0.05} 0.025`);
-    panel.appendChild(card);
+    door.appendChild(card);
 
-    if (preview.favicon) {
+    if (prev.favicon) {
       const ico = document.createElement('a-image');
-      ico.setAttribute('src', preview.favicon);
+      ico.setAttribute('src', prev.favicon);
       ico.setAttribute('width', 0.28);
       ico.setAttribute('height', 0.28);
       ico.setAttribute('position', `-1.2 ${0.32} 0.03`);
-      panel.appendChild(ico);
+      door.appendChild(ico);
     }
     const hostLabel = document.createElement('a-entity');
-    hostLabel.setAttribute('text', `value: ${preview.host || ''}; align: left; color: #fff; width: 3.4; zOffset: 0.01`);
+    hostLabel.setAttribute('text', `value: ${prev.host || ''}; align: left; color: #fff; width: 3.4; zOffset: 0.01`);
     hostLabel.setAttribute('position', `-1.0 ${0.32} 0.03`);
-    panel.appendChild(hostLabel);
+    door.appendChild(hostLabel);
 
     const desc = document.createElement('a-entity');
     desc.setAttribute('text', 'value: Preview not available — tap Open to visit; align: center; color: #cfd8ff; width: 3.8; wrapCount: 40; zOffset: 0.01');
     desc.setAttribute('position', `0 ${-0.10} 0.03`);
-    panel.appendChild(desc);
-
-    // subtle shimmer to keep it “alive”
-    card.setAttribute('animation__pulse', 'property: material.opacity; dir: alternate; from: 0.90; to: 0.96; dur: 1800; easing: easeInOutSine; loop: true');
+    door.appendChild(desc);
   }
 
   // Open button
@@ -228,7 +234,7 @@ function spawnDoorPanel(worldPos, link) {
     const u = (link.url || '').trim();
     if (u) { try { window.open(u, '_blank'); } catch(e) { location.href = u; } }
   });
-  panel.appendChild(openBtn);
+  door.appendChild(openBtn);
 
   // Close (top-right)
   const closeBtn = document.createElement('a-entity');
@@ -240,14 +246,14 @@ function spawnDoorPanel(worldPos, link) {
   closeGlyph.setAttribute('text', 'value: ✕; align: center; color: #fff; width: 2; zOffset: 0.01');
   closeGlyph.setAttribute('position', '0 0 0.01');
   closeBtn.appendChild(closeGlyph);
-  panel.appendChild(closeBtn);
+  door.appendChild(closeBtn);
 
-  return { panel, closeBtn };
+  return { panelRoot, hinge, door, closeBtn };
 }
 
 /* Expand from orb click/gaze */
 function expandOrbToPanel(orbEl, link) {
-  // Clear older
+  // clear older
   if (orbEl.__panelEl) {
     try { orbEl.__panelEl.parentNode.removeChild(orbEl.__panelEl); } catch(e){}
     orbEl.__panelEl = null;
@@ -255,19 +261,18 @@ function expandOrbToPanel(orbEl, link) {
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  // World position + lift
+  // world position + lift
   const worldPos = new THREE.Vector3();
   orbEl.object3D.getWorldPosition(worldPos);
   worldPos.y += 1.3; // door higher
 
-  // Hide orbs while panel is open
+  // hide orbs while door open
   setOrbsVisible(false);
 
-  const { panel, closeBtn } = spawnDoorPanel(worldPos, link);
-  scene.appendChild(panel);
-  orbEl.__panelEl = panel;
+  const { panelRoot, closeBtn } = spawnHingedDoor(worldPos, link);
+  orbEl.__panelEl = panelRoot;
 
-  // Close handlers
+  // close handlers
   const closeAll = () => {
     clearTimeout(orbEl.__autoCloseTimer);
     clearTimeout(orbEl.__lookAwayTimer);
@@ -279,7 +284,7 @@ function expandOrbToPanel(orbEl, link) {
   };
   closeBtn.addEventListener('click', closeAll);
 
-  // Auto/Look-away with 300ms lockout
+  // auto/ look-away with 300ms lockout
   orbEl.__autoCloseTimer = setTimeout(closeAll, 8000);
   let lookAwayArmed = false;
   setTimeout(() => { lookAwayArmed = true; }, 300);
@@ -289,8 +294,8 @@ function expandOrbToPanel(orbEl, link) {
     clearTimeout(orbEl.__lookAwayTimer);
     orbEl.__lookAwayTimer = setTimeout(closeAll, 1200);
   };
-  panel.addEventListener('mouseenter', cancelLookAway);
-  panel.addEventListener('mouseleave', startLookAway);
+  panelRoot.addEventListener('mouseenter', cancelLookAway);
+  panelRoot.addEventListener('mouseleave', startLookAway);
 }
 
 /* ---------- Bind (gaze fuse or tap) ---------- */
