@@ -1,19 +1,24 @@
 /* =========================================================
-   VLife 360 – script.js (v20)
+   VLife 360 – script.js (v21)
    - Welcome splash + menu collapse
    - Orbs (gaze or tap)
-   - Hinged "door" panel (centered on orb)
+   - Hinged "door" panel (adjustable centre/offset)
    - Swing OPEN and SWING CLOSE
    - Auto-close (8s) + look-away (1.2s, armed after 300ms)
    - YouTube links with thumbnail previews
 ========================================================= */
 
 /* ---------- CONFIG ---------- */
-// 'left' | 'right' — default hinge side
+// Default hinge side: 'left' | 'right'
 let HINGE_SIDE_DEFAULT = 'left';
-// Alternate hinge side each time if true
+// Alternate hinge side each time?
 let AUTO_ALTERNATE_HINGE = false;
 let __lastHingeSide = 'right'; // so first open becomes 'left'
+
+// Fraction of the door width to shift the hinge from centre toward the chosen edge.
+// 0.50 = hinge on the very edge (original offset); 0.00 = perfectly centred.
+// You asked for "half the original change" → 0.25.
+const HINGE_OFFSET_FACTOR = 0.25;
 
 /* ---------- Components ---------- */
 AFRAME.registerComponent('orb', {
@@ -138,10 +143,10 @@ function previewForLink(link) {
 }
 
 /* =========================================================
-   Hinged door (centered on orb)
+   Hinged door (adjustable hinge offset)
    Structure:
    panelRoot (billboard) @ worldPos
-     └─ hinge (rotates Y, positioned at door edge)
+     └─ hinge (rotates Y, positioned between centre and edge)
          └─ door (CENTERED at 0,0,0; visible panel)
 ========================================================= */
 function spawnHingedDoor(worldPos, link, hingeSide='left') {
@@ -159,12 +164,14 @@ function spawnHingedDoor(worldPos, link, hingeSide='left') {
   hinge.setAttribute('rotation', `0 ${startY} 0`);
   hinge.setAttribute('animation__open', 'property: rotation; to: 0 0 0; dur: 420; easing: easeOutCubic');
 
-  // >>> KEY: move hinge to door edge, keep door centered, so door stays centered on orb
-  const hingeX = hingeSide === 'right' ? (W/2) : (-W/2);
+  // Position hinge between centre (0) and edge (±W/2) using factor
+  // 0.00 → centre; 0.50 → edge. We default to 0.25 (half the original change).
+  const dir = hingeSide === 'right' ? 1 : -1;
+  const hingeX = dir * (W * HINGE_OFFSET_FACTOR);
   hinge.setAttribute('position', `${hingeX} 0 0`);
   panelRoot.appendChild(hinge);
 
-  // Door content (CENTERED at origin)
+  // Door content (CENTERED at origin so it mostly stays centred on the orb)
   const door = document.createElement('a-entity');
   door.setAttribute('position', `0 0 0`);
   hinge.appendChild(door);
@@ -195,7 +202,7 @@ function spawnHingedDoor(worldPos, link, hingeSide='left') {
   urlTxt.setAttribute('position', `0 ${H/2 - headerH - 0.10} 0.02`);
   door.appendChild(urlTxt);
 
-  // Preview (YouTube thumb or host card)
+  // Preview (YouTube thumb or simple card)
   const prev = previewForLink(link);
   if (prev.src) {
     const img = document.createElement('a-image');
@@ -327,8 +334,9 @@ else scene?.addEventListener('loaded', bindOrbEvents);
 /* ---------- Optional: ESC toggles menu on desktop ---------- */
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleMenu(); });
 
-/* ---------- Live hinge options (if you want to tweak from console) ---------- */
+/* ---------- Live hinge options (console) ---------- */
 window.vlifeDoorOptions = {
   setDefault(side) { if (side === 'left' || side === 'right') HINGE_SIDE_DEFAULT = side; },
-  setAlternate(on) { AUTO_ALTERNATE_HINGE = !!on; }
+  setAlternate(on) { AUTO_ALTERNATE_HINGE = !!on; },
+  setOffset(f)     { const x = Number(f); if (!isNaN(x)) (window.HINGE_OFFSET_FACTOR = x); }
 };
