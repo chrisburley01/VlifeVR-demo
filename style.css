@@ -7,10 +7,77 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
-a-scene {
-  position: fixed;
+a-scene { position: fixed; inset: 0; z-index: 0; }
+.hidden { display: none !important; }
+
+/* ----- Persistent VLife logo (main UI) ----- */
+#logo {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 15;
+  width: 120px;
+  height: auto;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.5));
+  pointer-events: none;
+}
+
+/* ----- Hamburger ----- */
+#hamburger {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 15;
+  background: rgba(0,0,0,.7);
+  color: #fff;
+  border: 0;
+  border-radius: 12px;
+  font-size: 22px;
+  line-height: 1;
+  padding: 10px 12px;
+}
+
+/* ----- Welcome Splash (front door) ----- */
+#welcomeSplash {
+  position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.82), rgba(0,0,0,.92));
+  text-align: center;
+  color: #fff;
+}
+#welcomeSplash .splash-logo {
+  width: min(60vw, 360px);
+  height: auto;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,.6));
+}
+#welcomeSplash h1 {
+  margin: 8px 0 2px;
+  font-size: clamp(26px, 6vw, 40px);
+  color: #ff9f1a;
+}
+#welcomeSplash .tagline {
+  margin: 4px 0 20px;
+  opacity: .9;
+}
+#welcomeSplash .splash-enter {
+  background: #0f2353;
+  color: #fff;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 22px;
+  font-size: 1.05rem;
+}
+#welcomeSplash .hint { opacity: .7; font-size: .9rem; margin-top: 10px; }
+
+#welcomeSplash.fadeout {
+  animation: splashFade .5s ease forwards;
+}
+@keyframes splashFade {
+  to { opacity: 0; visibility: hidden; }
 }
 
 /* ----- Overlay menu ----- */
@@ -39,11 +106,7 @@ a-scene {
   color: #ff9f1a;
   letter-spacing: .5px;
 }
-.status {
-  color: #5fff7b;
-  font-weight: 700;
-  margin: 6px 0 12px;
-}
+.status { color: #5fff7b; font-weight: 700; margin: 6px 0 12px; }
 .btn-row { margin: 8px 0; }
 .btn {
   display: inline-block;
@@ -57,37 +120,3 @@ a-scene {
 }
 .btn:hover { background: #002c77; }
 .btn:active { transform: translateY(1px); }
-
-/* ----- Hamburger ----- */
-#hamburger {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 15;
-  background: rgba(0,0,0,.7);
-  color: #fff;
-  border: 0;
-  border-radius: 12px;
-  font-size: 22px;
-  line-height: 1;
-  padding: 10px 12px;
-}
-.hidden { display: none !important; }
-
-/* ----- (Optional) AR/VR buttons if you keep them in HTML ----- */
-.mode-buttons {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 12;
-}
-.mode-buttons button {
-  margin-left: 10px;
-  padding: 10px 16px;
-  background: #002c77;
-  color: #fff;
-  border: 0;
-  border-radius: 10px;
-  font-size: 1rem;
-}
-.mode-buttons button:hover { background:#0f2353; }
