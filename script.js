@@ -1,17 +1,10 @@
 /* =========================================================
-   VLife 360 – full script.js
-   - Orb components
-   - Link data (with optional /assets/links.json override)
-   - Menu collapse -> hamburger
-   - Orb -> BIG floating link panel w/ marquee
-   - Auto-close + look-away close
-   - Binding (gaze fuse or tap)
+   VLife 360 – full script.js (with Welcome splash + logo)
 ========================================================= */
 
 /* ---------- Components ---------- */
 AFRAME.registerComponent('orb', {
   init: function () {
-    // Visible yellow orb with generous hitbox
     this.el.setAttribute('geometry', 'primitive: sphere; radius: 0.2');
     this.el.setAttribute('material', 'color: #ffd100; emissive: #ffd100; emissiveIntensity: 0.95; metalness: 0.1; roughness: 0.4');
     this.el.setAttribute('animation__pulse', 'property: scale; dir: alternate; dur: 1200; easing: easeInOutSine; loop: true; to: 1.35 1.35 1.35');
@@ -41,7 +34,7 @@ let ORB_LINKS = [
 fetch('assets/links.json')
   .then(r => (r.ok ? r.json() : Promise.reject()))
   .then(d => { if (Array.isArray(d) && d.length >= 6) ORB_LINKS = d.slice(0,6); })
-  .catch(()=>{ /* keep defaults */ });
+  .catch(()=>{});
 
 /* ---------- UI elements ---------- */
 const scene      = document.getElementById('scene');
@@ -49,6 +42,8 @@ const sky        = document.getElementById('sky');
 const statusText = document.getElementById('statusText');
 const menuPanel  = document.getElementById('menuPanel');
 const hamburger  = document.getElementById('hamburger');
+const welcome    = document.getElementById('welcomeSplash');
+const enterBtn   = document.getElementById('enterBtn');
 
 /* Background labels for status line */
 const labelMap = {
@@ -58,6 +53,20 @@ const labelMap = {
   Neonnightclub: 'Neon Nightclub 360',
   floating_sky_monastery_upscaled_8k: 'Floating Sky Monastery 8K'
 };
+
+/* ---------- Welcome splash control ---------- */
+function showMenuAfterSplash() {
+  welcome.classList.add('fadeout');
+  setTimeout(() => {
+    welcome.classList.add('hidden');
+    menuPanel.classList.remove('hidden');
+  }, 480);
+}
+if (enterBtn) enterBtn.addEventListener('click', showMenuAfterSplash);
+// Safety: auto-enter after 2.5s
+setTimeout(() => {
+  if (!welcome.classList.contains('hidden')) showMenuAfterSplash();
+}, 2500);
 
 /* ---------- Menu: set background & collapse panel ---------- */
 function setBackground(bg) {
@@ -86,8 +95,6 @@ window.toggleMenu = toggleMenu;
 /* =========================================================
    Helpers for display + marquee
 ========================================================= */
-
-// Trim for initial fit (Open button still uses full URL)
 function trimUrlForDisplay(u, max = 44) {
   try {
     const url = new URL(u);
@@ -98,11 +105,6 @@ function trimUrlForDisplay(u, max = 44) {
   } catch { return u.length > max ? u.slice(0, max - 1) + '…' : u; }
 }
 
-/**
- * Start a marquee that scrolls text inside a character window.
- * We emulate clipping by showing a moving substring.
- * Call stopMarquee(entity) to cancel.
- */
 function startMarquee(textEntity, fullText, windowChars, stepMs = 120, spacer = '   •   ') {
   stopMarquee(textEntity);
   if (!fullText || fullText.length <= windowChars) {
@@ -128,12 +130,8 @@ function stopMarquee(textEntity) {
 
 /* =========================================================
    Orb -> BIG floating panel (above orb) with marquee
-   - appears 1.2 m above the orb
-   - auto-closes after 8 s
-   - closes 1.2 s after look-away (armed after 300 ms to avoid jitter)
 ========================================================= */
 function expandOrbToPanel(orbEl, link) {
-  // remember original so we can restore
   if (!orbEl.__vlifeOriginal) {
     orbEl.__vlifeOriginal = {
       geom:  orbEl.getAttribute('geometry'),
@@ -143,55 +141,45 @@ function expandOrbToPanel(orbEl, link) {
     };
   }
 
-  // reset timers
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  // raise panel above the orb line (higher so the orb never overlaps)
-  const lift = 1.2; // metres
+  const lift = 1.2; // metres above orb line
   const p = orbEl.__vlifeOriginal.pos;
   orbEl.setAttribute('position', `${p.x} ${p.y + lift} ${p.z}`);
 
-  // wipe old children / geometry
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
 
-  // container so hover/leave applies to whole surface
   const panelRoot = document.createElement('a-entity');
   orbEl.appendChild(panelRoot);
 
-  // BIGGER BOXES
   const panelW = 2.40, panelH = 0.84;
   const headerH = 0.12;
 
-  // background
   const bg = document.createElement('a-entity');
   bg.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: ${panelH}`);
   bg.setAttribute('material', 'color: #000; opacity: 0.82; transparent: true');
   bg.setAttribute('position', '0 0 0.005');
   panelRoot.appendChild(bg);
 
-  // header bar
   const header = document.createElement('a-entity');
   header.setAttribute('geometry', `primitive: plane; width: ${panelW}; height: ${headerH}`);
   header.setAttribute('material', 'color: #ffd100; opacity: 0.96');
   header.setAttribute('position', `0 ${panelH/2 - headerH/2} 0.01`);
   panelRoot.appendChild(header);
 
-  // Title (marquee if long)
   const titleEntity = document.createElement('a-entity');
   titleEntity.setAttribute('text', `value: ${link.title}; align: center; color: #111; width: 3.2; zOffset: 0.01`);
   titleEntity.setAttribute('position', `0 ${panelH/2 - headerH/2} 0.015`);
   panelRoot.appendChild(titleEntity);
   startMarquee(titleEntity, link.title || '', 34, 120);
 
-  // URL (display + marquee)
   const urlEntity = document.createElement('a-entity');
   urlEntity.setAttribute('text', `value: ${trimUrlForDisplay(link.url, 44)}; align: center; color: #fff; width: 2.6; wrapCount: 36; zOffset: 0.01`);
   urlEntity.setAttribute('position', '0 0.16 0.015');
   panelRoot.appendChild(urlEntity);
   startMarquee(urlEntity, link.url || '', 44, 90);
 
-  // Open button (bigger)
   const openBtn = document.createElement('a-entity');
   openBtn.setAttribute('class', 'linkbtn');
   openBtn.setAttribute('geometry', 'primitive: plane; width: 0.80; height: 0.22');
@@ -207,7 +195,6 @@ function expandOrbToPanel(orbEl, link) {
   });
   panelRoot.appendChild(openBtn);
 
-  // Close (top-right, bigger hit area)
   const closeBtn = document.createElement('a-entity');
   closeBtn.setAttribute('class', 'linkbtn');
   closeBtn.setAttribute('geometry', 'primitive: plane; width: 0.16; height: 0.16');
@@ -220,10 +207,9 @@ function expandOrbToPanel(orbEl, link) {
   closeBtn.addEventListener('click', () => restoreOrb(orbEl));
   panelRoot.appendChild(closeBtn);
 
-  // --- timers: auto-close + look-away with 300ms lockout ---
+  // auto-close + look-away (armed after 300ms to avoid jitter)
   orbEl.__autoCloseTimer = setTimeout(() => restoreOrb(orbEl), 8000);
-
-  let lookAwayArmed = false; // ignore jitter just after open
+  let lookAwayArmed = false;
   setTimeout(() => { lookAwayArmed = true; }, 300);
 
   const cancelLookAway = () => { if (lookAwayArmed) clearTimeout(orbEl.__lookAwayTimer); };
@@ -232,7 +218,6 @@ function expandOrbToPanel(orbEl, link) {
     clearTimeout(orbEl.__lookAwayTimer);
     orbEl.__lookAwayTimer = setTimeout(() => restoreOrb(orbEl), 1200);
   };
-
   panelRoot.addEventListener('mouseenter', cancelLookAway);
   panelRoot.addEventListener('mouseleave', startLookAway);
 
@@ -246,17 +231,14 @@ function restoreOrb(orbEl) {
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
-  // stop marquees
   if (orbEl.__panelNodes) {
     stopMarquee(orbEl.__panelNodes.titleEntity);
     stopMarquee(orbEl.__panelNodes.urlEntity);
     orbEl.__panelNodes = null;
   }
 
-  // clear children
   while (orbEl.firstChild) orbEl.removeChild(orbEl.firstChild);
 
-  // restore sphere + original position
   orbEl.setAttribute('geometry', orbEl.__vlifeOriginal.geom);
   orbEl.setAttribute('material', orbEl.__vlifeOriginal.mat);
   orbEl.setAttribute('scale',    orbEl.__vlifeOriginal.scale);
@@ -264,15 +246,12 @@ function restoreOrb(orbEl) {
   orbEl.setAttribute('position', `${p.x} ${p.y} ${p.z}`);
 }
 
-/* =========================================================
-   Bind: gaze fuse or tap triggers the panel
-   (Dual cursors are set in index.html)
-========================================================= */
+/* ---------- Bind (gaze fuse or tap) ---------- */
 function bindOrbEvents() {
   document.querySelectorAll('.hotspot').forEach((el) => {
     const idx  = parseInt(el.getAttribute('data-key') || '0', 10);
     const link = ORB_LINKS[Math.max(0, Math.min(5, idx))] || ORB_LINKS[0];
-    el.addEventListener('click', () => expandOrbToPanel(el, link)); // fires after gaze fuse or tap
+    el.addEventListener('click', () => expandOrbToPanel(el, link));
   });
 }
 
