@@ -156,10 +156,7 @@ function expandOrbToPanel(orbEl, link) {
   panel.appendChild(titleEntity);
 
   // URL (wrap neatly)
-  const urlEntity = document.createElement('a-entity');
-  urlEntity.setAttribute('text', `value: ${link.url}; align: center; color: #fff; width: 2.8; wrapCount: 40; zOffset: 0.01`);
-  urlEntity.setAttribute('position', '0 0.16 0.015');
-  panel.appendChild(urlEntity);
+
 
   // Open button (large)
   const openBtn = document.createElement('a-entity');
