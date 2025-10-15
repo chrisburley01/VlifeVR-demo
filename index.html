@@ -2,27 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>VLife • Library v1</title>
+  <title>VLife • Chateau Library</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=lib1.1" />
+  <link rel="stylesheet" href="style.css?v=chateau1" />
 </head>
 <body>
   <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
+  <div id="minimap">
+    <canvas id="mapCanvas" width="168" height="168"></canvas>
+    <div class="label">Minimap</div>
+  </div>
   <button id="helpBtn" onclick="toggleHelp()">?</button>
   <div id="help" class="hidden">
-    <h3>VLife • Library</h3>
-    <p>Look at the floor and tap to teleport. Tap any picture to open it.</p>
+    <h3>VLife • Chateau Library</h3>
+    <p>Tap the floor to walk. Tap paintings to preview & open links.</p>
+    <p>Use the mini-map to orient—triangle = you.</p>
   </div>
 
   <a-scene id="scene"
-           background="color: #0b1220"
+           background="color: #0c0f19"
            renderer="antialias: true; colorManagement: true"
            loading-screen="enabled:false">
-    <a-assets id="assets">
-      <img id="fallbackPoster" src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop" crossorigin="anonymous" />
+
+    <a-assets timeout="15000">
+      <!-- Textures (royalty-free) -->
+      <img id="texStone" crossorigin="anonymous"
+           src="https://images.unsplash.com/photo-1541535881962-3bb380b08458?q=80&w=1200&auto=format&fit=crop" />
+      <img id="texWood" crossorigin="anonymous"
+           src="https://images.unsplash.com/photo-1493666438817-866a91353ca9?q=80&w=1200&auto=format&fit=crop" />
+      <img id="fallbackPoster" crossorigin="anonymous"
+           src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop" />
     </a-assets>
 
+    <!-- Camera rig with dual cursors -->
     <a-entity id="rig" position="0 1.6 4">
       <a-camera id="cam" wasd-controls-enabled="false" look-controls="touchEnabled: true">
         <a-cursor id="gazeCursor"
@@ -30,7 +43,7 @@
           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
           material="shader: flat; color: #fff"
           cursor="fuse: true; fuseTimeout: 1100; rayOrigin: entity"
-          raycaster="objects: .teleport, .interact; far: 60; interval: 0">
+          raycaster="objects: .interact; far: 60; interval: 0">
         </a-cursor>
         <a-entity id="mouseCursor"
           cursor="rayOrigin: mouse"
@@ -42,6 +55,6 @@
     <a-entity id="env"></a-entity>
   </a-scene>
 
-  <script src="script.js?v=lib1.1"></script>
+  <script src="script.js?v=chateau1"></script>
 </body>
 </html>
