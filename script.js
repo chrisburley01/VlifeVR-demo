@@ -1,11 +1,19 @@
 /* =========================================================
-   VLife 360 – script.js (v18)
+   VLife 360 – script.js (v19)
    - Welcome splash + menu collapse
    - Orbs (gaze or tap)
-   - Hinged "door" panel with left hinge swing
-   - Auto previews (YouTube thumbnails)
+   - Hinged "door" panel (left or right hinge)
+   - Swing OPEN and SWING CLOSE animations
    - Auto-close (8s) + look-away (1.2s, armed after 300ms)
+   - YouTube links with thumbnail previews
 ========================================================= */
+
+/* ---------- CONFIG ---------- */
+// 'left' | 'right' — which side the door hinge lives on by default
+let HINGE_SIDE_DEFAULT = 'left';
+// If true, each new door alternates sides (left, right, left, …)
+let AUTO_ALTERNATE_HINGE = false;
+let __lastHingeSide = 'right'; // so first open becomes 'left'
 
 /* ---------- Components ---------- */
 AFRAME.registerComponent('orb', {
@@ -17,7 +25,6 @@ AFRAME.registerComponent('orb', {
     this.el.addEventListener('mouseleave', () => this.el.object3D.scale.set(1,1,1));
   }
 });
-
 AFRAME.registerComponent('billboard', {
   tick: function () {
     const cam = this.cam || (this.cam = document.querySelector('a-camera'));
@@ -30,14 +37,13 @@ AFRAME.registerComponent('billboard', {
    All YouTube links here → guaranteed preview thumbnails
 ------------------------------------------------------------------- */
 let ORB_LINKS = [
-  { title: 'YouTube 360 – Grand Canyon', url: 'https://www.youtube.com/watch?v=CSvFpBOe8eY' },
+  { title: 'YouTube 360 – Grand Canyon',   url: 'https://www.youtube.com/watch?v=CSvFpBOe8eY' },
   { title: 'YouTube 360 – Roller Coaster', url: 'https://www.youtube.com/watch?v=VR1b7GdQf2I' },
-  { title: 'YouTube 360 – Cities at Night', url: 'https://www.youtube.com/watch?v=v8VrmkG2FvE' },
-  { title: 'YouTube 360 – Ocean Dive', url: 'https://www.youtube.com/watch?v=6B9vLwYxGZ0' },
-  { title: 'YouTube 360 – Space Walk', url: 'https://www.youtube.com/watch?v=0qisGSwZym4' },
-  { title: 'YouTube 360 – Mountain Flight', url: 'https://www.youtube.com/watch?v=GoB9aSxUjYw' }
+  { title: 'YouTube 360 – Cities at Night',url: 'https://www.youtube.com/watch?v=v8VrmkG2FvE' },
+  { title: 'YouTube 360 – Ocean Dive',     url: 'https://www.youtube.com/watch?v=6B9vLwYxGZ0' },
+  { title: 'YouTube 360 – Space Walk',     url: 'https://www.youtube.com/watch?v=0qisGSwZym4' },
+  { title: 'YouTube 360 – Mountain Flight',url: 'https://www.youtube.com/watch?v=GoB9aSxUjYw' }
 ];
-
 fetch('assets/links.json')
   .then(r => (r.ok ? r.json() : Promise.reject()))
   .then(d => { if (Array.isArray(d) && d.length >= 6) ORB_LINKS = d.slice(0,6); })
@@ -127,18 +133,12 @@ function previewForLink(link) {
     out.favicon = `https://icons.duckduckgo.com/ip3/${u.hostname}.ico`;
   } catch(_) {}
   const yt = parseYouTubeId(link.url || '');
-  if (yt) {
-    out.src = `https://img.youtube.com/vi/${yt}/hqdefault.jpg`;
-  }
+  if (yt) out.src = `https://img.youtube.com/vi/${yt}/hqdefault.jpg`;
   return out;
 }
 
-/* Create hinged door structure:
-   panelRoot (billboard) @ worldPos
-     └─ hinge (rotates Y)
-         └─ door (offset by W/2 on +X; contains all content)
-*/
-function spawnHingedDoor(worldPos, link) {
+// Create hinged door structure with chosen side
+function spawnHingedDoor(worldPos, link, hingeSide='left') {
   const panelRoot = document.createElement('a-entity');
   panelRoot.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z}`);
   panelRoot.setAttribute('billboard', '');
@@ -147,15 +147,17 @@ function spawnHingedDoor(worldPos, link) {
   // Sizes (big door)
   const W = 3.2, H = 1.8, headerH = 0.16;
 
-  // Hinge: rotate from ~85° open (edge-on) to 0°
+  // Hinge: rotate from ±85° (edge-on) to 0°
+  const startY = hingeSide === 'right' ? -85 : 85;
   const hinge = document.createElement('a-entity');
-  hinge.setAttribute('rotation', `0 85 0`);
+  hinge.setAttribute('rotation', `0 ${startY} 0`);
   hinge.setAttribute('animation__open', 'property: rotation; to: 0 0 0; dur: 420; easing: easeOutCubic');
   panelRoot.appendChild(hinge);
 
-  // Door content: centered plane, offset to the right so left edge sits on hinge
+  // Door content: offset to make the chosen edge sit on the hinge
   const door = document.createElement('a-entity');
-  door.setAttribute('position', `${W/2} 0 0`);
+  const offsetX = hingeSide === 'right' ? -W/2 : W/2;
+  door.setAttribute('position', `${offsetX} 0 0`);
   hinge.appendChild(door);
 
   // Backing plate
@@ -172,19 +174,19 @@ function spawnHingedDoor(worldPos, link) {
   header.setAttribute('position', `0 ${H/2 - headerH/2} 0.01`);
   door.appendChild(header);
 
-  // Title text
+  // Title
   const title = document.createElement('a-entity');
   title.setAttribute('text', `value: ${link.title || ''}; align: center; color: #111; width: 5; zOffset: 0.01`);
   title.setAttribute('position', `0 ${H/2 - headerH/2} 0.02`);
   door.appendChild(title);
 
-  // URL
+  // URL (white)
   const urlTxt = document.createElement('a-entity');
   urlTxt.setAttribute('text', `value: ${link.url || ''}; align: center; color: #fff; width: 4.6; wrapCount: 64; zOffset: 0.01`);
   urlTxt.setAttribute('position', `0 ${H/2 - headerH - 0.10} 0.02`);
   door.appendChild(urlTxt);
 
-  // Preview area
+  // Preview area (image if we have it; otherwise a simple host card)
   const prev = previewForLink(link);
   if (prev.src) {
     const img = document.createElement('a-image');
@@ -213,11 +215,6 @@ function spawnHingedDoor(worldPos, link) {
     hostLabel.setAttribute('text', `value: ${prev.host || ''}; align: left; color: #fff; width: 3.4; zOffset: 0.01`);
     hostLabel.setAttribute('position', `-1.0 ${0.32} 0.03`);
     door.appendChild(hostLabel);
-
-    const desc = document.createElement('a-entity');
-    desc.setAttribute('text', 'value: Preview not available — tap Open to visit; align: center; color: #cfd8ff; width: 3.8; wrapCount: 40; zOffset: 0.01');
-    desc.setAttribute('position', `0 ${-0.10} 0.03`);
-    door.appendChild(desc);
   }
 
   // Open button
@@ -248,10 +245,10 @@ function spawnHingedDoor(worldPos, link) {
   closeBtn.appendChild(closeGlyph);
   door.appendChild(closeBtn);
 
-  return { panelRoot, hinge, door, closeBtn };
+  return { panelRoot, hinge, door, closeBtn, W, H, headerH };
 }
 
-/* Expand from orb click/gaze */
+/* ---------- OPEN from orb ---------- */
 function expandOrbToPanel(orbEl, link) {
   // clear older
   if (orbEl.__panelEl) {
@@ -261,6 +258,12 @@ function expandOrbToPanel(orbEl, link) {
   clearTimeout(orbEl.__autoCloseTimer);
   clearTimeout(orbEl.__lookAwayTimer);
 
+  // Choose hinge side
+  const hingeSide = AUTO_ALTERNATE_HINGE
+    ? (__lastHingeSide === 'left' ? 'right' : 'left')
+    : HINGE_SIDE_DEFAULT;
+  __lastHingeSide = hingeSide;
+
   // world position + lift
   const worldPos = new THREE.Vector3();
   orbEl.object3D.getWorldPosition(worldPos);
@@ -269,22 +272,37 @@ function expandOrbToPanel(orbEl, link) {
   // hide orbs while door open
   setOrbsVisible(false);
 
-  const { panelRoot, closeBtn } = spawnHingedDoor(worldPos, link);
+  const built = spawnHingedDoor(worldPos, link, hingeSide);
+  const { panelRoot, hinge, closeBtn } = built;
   orbEl.__panelEl = panelRoot;
+  orbEl.__hingeEl = hinge;
+  orbEl.__hingeSide = hingeSide;
 
-  // close handlers
+  // Closing logic (now with swing-close)
+  const swingCloseAndRemove = () => {
+    // If already removed, ignore
+    if (!orbEl.__panelEl) return;
+    // Play hinge back to edge-on
+    const toY = hingeSide === 'right' ? -85 : 85;
+    hinge.setAttribute('animation__close', `property: rotation; to: 0 ${toY} 0; dur: 360; easing: easeInCubic`);
+    // Remove after animation finishes
+    setTimeout(() => {
+      try { panelRoot.parentNode.removeChild(panelRoot); } catch(e){}
+      orbEl.__panelEl = null;
+      orbEl.__hingeEl = null;
+      setOrbsVisible(true);
+    }, 370);
+  };
+
   const closeAll = () => {
     clearTimeout(orbEl.__autoCloseTimer);
     clearTimeout(orbEl.__lookAwayTimer);
-    if (orbEl.__panelEl) {
-      try { orbEl.__panelEl.parentNode.removeChild(orbEl.__panelEl); } catch(e){}
-      orbEl.__panelEl = null;
-    }
-    setOrbsVisible(true);
+    swingCloseAndRemove();
   };
+
   closeBtn.addEventListener('click', closeAll);
 
-  // auto/ look-away with 300ms lockout
+  // Auto / look-away with 300ms lockout
   orbEl.__autoCloseTimer = setTimeout(closeAll, 8000);
   let lookAwayArmed = false;
   setTimeout(() => { lookAwayArmed = true; }, 300);
@@ -311,3 +329,9 @@ else scene?.addEventListener('loaded', bindOrbEvents);
 
 /* ---------- Optional: ESC toggles menu on desktop ---------- */
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleMenu(); });
+
+/* ---------- Expose a tiny API if you want to switch hinge behaviour live ---------- */
+window.vlifeDoorOptions = {
+  setDefault(side) { if (side === 'left' || side === 'right') HINGE_SIDE_DEFAULT = side; },
+  setAlternate(on) { AUTO_ALTERNATE_HINGE = !!on; }
+};
