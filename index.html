@@ -2,30 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>VLife • Gallery Library (Room v2)</title>
+  <title>VLife • Library v1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=room2" />
+  <link rel="stylesheet" href="style.css?v=lib1.1" />
 </head>
 <body>
   <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
-  <button id="hamburger" onclick="toggleHelp()">?</button>
+  <button id="helpBtn" onclick="toggleHelp()">?</button>
   <div id="help" class="hidden">
-    <h3>VLife • Gallery Library</h3>
-    <p>Tap/gaze the floor to move. Look at a frame and tap/gaze to preview & open.</p>
+    <h3>VLife • Library</h3>
+    <p>Look at the floor and tap to teleport. Tap any picture to open it.</p>
   </div>
 
-  <a-scene id="scene" renderer="antialias: true; colorManagement: true" loading-screen="enabled:false">
-    <a-assets id="assets"></a-assets>
+  <a-scene id="scene"
+           background="color: #0b1220"
+           renderer="antialias: true; colorManagement: true"
+           loading-screen="enabled:false">
+    <a-assets id="assets">
+      <img id="fallbackPoster" src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop" crossorigin="anonymous" />
+    </a-assets>
 
-    <!-- Lighting -->
-    <a-entity light="type: ambient; intensity: 0.5; color: #fff"></a-entity>
-    <a-entity light="type: directional; intensity: 0.85; castShadow: true" position="4 6 3"></a-entity>
-
-    <!-- Camera rig with dual cursors -->
-    <a-entity id="rig" position="0 1.6 6">
+    <a-entity id="rig" position="0 1.6 4">
       <a-camera id="cam" wasd-controls-enabled="false" look-controls="touchEnabled: true">
-        <!-- Gaze cursor -->
         <a-cursor id="gazeCursor"
           position="0 0 -1"
           geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
@@ -33,7 +32,6 @@
           cursor="fuse: true; fuseTimeout: 1100; rayOrigin: entity"
           raycaster="objects: .teleport, .interact; far: 60; interval: 0">
         </a-cursor>
-        <!-- Mouse/touch cursor -->
         <a-entity id="mouseCursor"
           cursor="rayOrigin: mouse"
           raycaster="objects: .teleport, .interact; far: 60; interval: 0">
@@ -41,9 +39,9 @@
       </a-camera>
     </a-entity>
 
-    <!-- Room shell is built from script.js -->
+    <a-entity id="env"></a-entity>
   </a-scene>
 
-  <script src="script.js?v=room2"></script>
+  <script src="script.js?v=lib1.1"></script>
 </body>
 </html>
