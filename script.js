@@ -1,9 +1,9 @@
 /* =========================================================
-   VLife • Chateau Library – script.js (chateau1.2)
-   Fixes:
-   - Main hall floor: single plane + canvas stone-tile texture (no seams)
-   - Corridor frames: offset from wall (+/-0.06m) so they don't sink in
-   - Kept teleport, mini-map, sconces/chandeliers
+   VLife • Chateau Library – script.js (chateau1.3)
+   - Main hall: 1m vertical stone panels with trim
+   - Frames: correct rotation + 6cm standoff; open link directly
+   - No pop-up panel; subtle hover glow on frames
+   - Mini-map + tap-to-teleport retained
 ========================================================= */
 
 /* ---- Teleport behaviour ---- */
@@ -45,7 +45,6 @@ function parseYouTubeId(u){
   return null;
 }
 function ytThumb(u){ const id = parseYouTubeId(u); return id ? ('https://img.youtube.com/vi/'+id+'/hqdefault.jpg') : null; }
-function worldPosOf(el, lift=1.35){ const v = new THREE.Vector3(); el.object3D.getWorldPosition(v); v.y += lift; return v; }
 
 /* ---- Adjust gaze (skip floor by default) ---- */
 (function adjustGazeRaycaster(){
@@ -104,9 +103,8 @@ function worldPosOf(el, lift=1.35){ const v = new THREE.Vector3(); el.object3D.g
   }
 
   scene.addEventListener('click', (evt)=>{
-    if (!armed) return;
     const target=evt.target;
-    if (!target || !target.classList || !target.classList.contains('teleport')) return;
+    if (!armed || !target || !target.classList || !target.classList.contains('teleport')) return;
     const d = evt.detail || {};
     const inter = d.intersection || (d.intersections && d.intersections[0]);
     if (!inter) return;
@@ -114,152 +112,129 @@ function worldPosOf(el, lift=1.35){ const v = new THREE.Vector3(); el.object3D.g
   });
 })();
 
-/* ---- Door panel ---- */
-function spawnDoorPanel(worldPos, title, url, imgSrc){
-  const W=3.2,H=1.8,headerH=0.16;
-  const root=document.createElement('a-entity');
-  root.setAttribute('position', `${worldPos.x} ${worldPos.y} ${worldPos.z}`);
-  root.setAttribute('billboard',''); scene.appendChild(root);
-
-  const back=document.createElement('a-entity');
-  back.setAttribute('geometry',`primitive: plane; width:${W}; height:${H}`);
-  back.setAttribute('material','color:#000; opacity:0.9; transparent:true'); back.setAttribute('position','0 0 0.002');
-  root.appendChild(back);
-
-  const header=document.createElement('a-entity');
-  header.setAttribute('geometry',`primitive: plane; width:${W}; height:${headerH}`);
-  header.setAttribute('material','color:#ffcf6b; opacity:0.98'); header.setAttribute('position',`0 ${H/2-headerH/2} 0.01`);
-  root.appendChild(header);
-
-  const t=document.createElement('a-entity');
-  t.setAttribute('text',`value:${title}; align:center; color:#2b1a08; width:5; zOffset:0.01`);
-  t.setAttribute('position',`0 ${H/2-headerH/2} 0.02`); root.appendChild(t);
-
-  const urlTxt=document.createElement('a-entity');
-  urlTxt.setAttribute('text',`value:${url}; align:center; color:#fff; width:4.8; wrapCount:68; zOffset:0.01`);
-  urlTxt.setAttribute('position',`0 ${H/2-headerH-0.10} 0.02`); root.appendChild(urlTxt);
-
-  if (imgSrc){
-    const img=document.createElement('a-image');
-    img.setAttribute('src',imgSrc); img.setAttribute('width',W-0.36); img.setAttribute('height',H-headerH-0.56);
-    img.setAttribute('position','0 0.05 0.025');
-    img.setAttribute('animation__zoom','property: scale; dir: alternate; from:1 1 1; to:1.05 1.05 1; dur:2600; easing:easeInOutSine; loop:true');
-    root.appendChild(img);
-  } else {
-    const ph=document.createElement('a-entity');
-    ph.setAttribute('geometry',`primitive: plane; width:${W-0.36}; height:${H-headerH-0.56}`);
-    ph.setAttribute('material','color:#1c2a4b; opacity:0.92; transparent:true'); ph.setAttribute('position','0 0.05 0.025');
-    root.appendChild(ph);
-  }
-
-  const openBtn=document.createElement('a-entity');
-  openBtn.setAttribute('class','interact');
-  openBtn.setAttribute('geometry','primitive: plane; width:1.10; height:0.28');
-  openBtn.setAttribute('material','color:#1f3560; opacity:0.96'); openBtn.setAttribute('position',`0 ${-H/2+0.22} 0.03`);
-  const label=document.createElement('a-entity');
-  label.setAttribute('text','value:Open; align:center; color:#fff; width:1.8; zOffset:0.01'); label.setAttribute('position','0 0 0.01');
-  openBtn.appendChild(label); openBtn.addEventListener('click',()=>{try{window.open(url,'_blank');}catch(e){location.href=url;}});
-  root.appendChild(openBtn);
-
-  const closeBtn=document.createElement('a-entity');
-  closeBtn.setAttribute('class','interact'); closeBtn.setAttribute('geometry','primitive: plane; width:0.20; height:0.20');
-  closeBtn.setAttribute('material','color:#000; opacity:0.001; transparent:true'); closeBtn.setAttribute('position',`${W/2-0.14} ${H/2-0.14} 0.04`);
-  const glyph=document.createElement('a-entity');
-  glyph.setAttribute('text','value:✕; align:center; color:#fff; width:2; zOffset:0.01'); glyph.setAttribute('position','0 0 0.01');
-  closeBtn.appendChild(glyph); root.appendChild(closeBtn);
-
-  function destroy(){ try{ root.parentNode.removeChild(root); }catch(e){} }
-  const auto=setTimeout(destroy,8000); let armed=false; setTimeout(()=>armed=true,300);
-  let look=setTimeout(()=>{},999999); const cancel=()=>armed&&clearTimeout(look); const rearm=()=>{if(!armed)return;clearTimeout(look);look=setTimeout(destroy,1200);};
-  root.addEventListener('mouseenter',cancel); root.addEventListener('mouseleave',rearm);
-  closeBtn.addEventListener('click',()=>{clearTimeout(auto);destroy();});
-  return root;
-}
-
-/* ---------- Hall + Corridors (stone walls, wood corridor floor) ---------- */
+/* ---------- Build Chateau: panelled main hall + corridors ---------- */
 (function buildChateau(){
 
   /* Lights */
   const hemi = document.createElement('a-entity');
-  hemi.setAttribute('light','type: hemisphere; intensity: 0.9; color: #dfe8ff; groundColor:#433;');
+  hemi.setAttribute('light','type: hemisphere; intensity: 0.9; color: #e9f0ff; groundColor:#443333;');
   hemi.setAttribute('position','0 3 0'); env.appendChild(hemi);
 
-  /* === MAIN HALL FLOOR: canvas stone tiles (no seams) === */
+  /* === MAIN HALL FLOOR (stone tile texture via canvas) === */
   const tileCanvas = document.createElement('canvas');
   tileCanvas.width = 512; tileCanvas.height = 512;
   const g = tileCanvas.getContext('2d');
-  // base
   g.fillStyle = '#d8d2c6'; g.fillRect(0,0,512,512);
-  // tiles
-  const N = 8; // 8x8 tiles in the texture
-  const s = 512/N;
+  const N = 8, s = 512/N;
   for (let i=0;i<N;i++){
     for (let j=0;j<N;j++){
       const shade = 205 + ((i+j)%2 ? -10 : 0);
       g.fillStyle = `rgb(${shade},${shade-6},${shade-12})`;
-      g.fillRect(i*s, j*s, s-2, s-2);
+      g.fillRect(i*s+1, j*s+1, s-2, s-2);
     }
   }
-  // grout lines
   g.strokeStyle = 'rgba(60,60,60,0.35)';
   for (let k=0;k<=N;k++){ g.beginPath(); g.moveTo(k*s,0); g.lineTo(k*s,512); g.stroke();
                           g.beginPath(); g.moveTo(0,k*s); g.lineTo(512,k*s); g.stroke(); }
   const tex = new THREE.CanvasTexture(tileCanvas);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(HALL_W/3, HALL_D/3); // scale texture to room size
+  tex.repeat.set(HALL_W/3, HALL_D/3);
 
   const hallFloor = document.createElement('a-entity');
   hallFloor.classList.add('teleport');
   hallFloor.setAttribute('geometry', `primitive: plane; width:${HALL_W}; height:${HALL_D}`);
   hallFloor.setAttribute('rotation', '-90 0 0');
-  // attach texture via material component using THREE texture:
-  hallFloor.addEventListener('model-loaded', ()=>{}); // no-op
-  hallFloor.setAttribute('material', 'shader: flat; src:');
-  hallFloor.object3D.traverse(()=>{}); // placeholder
-  // A-Frame hook to set map directly:
+  hallFloor.setAttribute('material', 'shader: flat; src:'); // placeholder
   hallFloor.addEventListener('loaded', ()=>{
     const mesh = hallFloor.getObject3D('mesh');
-    if (mesh) {
-      mesh.material.map = tex;
-      mesh.material.needsUpdate = true;
-    }
+    if (mesh) { mesh.material.map = tex; mesh.material.needsUpdate = true; }
   });
   env.appendChild(hallFloor);
 
-  /* === HALL WALLS (stone blocks, simple trim) === */
-  function wallBox(x,y,z,w,h,d,color){
-    const b=document.createElement('a-box');
-    b.setAttribute('position',`${x} ${y} ${z}`);
-    b.setAttribute('width',`${w}`); b.setAttribute('height',`${h}`); b.setAttribute('depth',`${d}`);
-    b.setAttribute('color',color); env.appendChild(b);
-  }
-  const stone = '#cfc8bc', trim = '#b9b1a2';
-  wallBox(0, HALL_H/2, -HALL_D/2, HALL_W, HALL_H, WALL_T, stone);
-  wallBox(0, HALL_H/2,  HALL_D/2, HALL_W, HALL_H, WALL_T, stone);
-  wallBox( HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, stone);
-  wallBox(-HALL_W/2, HALL_H/2, 0, WALL_T, HALL_H, HALL_D, stone);
+  /* === MAIN HALL WALLS: 1m vertical panels === */
+  const wallBase = '#cfc8bc';
+  const panelA   = '#c8c1b5';
+  const panelB   = '#bfb7a9';
+  const trim     = '#b3ab9b';
 
-  // baseboard & cornice (rings)
-  function ring(y,hthk){
-    const r = document.createElement('a-box');
-    r.setAttribute('position', `0 ${y} 0`);
-    r.setAttribute('width', `${HALL_W+WALL_T*2}`);
-    r.setAttribute('height', `${hthk}`);
-    r.setAttribute('depth', `${HALL_D+WALL_T*2}`);
-    r.setAttribute('color', trim);
-    r.setAttribute('geometry', `primitive: box`);
-    r.setAttribute('material', `color:${trim}`);
-    r.setAttribute('opacity', '1');
-    env.appendChild(r);
+  function addTrimRings(){
+    const base = document.createElement('a-box');
+    base.setAttribute('position',`0 0.10 0`);
+    base.setAttribute('width',`${HALL_W+WALL_T*2}`);
+    base.setAttribute('height',`0.12`);
+    base.setAttribute('depth',`${HALL_D+WALL_T*2}`);
+    base.setAttribute('color', trim);
+    env.appendChild(base);
+
+    const corn = base.cloneNode();
+    corn.setAttribute('position',`0 ${HALL_H-0.08} 0`);
+    env.appendChild(corn);
   }
-  ring(0.1, 0.12);                 // baseboard height
-  ring(HALL_H-0.08, 0.10);         // cornice
+
+  function buildPanelWall(side){
+    // side: 'N','S','E','W'
+    const alongX = (side==='N' || side==='S');
+    const width  = alongX ? HALL_W : HALL_D;
+    const sign   = (side==='N'||side==='W') ? -1 : 1;
+    const wallPos = {
+      x: (side==='E' ?  HALL_W/2 : side==='W' ? -HALL_W/2 : 0),
+      y: HALL_H/2,
+      z: (side==='S' ?  HALL_D/2 : side==='N' ? -HALL_D/2 : 0)
+    };
+
+    // base thin wall slab
+    const slab = document.createElement('a-box');
+    slab.setAttribute('position', `${wallPos.x} ${wallPos.y} ${wallPos.z}`);
+    slab.setAttribute('width',  alongX ? `${HALL_W}` : `${WALL_T}`);
+    slab.setAttribute('height', `${HALL_H}`);
+    slab.setAttribute('depth',  alongX ? `${WALL_T}` : `${HALL_D}`);
+    slab.setAttribute('color', wallBase);
+    env.appendChild(slab);
+
+    // chair-rail
+    const rail = document.createElement('a-box');
+    rail.setAttribute('color', trim);
+    if (alongX){
+      rail.setAttribute('width', `${HALL_W}`);
+      rail.setAttribute('height', `0.06`);
+      rail.setAttribute('depth', `0.05`);
+      rail.setAttribute('position', `0 1.0 ${wallPos.z + sign*(WALL_T/2 + 0.025)}`);
+    } else {
+      rail.setAttribute('width', `0.05`);
+      rail.setAttribute('height', `0.06`);
+      rail.setAttribute('depth', `${HALL_D}`);
+      rail.setAttribute('position', `${wallPos.x + sign*(WALL_T/2 + 0.025)} 1.0 0`);
+    }
+    env.appendChild(rail);
+
+    // vertical 1m panels
+    const panelW = 1.0, gap = 0.08, panelH = 3.0, panelY = 1.6;
+    const count = Math.floor((width - 0.4) / (panelW + gap));
+    for (let i=0;i<count;i++){
+      const offset = -((count-1)*(panelW+gap))/2 + i*(panelW+gap);
+      const pane = document.createElement('a-plane');
+      pane.setAttribute('width', `${panelW}`);
+      pane.setAttribute('height', `${panelH}`);
+      pane.setAttribute('material', `color:${i%2?panelA:panelB}`);
+      if (alongX){
+        pane.setAttribute('position', `${offset} ${panelY} ${wallPos.z + sign*(WALL_T/2 + 0.006)}`);
+        pane.setAttribute('rotation', `0 ${sign>0?180:0} 0`);
+      } else {
+        pane.setAttribute('position', `${wallPos.x + sign*(WALL_T/2 + 0.006)} ${panelY} ${offset}`);
+        pane.setAttribute('rotation', `0 ${side==='E'?-90:90} 0`);
+      }
+      env.appendChild(pane);
+    }
+  }
+
+  addTrimRings();
+  ['N','S','E','W'].forEach(buildPanelWall);
 
   // Ceiling (dark timber)
   const ceil=document.createElement('a-plane');
   ceil.setAttribute('rotation','90 0 0'); ceil.setAttribute('position',`0 ${HALL_H} 0`);
   ceil.setAttribute('width',`${HALL_W}`); ceil.setAttribute('height',`${HALL_D}`);
-  ceil.setAttribute('material','color:#5a3b1d; metalness:0; roughness:1'); env.appendChild(ceil);
+  ceil.setAttribute('material','color:#4d341c'); env.appendChild(ceil);
 
   // Chandeliers
   function chandelier(x,z){
@@ -289,10 +264,9 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
       floor.setAttribute('geometry',`primitive: plane; width:${COR_W}; height:${COR_L}`);
       floor.setAttribute('rotation','-90 0 0'); floor.setAttribute('position',`0 0 ${startZ+sign*(COR_L/2)}`);
     }
-    floor.setAttribute('material','color:#986135; metalness:0.1; roughness:0.9');
-    grp.appendChild(floor);
+    floor.setAttribute('material','color:#986135; roughness:0.95'); grp.appendChild(floor);
 
-    // plain stone walls
+    // plain stone corridor walls
     const wallTone='#cfc8bc';
     function wall(x,y,z,w,h,d){
       const box=document.createElement('a-box');
@@ -309,7 +283,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
       wall(xB, HALL_H/2, startZ + sign*(COR_L/2), WALL_T, HALL_H, COR_L);
     }
 
-    // sconces
+    // sconces every ~5m
     const step=5;
     if(alongX){
       for(let x = startX+sign*2.0; Math.abs(x-startX)<COR_L-1.5; x+=sign*step){
@@ -342,34 +316,48 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
 
   const corridors = [ mkCorridor('x+'), mkCorridor('x-'), mkCorridor('z+'), mkCorridor('z-') ];
 
-  /* === FRAMES (only images) — 6 cm proud from wall === */
+  /* === FRAMES (flush, correct yaw, open link directly) === */
   const step = 3.2, margin = 1.6; let linkIdx = 0;
-  const OFFSET = 0.06; // stand off from wall face
+  const OFFSET = 0.06; // standoff from wall
 
   function addFrame(pos, yawDeg){
     const link = LINKS[linkIdx % LINKS.length]; linkIdx++;
 
-    const frame = document.createElement('a-plane');
-    frame.classList.add('interact','poster');
-    frame.setAttribute('width','1.6'); frame.setAttribute('height','1.0');
-    frame.setAttribute('material','color:#1d2230; metalness:0.2; roughness:0.8');
-    frame.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
-    frame.setAttribute('rotation', `0 ${yawDeg} 0`);
+    const frame = document.createElement('a-entity');
+    frame.classList.add('interact');
 
-    const thumb = ytThumb(link.url);
+    // wooden frame (bevel)
+    const outer = document.createElement('a-plane');
+    outer.setAttribute('width','1.68'); outer.setAttribute('height','1.08');
+    outer.setAttribute('material','color:#3d2a16'); outer.setAttribute('position','0 0 0');
+    frame.appendChild(outer);
+
+    const inner = document.createElement('a-plane');
+    inner.setAttribute('width','1.6'); inner.setAttribute('height','1.0');
+    inner.setAttribute('material','color:#1d2230'); inner.setAttribute('position','0 0 0.005');
+    frame.appendChild(inner);
+
     const img = document.createElement('a-image');
-    img.setAttribute('src', thumb || '#fallbackPoster');
+    img.setAttribute('src', ytThumb(link.url) || '#fallbackPoster');
     img.setAttribute('width','1.52'); img.setAttribute('height','0.92');
     img.setAttribute('position','0 0 0.01');
     frame.appendChild(img);
 
     const cap = document.createElement('a-entity');
     cap.setAttribute('text', `value:${link.title}; align:center; color:#f5f5f5; width: 2.4; wrapCount: 22; zOffset: 0.01`);
-    cap.setAttribute('position', '0 -0.68 0.02'); frame.appendChild(cap);
+    cap.setAttribute('position', '0 -0.70 0.015'); frame.appendChild(cap);
 
-    frame.addEventListener('click', ()=>{
-      const p = worldPosOf(frame, 1.0);
-      spawnDoorPanel(p, link.title, link.url, thumb);
+    // orientation & position
+    frame.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+    frame.setAttribute('rotation', `0 ${yawDeg} 0`);
+
+    // subtle hover glow (gaze or mouse)
+    frame.addEventListener('mouseenter', ()=> { inner.setAttribute('material','color:#273045'); });
+    frame.addEventListener('mouseleave', ()=> { inner.setAttribute('material','color:#1d2230'); });
+
+    // open link directly
+    frame.addEventListener('click', ()=> {
+      try { window.open(link.url, '_blank'); } catch(e){ location.href = link.url; }
     });
 
     env.appendChild(frame);
@@ -408,7 +396,7 @@ function spawnDoorPanel(worldPos, title, url, imgSrc){
     const maxX = (HALL_W/2 + COR_L), maxZ = (HALL_D/2 + COR_L);
     return {
       mx: Math.round( W * (x + maxX) / (2*maxX) ),
-      mz: Math.round( H * (z + maxZ) / (2*maxZ) )
+      mz: Math.round( H * (z + maxZ) / (2*maxX) )
     };
   }
 
