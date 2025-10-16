@@ -1,10 +1,11 @@
-/* VLife • Château 2.0 (walking fix + minimap loop) */
+/* VLife • Château 2.0 — movement fixed (forward is forward), press-and-hold */
 const scene  = document.getElementById('scene');
 const world  = document.getElementById('world');
 const rig    = document.getElementById('rig');
 const cam    = document.getElementById('cam');
 const status = document.getElementById('status');
 const walkBtn= document.getElementById('walkBtn');
+const backBtn= document.getElementById('backBtn');
 const minimap= document.getElementById('minimap');
 
 function note(msg, ok=true){
@@ -14,12 +15,9 @@ function note(msg, ok=true){
 function v3(x=0,y=0,z=0){ return `${x} ${y} ${z}`; }
 
 const CFG = {
-  lobbySize: 20,
-  wallH: 3.2,
-  corridorW: 4,
-  corridorL: 18,
-  frameW: 1.1,
-  frameH: 0.7
+  lobbySize: 20, wallH: 3.2,
+  corridorW: 4, corridorL: 18,
+  frameW: 1.1, frameH: 0.7
 };
 
 const LINKS = [
@@ -31,26 +29,33 @@ const LINKS = [
   {title:"VR Rollercoaster", url:"https://www.youtube.com/results?search_query=rollercoaster+360"}
 ];
 
-/* ---------- Movement component (runs every frame) ---------- */
+/* ---------- Movement component ---------- */
+/* If your device felt reversed, `invert:true` below corrects it. */
 AFRAME.registerComponent('player-move',{
   schema:{
     speed:{type:'number', default:1.6},
-    active:{type:'boolean', default:false}
+    active:{type:'boolean', default:false},
+    invert:{type:'boolean', default:false},  // flip if needed
+    back:{type:'boolean', default:false}     // for “Back” press-hold
   },
   init(){
-    this.forward = new THREE.Vector3();
+    this.dir = new THREE.Vector3();
   },
   tick(time, dt){
-    if(!this.data.active) return;
+    if(!this.data.active && !this.data.back) return;
     if(!cam || !cam.object3D) return;
-    // Get camera forward vector (points along -Z)
-    cam.object3D.getWorldDirection(this.forward);
-    // Move forward (world units per second)
-    const step = (this.data.speed * (dt/1000));
-    // Optional: ignore vertical pitch so you don't drift up/down
-    this.forward.y = 0; this.forward.normalize();
-    // Move the rig
-    this.el.object3D.position.addScaledVector(this.forward, step);
+
+    cam.object3D.getWorldDirection(this.dir);
+    this.dir.y = 0; this.dir.normalize();
+
+    // Camera forward is typically negative-Z; if walking felt backwards,
+    // flip the sign with invert=true (defaulted true in HTML rig).
+    let sign = this.data.invert ? -1 : 1;
+    // Back button reverses that sign while held.
+    if(this.data.back) sign *= -1;
+
+    const step = (this.data.speed * (dt/1000)) * sign;
+    this.el.object3D.position.addScaledVector(this.dir, step);
   }
 });
 
@@ -59,7 +64,7 @@ AFRAME.registerComponent('ui-loop',{
   tick(){ drawMinimap(); }
 });
 
-/* ---------- Build world ---------- */
+/* ---------- Build simple world so we can move around ---------- */
 scene.addEventListener('loaded', () => {
   buildGroundSky();
   buildLobbyAndCorridors();
@@ -81,7 +86,7 @@ function buildGroundSky(){
   world.appendChild(sky);
 }
 
-/* lobby + 4 corridors */
+/* lobby + 4 corridors (frames on both sides) */
 function buildLobbyAndCorridors(){
   const S = CFG.lobbySize, H = CFG.wallH;
   addBox(0, 0, 0, S, 0.1, S, '#2a2a2a', true);
@@ -191,13 +196,23 @@ function addLocalBox(parent, x,y,z, w,h,d, color, receive){
   parent.appendChild(e);
 }
 
-/* -------- Walk button toggles the component -------- */
-walkBtn.addEventListener('click', ()=>{
-  const active = !(rig.getAttribute('player-move')?.active);
-  rig.setAttribute('player-move', `active:${active}`);
-  walkBtn.classList.toggle('active', active);
-  walkBtn.textContent = active ? 'Walking…' : 'Walk';
-});
+/* --------- Controls: press & hold forward/back ---------- */
+const press = (el, down, up) => {
+  const onDown = e => { e.preventDefault(); down(); };
+  const onUp   = () => up();
+  el.addEventListener('pointerdown', onDown);
+  window.addEventListener('pointerup', onUp);
+};
+
+press(walkBtn,
+  () => { rig.setAttribute('player-move', 'active:true'); walkBtn.classList.add('active'); walkBtn.textContent='Walking…'; },
+  () => { rig.setAttribute('player-move', 'active:false'); walkBtn.classList.remove('active'); walkBtn.textContent='Walk'; }
+);
+
+press(backBtn,
+  () => { rig.setAttribute('player-move', 'back:true'); backBtn.classList.add('active'); },
+  () => { rig.setAttribute('player-move', 'back:false'); backBtn.classList.remove('active'); }
+);
 
 /* ---------- Minimap ---------- */
 function installMinimap(){
