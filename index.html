@@ -2,59 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>VLife • Chateau Library</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VLife • Château 2.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+  <link rel="stylesheet" href="style.css" />
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=chateau1" />
+  <!-- THREE is exposed by A-Frame -->
 </head>
 <body>
-  <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" />
-  <div id="minimap">
-    <canvas id="mapCanvas" width="168" height="168"></canvas>
-    <div class="label">Minimap</div>
-  </div>
-  <button id="helpBtn" onclick="toggleHelp()">?</button>
-  <div id="help" class="hidden">
-    <h3>VLife • Chateau Library</h3>
-    <p>Tap the floor to walk. Tap paintings to preview & open links.</p>
-    <p>Use the mini-map to orient—triangle = you.</p>
-  </div>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 200 60" class="logo"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#73e3ff"/><stop offset="1" stop-color="#7bffb3"/></linearGradient></defs>
+        <text x="0" y="45" font-size="44" font-family="Poppins, Inter, system-ui" fill="url(#g)" font-weight="800">VLife</text>
+      </svg>
+      <span class="tag">Château 2.0</span>
+    </div>
+    <div class="hud">
+      <canvas id="mapCanvas" width="220" height="220"></canvas>
+    </div>
+  </header>
 
-  <a-scene id="scene"
-           background="color: #0c0f19"
-           renderer="antialias: true; colorManagement: true"
-           loading-screen="enabled:false">
-
-    <a-assets timeout="15000">
-      <!-- Textures (royalty-free) -->
-      <img id="texStone" crossorigin="anonymous"
-           src="https://images.unsplash.com/photo-1541535881962-3bb380b08458?q=80&w=1200&auto=format&fit=crop" />
-      <img id="texWood" crossorigin="anonymous"
-           src="https://images.unsplash.com/photo-1493666438817-866a91353ca9?q=80&w=1200&auto=format&fit=crop" />
-      <img id="fallbackPoster" crossorigin="anonymous"
-           src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1200&auto=format&fit=crop" />
-    </a-assets>
-
-    <!-- Camera rig with dual cursors -->
-    <a-entity id="rig" position="0 1.6 4">
-      <a-camera id="cam" wasd-controls-enabled="false" look-controls="touchEnabled: true">
-        <a-cursor id="gazeCursor"
-          position="0 0 -1"
-          geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
-          material="shader: flat; color: #fff"
-          cursor="fuse: true; fuseTimeout: 1100; rayOrigin: entity"
-          raycaster="objects: .interact; far: 60; interval: 0">
-        </a-cursor>
-        <a-entity id="mouseCursor"
-          cursor="rayOrigin: mouse"
-          raycaster="objects: .teleport, .interact; far: 60; interval: 0">
-        </a-entity>
-      </a-camera>
+  <a-scene id="scene" renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true" cursor="rayOrigin:mouse" raycaster="objects: .interact, .teleport;">
+    <!-- camera rig -->
+    <a-entity id="rig" position="0 1.6 0" movement-controls="enabled:false">
+      <a-entity id="cam" camera look-controls="pointerLockEnabled:false; touchEnabled:true"></a-entity>
+      <a-entity id="gazeCursor" cursor="fuse: false"></a-entity>
     </a-entity>
 
+    <!-- world root -->
     <a-entity id="env"></a-entity>
+
+    <!-- sky / light -->
+    <a-entity light="type:ambient; intensity:0.35; color:#ffffff"></a-entity>
+    <a-sky color="#0f0f14"></a-sky>
+
+    <!-- fallback poster if any thumb missing -->
+    <a-assets>
+      <img id="fallbackPoster" crossorigin="anonymous"
+           src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='512' height='288'><rect width='100%' height='100%' fill='%2318232e'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23a8c7ff' font-family='Arial' font-size='36'>VLife Link</text></svg>">
+      <!-- Tiny forest image used in Cabin window -->
+      <img id="forestPoster" crossorigin="anonymous"
+           src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='640' height='360'><defs><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%2387c8ff'/><stop offset='1' stop-color='%237bb36a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23s)'/><g fill='%234f8245'><?xml-stylesheet?><rect x='0' y='260' width='640' height='100'/></g></svg>">
+    </a-assets>
   </a-scene>
 
-  <script src="script.js?v=chateau1"></script>
+  <script src="script.js"></script>
 </body>
 </html>
