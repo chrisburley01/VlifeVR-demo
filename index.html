@@ -5,42 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>VLife • Château</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- A-Frame + three.js -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 <body>
-  <!-- UI: Logo + Help + Minimap -->
+  <!-- Top UI -->
   <header class="ui">
     <img id="vlifeLogo" alt="VLife" src="assets/Vlifelogo_1_.png" />
     <button id="helpBtn">?</button>
   </header>
 
-  <div id="minimap">
-    <canvas id="mapCanvas" width="280" height="280"></canvas>
+  <!-- Minimap (now mini + collapsible + non-blocking) -->
+  <div id="minimap" class="collapsed">
+    <canvas id="mapCanvas" width="200" height="200"></canvas>
     <div class="label">Minimap</div>
+    <button id="mapToggle" title="Toggle map size">⤢</button>
   </div>
 
+  <!-- Mobile walk button -->
+  <button id="walkBtn" aria-label="Walk forward">Walk</button>
+
   <!-- Scene -->
-  <a-scene id="scene" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true"
+  <a-scene id="scene" renderer="antialias:true; colorManagement:true; physicallyCorrectLights:true"
            background="color: #0b0c11">
-    <!-- Assets (posters used in rooms/frames) -->
     <a-assets>
       <img id="forestPoster" src="assets/Forrest360.jpg" crossorigin="anonymous" />
-      <!-- Fallback tiny poster so we never crash if a link thumb fails -->
       <canvas id="fallbackPoster" width="64" height="36"></canvas>
     </a-assets>
 
-    <!-- Rig + camera -->
     <a-entity id="rig" position="0 1.6 0">
       <a-entity id="cam" camera look-controls wasd-controls="acceleration: 20">
-        <a-entity id="cursor" cursor="fuse: true; fuseTimeout: 900"
-                  position="0 0 -1" geometry="primitive: ring; radiusInner:0.01; radiusOuter:0.016"
-                  material="color: #ffffff; shader: flat; opacity: 0.9">
-        </a-entity>
+        <a-entity id="cursor" cursor="fuse:true; fuseTimeout:900"
+                  position="0 0 -1" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
+                  material="color:#ffffff; shader:flat; opacity:0.9"></a-entity>
       </a-entity>
     </a-entity>
 
-    <!-- World root -->
     <a-entity id="env"></a-entity>
   </a-scene>
 
