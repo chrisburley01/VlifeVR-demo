@@ -2,25 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <title>VLife • Diagnostic MWE</title>
-  <link rel="stylesheet" href="styles.css?v=2.54" />
-  <!-- A-Frame first -->
+  <link rel="stylesheet" href="style.css?v=2.54" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
-
 <body>
-  <!-- Splash / Status -->
   <div id="splash">Loading VLife…</div>
   <div id="status" hidden></div>
 
-  <!-- HUD -->
   <button id="walkBtn">Walk</button>
 
-  <!-- Scene (pinned full-viewport via CSS) -->
   <a-scene
     id="scene"
     embedded
@@ -28,7 +20,6 @@
     background="color:#0b0c10"
   >
     <a-entity id="world"></a-entity>
-
     <a-entity id="rig" position="0 1.6 0">
       <a-entity id="cam"
         camera
@@ -39,7 +30,6 @@
     </a-entity>
   </a-scene>
 
-  <!-- Our script LAST -->
   <script src="script.js?v=2.54"></script>
 </body>
 </html>
