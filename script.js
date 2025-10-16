@@ -1,110 +1,246 @@
-/* VLife Diagnostic 2.54 — visible test world + mono fix companion */
+/* VLife • Château 2.0 (stable baseline) */
+const scene  = document.getElementById('scene');
+const world  = document.getElementById('world');
+const rig    = document.getElementById('rig');
+const cam    = document.getElementById('cam');
+const status = document.getElementById('status');
+const walkBtn= document.getElementById('walkBtn');
+const minimap= document.getElementById('minimap');
 
-console.log("🔵 script.js loaded");
-const scene  = document.getElementById("scene");
-const world  = document.getElementById("world");
-const rig    = document.getElementById("rig");
-const cam    = document.getElementById("cam");
-const splash = document.getElementById("splash");
-const status = document.getElementById("status");
-const walkBtn= document.getElementById("walkBtn");
-
-function showStatus(msg, ok=false){
-  status.hidden = false;
-  status.textContent = msg;
-  status.style.borderColor = ok ? "rgba(120,255,180,.35)" : "rgba(255,160,160,.35)";
-  status.style.color = ok ? "#cfffdf" : "#ffdede";
+/* ----------------- util ----------------- */
+function note(msg, ok=true){
+  status.hidden=false; status.textContent = msg;
+  status.style.color = ok ? '#cbffd8' : '#ffd6d6';
 }
-function hideSplash(reason="ready"){ splash?.remove(); showStatus(`✅ ${reason}`, true); }
-function failSplash(reason){ splash?.remove(); showStatus(`❌ ${reason}`, false); }
 
-scene.addEventListener("loaded", () => {
-  console.log("✅ A-Frame scene loaded");
-  try {
-    buildWorld();
-    hideSplash("World visible");
-  } catch (e) {
-    console.error("❌ buildWorld error", e);
-    failSplash("buildWorld() failed");
-  }
+function v3(x=0,y=0,z=0){ return `${x} ${y} ${z}`; }
+
+/* ------------- layout config ----------- */
+const CFG = {
+  lobbySize: 20,      // square lobby
+  wallH: 3.2,
+  corridorW: 4,
+  corridorL: 18,
+  frameW: 1.1,
+  frameH: 0.7,
+  walkSpeed: 1.6
+};
+
+// quick links (thumbnails optional; titles always show)
+const LINKS = [
+  {title:"GoPro 360", url:"https://www.youtube.com/@GoPro/search?query=360"},
+  {title:"National Geographic 360", url:"https://www.youtube.com/playlist?list=PLvjPDlt6ApQUgZgY2hLpcZ3g4Zz4Icz7T"},
+  {title:"NYTimes Daily 360", url:"https://www.nytimes.com/spotlight/the-daily-360"},
+  {title:"ISS Spacewalk 360", url:"https://www.youtube.com/watch?v=H9w5o6wEziA"},
+  {title:"BBC Earth 360", url:"https://www.youtube.com/results?search_query=bbc+earth+360"},
+  {title:"VR Rollercoaster", url:"https://www.youtube.com/results?search_query=rollercoaster+360"}
+];
+
+/* ------------- build world ------------- */
+scene.addEventListener('loaded', () => {
+  buildGroundSky();
+  buildLobbyAndCorridors();
+  installMinimap();
+  note('World ready');
 });
 
-/* --------------- CONFIG --------------- */
-const CFG = { WALK_SPEED: 1.6 };
-
-/* --------------- WORLD ---------------- */
-function buildWorld(){
-  // Ambient + Directional light
-  addLight("ambient", {color:"#ffffff", intensity:0.5});
-  addLight("directional", {color:"#ffdca8", intensity:1.0, position:"0 5 3"});
-
-  // Ground plane
-  const ground = document.createElement("a-plane");
-  ground.setAttribute("rotation", "-90 0 0");
-  ground.setAttribute("width", "100");
-  ground.setAttribute("height", "100");
-  ground.setAttribute("color", "#222");
-  ground.setAttribute("shadow", "cast:false; receive:true");
+/* ground + sky */
+function buildGroundSky(){
+  const ground = document.createElement('a-plane');
+  ground.setAttribute('rotation', '-90 0 0');
+  ground.setAttribute('width', '120');
+  ground.setAttribute('height', '120');
+  ground.setAttribute('color', '#222');
   world.appendChild(ground);
 
-  // Sky dome
-  const sky = document.createElement("a-sky");
-  sky.setAttribute("color", "#0a0c12");
+  const sky = document.createElement('a-sky');
+  sky.setAttribute('color', '#0d0f16');
   world.appendChild(sky);
-
-  // Central cube (always visible)
-  const cube = document.createElement("a-box");
-  cube.setAttribute("position", "0 1.5 -4");
-  cube.setAttribute("depth", "2");
-  cube.setAttribute("width", "2");
-  cube.setAttribute("height", "2");
-  cube.setAttribute("color", "#33aaff");
-  cube.setAttribute("shadow", "cast:true; receive:true");
-  world.appendChild(cube);
-
-  // Four coloured markers
-  addMarker(4, 0, 0,  "#f55");
-  addMarker(-4, 0, 0, "#5f5");
-  addMarker(0, 0, 4,  "#ff5");
-  addMarker(0, 0, -4, "#55f");
 }
 
-function addLight(type, opts={}){
-  const e = document.createElement("a-entity");
-  let def = `type:${type};`;
-  for (const [k,v] of Object.entries(opts)){
-    if (k === "position") e.setAttribute("position", v);
-    else def += `${k}:${v};`;
+/* lobby (center) + 4 corridors */
+function buildLobbyAndCorridors(){
+  const S = CFG.lobbySize, H = CFG.wallH;
+
+  // lobby floor/ceiling
+  addBox(0, 0, 0, S, 0.1, S, '#2a2a2a', true);
+  addBox(0, H, 0, S, 0.1, S, '#1c1c1c', false);
+
+  // lobby walls (panelled with 1m breaks)
+  wallStrip(-S/2, H/2, 0,    0, 0, 0,    S, H, '#e8e1cf'); // West
+  wallStrip( S/2, H/2, 0,    0, 180, 0,  S, H, '#e8e1cf'); // East
+  wallStrip( 0,   H/2,-S/2,  0, 90, 0,   S, H, '#e8e1cf'); // North
+  wallStrip( 0,   H/2, S/2,  0,-90, 0,   S, H, '#e8e1cf'); // South
+
+  // four corridors start from lobby midpoints
+  corridor( 0, 0, -S/2, 0);    // north (negative z)
+  corridor( S/2, 0,  0, 90);   // east  (positive x)
+  corridor( 0, 0,  S/2, 180);  // south (positive z)
+  corridor(-S/2, 0,  0, -90);  // west  (negative x)
+}
+
+/* thin “panelled” wall: a row of 1m panels with 2cm gaps */
+function wallStrip(x,y,z, rx,ry,rz, len, h, color){
+  const root = document.createElement('a-entity');
+  root.setAttribute('position', v3(x,y,z));
+  root.setAttribute('rotation', v3(rx,ry,rz));
+  world.appendChild(root);
+
+  const panelW = 1, gap = .05, usable = len - gap;
+  const count = Math.floor(usable/(panelW+gap));
+  const startX = -((count*(panelW+gap)-gap)/2) + panelW/2;
+
+  for(let i=0;i<count;i++){
+    const px = startX + i*(panelW+gap);
+    const p = document.createElement('a-box');
+    p.setAttribute('position', v3(px, 0, 0));
+    p.setAttribute('width', panelW);
+    p.setAttribute('height', h);
+    p.setAttribute('depth', .08);
+    p.setAttribute('color', color);
+    p.setAttribute('shadow', 'receive:true');
+    root.appendChild(p);
   }
-  e.setAttribute("light", def);
+}
+
+/* corridor with framed links on BOTH sides */
+function corridor(x,z, zOffOrXOff, yaw){
+  const root = document.createElement('a-entity');
+  root.setAttribute('position', v3(x,0,z));
+  root.setAttribute('rotation', v3(0,yaw,0));
+  world.appendChild(root);
+
+  const W = CFG.corridorW, L = CFG.corridorL, H = CFG.wallH;
+
+  // floor + ceiling
+  addLocalBox(root, 0, 0, -L/2,  W, .05, L,  '#3a2f24', true);   // floor wood
+  addLocalBox(root, 0, H, -L/2,  W, .05, L,  '#101215', false);  // ceiling
+
+  // left & right walls
+  addLocalBox(root, -W/2, H/2, -L/2, .08, H, L, '#eae5d6', false);
+  addLocalBox(root,  W/2, H/2, -L/2, .08, H, L, '#eae5d6', false);
+
+  // frames each side, alternating links
+  const step = 3.2, yCenter = 1.5, inset = .15;
+  let linkIdx = 0;
+
+  for(let dz=-2; dz>=-L+2; dz-=step){
+    // right wall (faces into corridor)
+    createFrame(root,  W/2 - inset, yCenter, dz, 0, -90, 0, LINKS[linkIdx%LINKS.length]);
+    // left wall
+    createFrame(root, -W/2 + inset, yCenter, dz, 0,  90, 0, LINKS[(linkIdx+1)%LINKS.length]);
+    linkIdx += 2;
+  }
+}
+
+/* frame = border + title + interactive plane */
+function createFrame(parent, x,y,z, rx,ry,rz, link){
+  const group = document.createElement('a-entity');
+  group.setAttribute('position', v3(x,y,z));
+  group.setAttribute('rotation', v3(rx,ry,rz));
+  parent.appendChild(group);
+
+  const w = CFG.frameW, h = CFG.frameH;
+
+  // backing panel
+  const back = document.createElement('a-plane');
+  back.setAttribute('width', w+0.08);
+  back.setAttribute('height', h+0.08);
+  back.setAttribute('color', '#111');
+  back.setAttribute('position', v3(0,0,-0.01));
+  group.appendChild(back);
+
+  // frame border
+  const frame = document.createElement('a-plane');
+  frame.classList.add('frame');
+  frame.setAttribute('width', w);
+  frame.setAttribute('height', h);
+  frame.setAttribute('material', 'color:#1d2632; metalness:0.4; roughness:0.2');
+  frame.setAttribute('event-set__enter', 'scale:1.02 1.02 1');
+  frame.setAttribute('event-set__leave', 'scale:1 1 1');
+  group.appendChild(frame);
+
+  // title bar
+  const title = document.createElement('a-entity');
+  title.setAttribute('text', `value:${link.title}; align:center; width:2.5; color:#ffd988;`);
+  title.setAttribute('position', v3(0, h/2 + .18, 0));
+  group.appendChild(title);
+
+  // click opens link
+  frame.addEventListener('click', () => window.open(link.url, '_blank'));
+}
+
+/* helpers to add boxes */
+function addBox(x,y,z, w,h,d, color, receive){
+  const e = document.createElement('a-box');
+  e.setAttribute('position', v3(x, y + h/2, z));
+  e.setAttribute('width', w);
+  e.setAttribute('height', h);
+  e.setAttribute('depth', d);
+  e.setAttribute('color', color);
+  e.setAttribute('shadow', `receive:${!!receive}; cast:${!receive}`);
   world.appendChild(e);
 }
-function addMarker(x,y,z,color){
-  const sphere = document.createElement("a-sphere");
-  sphere.setAttribute("position", `${x} ${y+1} ${z}`);
-  sphere.setAttribute("radius", "0.5");
-  sphere.setAttribute("color", color);
-  world.appendChild(sphere);
+function addLocalBox(parent, x,y,z, w,h,d, color, receive){
+  const e = document.createElement('a-box');
+  e.setAttribute('position', v3(x, y + h/2, z));
+  e.setAttribute('width', w);
+  e.setAttribute('height', h);
+  e.setAttribute('depth', d);
+  e.setAttribute('color', color);
+  e.setAttribute('shadow', `receive:${!!receive}; cast:${!receive}`);
+  parent.appendChild(e);
 }
 
-/* --------------- MOVEMENT ------------- */
+/* --------------- movement --------------- */
 let walking = false;
-walkBtn.addEventListener("click", () => {
+walkBtn.addEventListener('click', ()=>{
   walking = !walking;
-  walkBtn.classList.toggle("active", walking);
-  walkBtn.textContent = walking ? "Walking…" : "Walk";
+  walkBtn.classList.toggle('active', walking);
+  walkBtn.textContent = walking ? 'Walking…' : 'Walk';
 });
 
 let last = performance.now();
-scene.addEventListener("tick", () => {
+scene.addEventListener('tick', ()=>{
   const now = performance.now();
-  const dt = Math.min(0.05, (now - last) / 1000);
-  last = now;
-  if (walking) moveForward(dt);
+  const dt = Math.min(0.05, (now-last)/1000); last = now;
+  if (walking){
+    const y = cam.object3D.rotation.y;
+    rig.object3D.position.x += Math.sin(y) * CFG.walkSpeed * dt;
+    rig.object3D.position.z += Math.cos(y) * CFG.walkSpeed * dt;
+  }
+  drawMinimap();
 });
 
-function moveForward(dt){
-  const y = cam.object3D.rotation.y;
-  rig.object3D.position.x += Math.sin(y) * CFG.WALK_SPEED * dt;
-  rig.object3D.position.z += Math.cos(y) * CFG.WALK_SPEED * dt;
+/* --------------- minimap ---------------- */
+function installMinimap(){
+  minimap.innerHTML = `<canvas id="mm" width="180" height="180"></canvas>`;
+}
+function drawMinimap(){
+  const c = document.getElementById('mm'); if(!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.fillRect(0,0,c.width,c.height);
+
+  // simple cross layout schematic
+  ctx.strokeStyle = '#7a8bff';
+  ctx.lineWidth = 3;
+  const cx=90, cy=90, s=28;
+  ctx.strokeRect(cx-s, cy-s, s*2, s*2);       // lobby
+  ctx.beginPath();
+  ctx.moveTo(cx, cy-s); ctx.lineTo(cx, cy-70); // north
+  ctx.moveTo(cx+s, cy); ctx.lineTo(cx+70, cy); // east
+  ctx.moveTo(cx, cy+s); ctx.lineTo(cx, cy+70); // south
+  ctx.moveTo(cx-s, cy); ctx.lineTo(cx-70, cy); // west
+  ctx.stroke();
+
+  // player marker
+  const p = rig.object3D.position;
+  const scale=2; // 1 world unit ≈ 2 px on map (rough)
+  const mx = cx + p.x*scale;
+  const my = cy + p.z*scale*-1;
+  ctx.fillStyle = '#ffd26b';
+  ctx.beginPath();
+  ctx.arc(mx,my,5,0,Math.PI*2); ctx.fill();
 }
