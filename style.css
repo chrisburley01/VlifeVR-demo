@@ -1,78 +1,12 @@
-body, html {
-  margin: 0;
-  overflow: hidden;
-  font-family: system-ui, sans-serif;
-  background: #0b0c10;
-  color: #fff;
+html, body { margin:0; height:100%; background:#0b0c10; color:#eaf6ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+a-scene { width:100vw; height:100vh; }
+
+/* Splash */
+#splash{
+  position:fixed; inset:0; display:grid; place-items:center;
+  background:#0b0c10; color:#cfe9ff; font-weight:700; z-index:10;
 }
 
-#splash {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: #0b0c10;
-  color: #cfe9ff;
-  font-size: 1.2rem;
-  z-index: 10;
-}
-
-#logo {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  height: 70px;
-  z-index: 6;
-}
-
-#help {
-  position: fixed;
-  top: 25px;
-  right: 20px;
-  background: rgba(0,0,0,0.5);
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  font-weight: 600;
-  z-index: 6;
-}
-
-.minimap {
-  position: fixed;
-  bottom: 80px;
-  right: 12px;
-  background: rgba(15,15,20,0.9);
-  border-radius: 12px;
-  padding: 6px;
-  z-index: 5;
-  text-align: center;
-}
-.minimap canvas {
-  width: 180px;
-  height: 180px;
-  image-rendering: pixelated;
-}
-.minimap div {
-  font-size: 0.8rem;
-  opacity: 0.8;
-  margin-top: 2px;
-}
-
-#walkBtn, #vrBtn {
-  position: fixed;
-  bottom: 20px;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  padding: 10px 20px;
-  z-index: 6;
-}
-#walkBtn { left: 20px; background:#1e88e5; color:white; }
-#vrBtn   { right: 20px; background:white; color:black; }
-
-a-scene {
-  width: 100vw;
-  height: 100vh;
-}
+/* Status strip (errors / success) */
+#status{
+  position:fixed; left:50%;
