@@ -1,145 +1,221 @@
-// === VLife Château 2.51 – Diagnostic Build ===
+/* VLife Diagnostic 2.52 — subpath-safe, aggressive logs, hard fallbacks */
 
-console.log("🔵 script.js loaded — starting setup");
-
-const scene = document.querySelector("a-scene");
-const world = document.getElementById("world");
-const rig = document.getElementById("rig");
-const cam = document.getElementById("cam");
+console.log("🔵 script.js loaded");
+const scene  = document.getElementById("scene");
+const world  = document.getElementById("world");
+const rig    = document.getElementById("rig");
+const cam    = document.getElementById("cam");
 const splash = document.getElementById("splash");
+const status = document.getElementById("status");
+const walkBtn= document.getElementById("walkBtn");
+
+function showStatus(msg, ok=false){
+  status.hidden = false;
+  status.textContent = msg;
+  status.style.borderColor = ok ? "rgba(120,255,180,.35)" : "rgba(255,160,160,.35)";
+  status.style.color = ok ? "#cfffdf" : "#ffdede";
+}
+
+function hideSplash(reason="ready"){
+  if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+  showStatus(`✅ ${reason}`, true);
+}
+
+function failSplash(reason){
+  if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+  showStatus(`❌ ${reason}`, false);
+}
 
 if (!scene || !world || !rig || !cam) {
-  console.error("❌ Scene elements missing – check index.html structure.");
+  console.error("❌ Missing core elements", {scene,world,rig,cam});
+  failSplash("index.html missing #scene/#world/#rig/#cam");
+  throw new Error("Missing DOM nodes");
 }
 
+console.log("🟣 waiting for A-Frame scene ‘loaded’…");
 scene.addEventListener("loaded", () => {
-  console.log("✅ A-Frame scene loaded.");
+  console.log("✅ A-Frame scene loaded");
   try {
     buildWorld();
-    console.log("✅ World built successfully.");
+    console.log("✅ buildWorld complete");
+    hideSplash("World ready");
   } catch (e) {
-    console.error("❌ buildWorld() failed:", e);
+    console.error("❌ buildWorld error", e);
+    failSplash("buildWorld() threw an error (see console)");
   }
-  splash?.remove();
 });
 
-// ============ CONFIG ============
+// Hard timeout: never let splash hang forever
+setTimeout(() => {
+  if (splash && splash.isConnected) {
+    console.warn("⚠️ Splash timeout; forcing removal");
+    hideSplash("Forced start (timeout)");
+  }
+}, 6000);
+
+/* -------------------- CONFIG -------------------- */
 const CFG = {
-  room: 10,
-  wallH: 3,
-  corW: 4,
-  corL: 18,
-  speed: 1.5
+  ROOM: 12,
+  COR_W: 4, COR_L: 18,
+  WALL_H: 3,
+  WALK_SPEED: 1.6
 };
 
-// ============ WORLD ============
-function buildWorld() {
-  addRoom(0, 0, "Main");
-  addCorridor(0, -CFG.corL, "Library");
-  addCorridor(CFG.corL, 0, "LogCabin");
-  addCorridor(-CFG.corL, 0, "SpaceShip");
-  addCorridor(0, CFG.corL, "NeonLab");
-  console.log("✅ Corridors and rooms created.");
+/* -------------------- BUILD --------------------- */
+function buildWorld(){
+  // Lights
+  addLight("ambient", {intensity:0.45, color:"#ffffff"});
+  addLight("point",   {intensity:1.0, distance:60, position:"0 6 0", color:"#ffdca8"});
+
+  // Main square
+  addRoom(0,0,"Main");
+
+  // Corridors + end markers (so we see orientation)
+  addCorridor( 1, 0, "E → Library");     // along +X
+  addCorridor(-1, 0, "W → Log Cabin");   // along -X
+  addCorridor( 0, 1, "S → Neon Lab");    // along +Z
+  addCorridor( 0,-1, "N → Space Ship");  // along -Z
+
+  // End rooms (very simple boxes)
+  const end = CFG.COR_L/2 + CFG.ROOM/2;
+  addSimpleRoom( end, 0, "#2a2f3a"); // East
+  addSimpleRoom(-end, 0, "#3a2f2a"); // West
+  addSimpleRoom(0,  end, "#24402e"); // South
+  addSimpleRoom(0, -end, "#3f3845"); // North
 }
 
-// ============ BUILDERS ============
-function addRoom(x, z, label) {
+function addLight(type, opts={}){
+  const e = document.createElement("a-entity");
+  e.setAttribute("light", Object.entries(opts).reduce((s,[k,v])=>{
+    if (k==="position") { e.setAttribute("position", v); return s; }
+    return s + `${k}:${v};`;
+  }, `type:${type};`));
+  world.appendChild(e);
+}
+
+function addRoom(x,z,label){
   const g = document.createElement("a-entity");
   g.setAttribute("position", `${x} 0 ${z}`);
 
-  const floor = makeBox(CFG.room, 0.1, CFG.room, "#222");
+  // floor: thin box (easier raycast)
+  const floor = document.createElement("a-box");
+  floor.setAttribute("width", CFG.ROOM);
+  floor.setAttribute("depth", CFG.ROOM);
+  floor.setAttribute("height", 0.05);
+  floor.setAttribute("color", "#1e232c");
+  floor.classList.add("teleport");
   g.appendChild(floor);
 
-  const walls = [
-    [0, CFG.wallH / 2, -CFG.room / 2, 0],
-    [0, CFG.wallH / 2, CFG.room / 2, 180],
-    [-CFG.room / 2, CFG.wallH / 2, 0, 90],
-    [CFG.room / 2, CFG.wallH / 2, 0, -90],
-  ];
-  walls.forEach(([wx, wy, wz, ry]) => {
-    const w = makePlane(CFG.room, CFG.wallH, "#333");
-    w.setAttribute("position", `${wx} ${wy} ${wz}`);
-    w.setAttribute("rotation", `0 ${ry} 0`);
-    g.appendChild(w);
-  });
+  // 4 walls
+  const W=CFG.ROOM/2, H=CFG.WALL_H, col="#343b49";
+  g.appendChild(makeWall( 0, H/2,-W,   0, col, CFG.ROOM, H));
+  g.appendChild(makeWall( 0, H/2, W, 180, col, CFG.ROOM, H));
+  g.appendChild(makeWall(-W, H/2, 0,  90, col, CFG.ROOM, H, true));
+  g.appendChild(makeWall( W, H/2, 0, -90, col, CFG.ROOM, H, true));
 
-  const labelText = document.createElement("a-text");
-  labelText.setAttribute("value", label);
-  labelText.setAttribute("color", "#fff");
-  labelText.setAttribute("position", `0 2 0`);
-  labelText.setAttribute("align", "center");
-  g.appendChild(labelText);
+  // label
+  const t = document.createElement("a-text");
+  t.setAttribute("value", label);
+  t.setAttribute("align", "center");
+  t.setAttribute("color", "#cfe9ff");
+  t.setAttribute("position", `0 ${H-0.6} 0`);
+  g.appendChild(t);
 
   world.appendChild(g);
 }
 
-function addCorridor(x, z, name) {
-  const g = document.createElement("a-entity");
-  g.setAttribute("position", `${x} 0 ${z}`);
+function addCorridor(dirX, dirZ, label){
+  // dirX ∈ {-1,0,1}, dirZ ∈ {-1,0,1}
+  const alongX = Math.abs(dirX) === 1;
+  const startX = alongX ? dirX*(CFG.ROOM/2 + CFG.COR_L/2) : 0;
+  const startZ = !alongX ? dirZ*(CFG.ROOM/2 + CFG.COR_L/2) : 0;
 
-  const floor = makeBox(CFG.corW, 0.1, CFG.corL, "#555");
+  const g = document.createElement("a-entity");
+  g.setAttribute("position", `${startX} 0 ${startZ}`);
+
+  // floor box
+  const floor = document.createElement("a-box");
+  floor.setAttribute("width", alongX ? CFG.COR_L : CFG.COR_W);
+  floor.setAttribute("depth", alongX ? CFG.COR_W : CFG.COR_L);
+  floor.setAttribute("height", 0.04);
+  floor.setAttribute("rotation", "0 0 0");
+  floor.setAttribute("color", "#2a2e38");
+  floor.classList.add("teleport");
   g.appendChild(floor);
 
-  const sideWalls = [
-    [-CFG.corW / 2, CFG.wallH / 2, 0, 90],
-    [CFG.corW / 2, CFG.wallH / 2, 0, -90],
-  ];
-  sideWalls.forEach(([wx, wy, wz, ry]) => {
-    const w = makePlane(CFG.corL, CFG.wallH, "#777");
-    w.setAttribute("position", `${wx} ${wy} ${wz}`);
-    w.setAttribute("rotation", `0 ${ry} 0`);
-    g.appendChild(w);
-  });
+  // side walls
+  const halfW = CFG.COR_W/2, H = CFG.WALL_H;
+  if (alongX){
+    g.appendChild(makeWall(0, H/2,  halfW,   0, "#bfa76f", CFG.COR_L, H));
+    g.appendChild(makeWall(0, H/2, -halfW, 180, "#bfa76f", CFG.COR_L, H));
+  }else{
+    g.appendChild(makeWall( halfW, H/2, 0, -90, "#bfa76f", CFG.COR_L, H, true));
+    g.appendChild(makeWall(-halfW, H/2, 0,  90, "#bfa76f", CFG.COR_L, H, true));
+  }
 
-  const endLabel = document.createElement("a-text");
-  endLabel.setAttribute("value", name);
-  endLabel.setAttribute("color", "#ff0");
-  endLabel.setAttribute("position", `0 2 ${CFG.corL / 2}`);
-  endLabel.setAttribute("align", "center");
-  g.appendChild(endLabel);
+  // end label marker
+  const endText = document.createElement("a-text");
+  const ex = alongX ? 0 : 0;
+  const ez = alongX ? 0 : 0;
+  endText.setAttribute("value", label);
+  endText.setAttribute("align", "center");
+  endText.setAttribute("color", "#ffd891");
+  endText.setAttribute("position", `${ex} 1.6 ${alongX ? 0 : 0}`);
+  g.appendChild(endText);
 
   world.appendChild(g);
 }
 
-function makeBox(w, h, d, color) {
-  const e = document.createElement("a-box");
-  e.setAttribute("width", w);
-  e.setAttribute("height", h);
-  e.setAttribute("depth", d);
-  e.setAttribute("color", color);
-  return e;
+function makeWall(x,y,z, yaw, color, w, h, vertical=false){
+  const p = document.createElement("a-plane");
+  p.setAttribute("position", `${x} ${y} ${z}`);
+  p.setAttribute("rotation", `0 ${yaw} 0`);
+  p.setAttribute("width", w);
+  p.setAttribute("height", h);
+  p.setAttribute("color", color);
+  return p;
 }
 
-function makePlane(w, h, color) {
-  const e = document.createElement("a-plane");
-  e.setAttribute("width", w);
-  e.setAttribute("height", h);
-  e.setAttribute("color", color);
-  return e;
+function addSimpleRoom(x,z,color){
+  const g = document.createElement("a-entity");
+  g.setAttribute("position", `${x} 0 ${z}`);
+
+  const floor = document.createElement("a-box");
+  floor.setAttribute("width", CFG.ROOM);
+  floor.setAttribute("depth", CFG.ROOM);
+  floor.setAttribute("height", 0.04);
+  floor.setAttribute("color", color);
+  floor.classList.add("teleport");
+  g.appendChild(floor);
+
+  const W=CFG.ROOM/2, H=CFG.WALL_H;
+  g.appendChild(makeWall( 0, H/2,-W,   0, color, CFG.ROOM, H));
+  g.appendChild(makeWall( 0, H/2, W, 180, color, CFG.ROOM, H));
+  g.appendChild(makeWall(-W, H/2, 0,  90, color, CFG.ROOM, H, true));
+  g.appendChild(makeWall( W, H/2, 0, -90, color, CFG.ROOM, H, true));
+
+  world.appendChild(g);
 }
 
-// ============ MOVEMENT ============
+/* -------------------- MOVEMENT ------------------- */
 let walking = false;
-const walkBtn = document.getElementById("walkBtn");
-
-walkBtn?.addEventListener("click", () => {
+walkBtn.addEventListener("click", () => {
   walking = !walking;
+  walkBtn.classList.toggle("active", walking);
+  walkBtn.textContent = walking ? "Walking…" : "Walk";
   console.log(walking ? "🚶 Walking enabled" : "🛑 Walking stopped");
 });
 
 let last = performance.now();
 scene.addEventListener("tick", () => {
   const now = performance.now();
-  const dt = (now - last) / 1000;
+  const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (walking) moveForward(dt);
 });
 
-function moveForward(dt) {
-  const y = cam.object3D.rotation.y;
-  rig.object3D.position.x += Math.sin(y) * CFG.speed * dt;
-  rig.object3D.position.z += Math.cos(y) * CFG.speed * dt;
+function moveForward(dt){
+  const y = cam.object3D.rotation.y; // radians
+  rig.object3D.position.x += Math.sin(y) * CFG.WALK_SPEED * dt;
+  rig.object3D.position.z += Math.cos(y) * CFG.WALK_SPEED * dt;
 }
-
-// ============ READY ============
-console.log("✅ Diagnostic script.js fully loaded");
