@@ -14,4 +14,9 @@ canvas.a-canvas{display:block!important}
 #brand{position:fixed;left:20px;top:20px;z-index:30}
 #brand img{height:64px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.45))}
 #status{position:fixed;left:20px;top:100px;padding:8px 12px;border-radius:12px;background:var(--hud);border:1px solid var(--hud-bd);z-index:30}
-#min
+#minimap{position:fixed;right:18px;bottom:18px;width:180px;height:180px;border-radius:16px;background:var(--hud);border:1px solid var(--hud-bd);box-shadow:var(--glow);z-index:30}
+#walkBtn{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;padding:12px 22px;border-radius:14px;border:1px solid var(--hud-bd);background:var(--hud);color:#eafff6;font-weight:700;z-index:30;backdrop-filter:blur(6px)}
+#walkBtn.active{background:rgba(32,120,255,.85)}
+
+/* A-Frame helpers */
+.frame:hover{opacity:.95}
