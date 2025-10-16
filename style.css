@@ -1,53 +1,17 @@
-/* Page baseline */
-html, body {
-  margin: 0;
-  height: 100%;
-  background: #0b0c10;
-  color: #eaf6ff;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  overflow: hidden;           /* avoid scrolling that can hide canvas */
+:root{
+  --hud: rgba(16,20,28,.8);
+  --hud-bd: rgba(255,255,255,.14);
+  --glow: 0 10px 30px rgba(0,0,0,.35);
+  --accent:#20a4ff;
 }
+html,body{margin:0;height:100%;background:#0b0c10;color:#eaf6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
 
-/* Pin the scene to the viewport (fixes white page in mono) */
-#scene, a-scene {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  display: block;
-  z-index: 1;                 /* HUD overlays go above this */
-  background: #000;           /* safety background behind canvas */
-}
+/* pin scene to viewport */
+a-scene,#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:1;background:#000}
+canvas.a-canvas{display:block!important}
 
-/* A-Frame sometimes sets inline canvas styles; force display */
-canvas.a-canvas { display: block !important; }
-
-/* Splash */
-#splash {
-  position: fixed; inset: 0;
-  display: grid; place-items: center;
-  background: #0b0c10;
-  color: #cfe9ff; font-weight: 700;
-  z-index: 20;
-}
-
-/* Status strip (errors/success) */
-#status {
-  position: fixed; left: 12px; top: 12px;
-  padding: 8px 12px; border-radius: 10px; z-index: 30;
-  background: rgba(20,24,30,.85);
-  border: 1px solid rgba(255,255,255,.15);
-  box-shadow: 0 8px 24px rgba(0,0,0,.35);
-  font-size: 14px;
-}
-
-/* Walk button */
-#walkBtn{
-  position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: 18px; z-index: 30;
-  border: 1px solid rgba(255,255,255,.15); border-radius: 14px;
-  background: rgba(18,22,28,.7); color: #eafff6;
-  padding: 12px 22px; font-weight: 700;
-  backdrop-filter: blur(6px);
-}
-#walkBtn.active{ background: rgba(32,120,255,.85); }
+/* HUD */
+#brand{position:fixed;left:20px;top:20px;z-index:30}
+#brand img{height:64px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.45))}
+#status{position:fixed;left:20px;top:100px;padding:8px 12px;border-radius:12px;background:var(--hud);border:1px solid var(--hud-bd);z-index:30}
+#min
