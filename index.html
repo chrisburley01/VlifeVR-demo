@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <meta
     name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
   />
   <title>VLife • Diagnostic MWE</title>
-  <link rel="stylesheet" href="styles.css?v=2.52" />
-  <!-- A-Frame MUST load before our script -->
+  <link rel="stylesheet" href="styles.css?v=2.54" />
+  <!-- A-Frame first -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 
@@ -17,19 +17,15 @@
   <div id="splash">Loading VLife…</div>
   <div id="status" hidden></div>
 
-  <!-- Optional logo: comment out if you don’t have the file -->
-  <!-- <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" /> -->
-
   <!-- HUD -->
   <button id="walkBtn">Walk</button>
 
-  <!-- Scene -->
+  <!-- Scene (pinned full-viewport via CSS) -->
   <a-scene
     id="scene"
-    renderer="colorManagement:true;physicallyCorrectLights:true;alpha:false;
-              highRefreshRate:true;antialias:true;powerPreference:high-performance"
-    background="color:#0b0c10"
     embedded
+    renderer="colorManagement:true;physicallyCorrectLights:true;alpha:false;highRefreshRate:true;antialias:true;powerPreference:high-performance"
+    background="color:#0b0c10"
   >
     <a-entity id="world"></a-entity>
 
@@ -44,6 +40,6 @@
   </a-scene>
 
   <!-- Our script LAST -->
-  <script src="script.js?v=2.52"></script>
+  <script src="script.js?v=2.54"></script>
 </body>
 </html>
