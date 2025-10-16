@@ -1,56 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
-/>
-  <title>VLife · Château 2.0</title>
-  <link rel="icon" href="assets/Vlifelogo_1_.png" />
-  <link rel="stylesheet" href="styles.css" />
-  <!-- A-Frame -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VLife Château 2.5</title>
+  <link rel="stylesheet" href="styles.css?v=2.5" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
+
 <body>
-  <!-- UI -->
-  <img class="brand" src="assets/Vlifelogo_1_.png" alt="VLife" />
-  <button id="helpBtn" class="hud help">?</button>
+  <!-- Splash -->
+  <div id="splash">Loading VLife Château 2.5 …</div>
 
-  <div id="minimap" class="hud minimap">
-    <canvas id="miniCanvas" width="256" height="256"></canvas>
-    <div class="mini-title">Minimap</div>
+  <!-- HUD -->
+  <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife logo" />
+  <div id="help">?</div>
+  <div id="minimapContainer" class="minimap">
+    <canvas id="minimap"></canvas>
+    <div>Minimap</div>
   </div>
+  <button id="walkBtn">Walk</button>
+  <button id="vrBtn">VR</button>
 
-  <button id="walkBtn" class="hud walk">Walk</button>
-
-  <!-- Scene -->
-  <a-scene renderer="colorManagement: true; physicallyCorrectLights: true"
-           background="color: #0b0c10">
-    <!-- Lighting -->
-    <a-entity light="type: ambient; intensity: 0.45; color: #ffffff"></a-entity>
-    <a-entity light="type: point; intensity: 0.9; distance: 60" position="0 8 0"></a-entity>
-
-    <!-- Player rig -->
-    <a-entity id="rig" position="0 1.6 0">
-      <a-entity id="cam"
-        camera
-        look-controls
-        wasd-controls="acceleration: 30"
-        raycaster="objects: .teleport, .interact; far: 80; interval: 0"
-        cursor="rayOrigin: mouse">
-        <!-- small ring cursor (visible, but subtle) -->
-        <a-entity id="cursor" position="0 0 -1"
-          geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.016"
-          material="color: #fff; shader: flat; opacity: 0.9">
-        </a-entity>
-      </a-entity>
-    </a-entity>
-
-    <!-- Root for generated world -->
+  <!-- 3D Scene -->
+  <a-scene
+    renderer="colorManagement:true;physicallyCorrectLights:true;alpha:false;
+              highRefreshRate:true;antialias:true;powerPreference:high-performance"
+    background="color:#0b0c10"
+    vr-mode-ui="enabled:true"
+    embedded>
     <a-entity id="world"></a-entity>
+    <a-entity id="rig" position="0 1.6 0">
+      <a-camera id="cam" wasd-controls-enabled="false" look-controls="pointerLockEnabled:false"></a-camera>
+    </a-entity>
   </a-scene>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=2.5"></script>
 </body>
 </html>
