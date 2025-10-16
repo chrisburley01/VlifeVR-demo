@@ -2,45 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>VLife • Château</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+/>
+  <title>VLife · Château 2.0</title>
+  <link rel="icon" href="assets/Vlifelogo_1_.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 <body>
-  <!-- Top UI -->
-  <header class="ui">
-    <img id="vlifeLogo" alt="VLife" src="assets/Vlifelogo_1_.png" />
-    <button id="helpBtn">?</button>
-  </header>
+  <!-- UI -->
+  <img class="brand" src="assets/Vlifelogo_1_.png" alt="VLife" />
+  <button id="helpBtn" class="hud help">?</button>
 
-  <!-- Minimap (now mini + collapsible + non-blocking) -->
-  <div id="minimap" class="collapsed">
-    <canvas id="mapCanvas" width="200" height="200"></canvas>
-    <div class="label">Minimap</div>
-    <button id="mapToggle" title="Toggle map size">⤢</button>
+  <div id="minimap" class="hud minimap">
+    <canvas id="miniCanvas" width="256" height="256"></canvas>
+    <div class="mini-title">Minimap</div>
   </div>
 
-  <!-- Mobile walk button -->
-  <button id="walkBtn" aria-label="Walk forward">Walk</button>
+  <button id="walkBtn" class="hud walk">Walk</button>
 
   <!-- Scene -->
-  <a-scene id="scene" renderer="antialias:true; colorManagement:true; physicallyCorrectLights:true"
-           background="color: #0b0c11">
-    <a-assets>
-      <img id="forestPoster" src="assets/Forrest360.jpg" crossorigin="anonymous" />
-      <canvas id="fallbackPoster" width="64" height="36"></canvas>
-    </a-assets>
+  <a-scene renderer="colorManagement: true; physicallyCorrectLights: true"
+           background="color: #0b0c10">
+    <!-- Lighting -->
+    <a-entity light="type: ambient; intensity: 0.45; color: #ffffff"></a-entity>
+    <a-entity light="type: point; intensity: 0.9; distance: 60" position="0 8 0"></a-entity>
 
+    <!-- Player rig -->
     <a-entity id="rig" position="0 1.6 0">
-      <a-entity id="cam" camera look-controls wasd-controls="acceleration: 20">
-        <a-entity id="cursor" cursor="fuse:true; fuseTimeout:900"
-                  position="0 0 -1" geometry="primitive:ring; radiusInner:0.01; radiusOuter:0.016"
-                  material="color:#ffffff; shader:flat; opacity:0.9"></a-entity>
+      <a-entity id="cam"
+        camera
+        look-controls
+        wasd-controls="acceleration: 30"
+        raycaster="objects: .teleport, .interact; far: 80; interval: 0"
+        cursor="rayOrigin: mouse">
+        <!-- small ring cursor (visible, but subtle) -->
+        <a-entity id="cursor" position="0 0 -1"
+          geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.016"
+          material="color: #fff; shader: flat; opacity: 0.9">
+        </a-entity>
       </a-entity>
     </a-entity>
 
-    <a-entity id="env"></a-entity>
+    <!-- Root for generated world -->
+    <a-entity id="world"></a-entity>
   </a-scene>
 
   <script src="script.js"></script>
