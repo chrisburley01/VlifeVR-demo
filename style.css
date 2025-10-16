@@ -1,21 +1,20 @@
 :root{
-  --hud: rgba(16,20,28,.8);
-  --hud-bd: rgba(255,255,255,.14);
-  --glow: 0 10px 30px rgba(0,0,0,.35);
+  --hud: rgba(16,20,28,.82);
+  --bd:  rgba(255,255,255,.12);
 }
 html,body{margin:0;height:100%;background:#0b0c10;color:#eaf6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
-a-scene,#scene{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:1;background:#000}
 canvas.a-canvas{display:block!important}
 
-#brand{position:fixed;left:20px;top:20px;z-index:30}
-#brand img{height:64px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.45))}
-#status{position:fixed;left:20px;top:100px;padding:8px 12px;border-radius:12px;background:var(--hud);border:1px solid var(--hud-bd);z-index:30}
+/* brand & toast */
+#brand{position:fixed;left:16px;top:16px;z-index:30}
+#brand img{height:64px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.4))}
+#toast{position:fixed;left:16px;top:92px;padding:10px 14px;border-radius:14px;background:var(--hud);border:1px solid var(--bd);z-index:30}
 
-#controls{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;display:flex;gap:10px;z-index:30}
-#controls button{padding:12px 22px;border-radius:14px;border:1px solid var(--hud-bd);background:var(--hud);color:#eafff6;font-weight:700;backdrop-filter:blur(6px)}
-#controls button.ghost{background:rgba(0,0,0,.35)}
-#controls #walkBtn.active{background:rgba(32,120,255,.85)}
+/* HUD buttons */
+#hud{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:10px;z-index:30}
+#hud button{padding:12px 22px;border-radius:14px;border:1px solid var(--bd);background:var(--hud);color:#eafff6;font-weight:700;backdrop-filter:blur(6px)}
+#hud button.ghost{background:rgba(0,0,0,.4)}
+#walkBtn.active{background:rgba(36,116,255,.9)}
 
-#minimap{position:fixed;right:18px;bottom:18px;width:180px;height:180px;border-radius:16px;background:var(--hud);
-  border:1px solid var(--hud-bd);box-shadow:var(--glow);z-index:30}
-.frame:hover{opacity:.95}
+/* minimap */
+#minimap{position:fixed;right:16px;bottom:16px;width:180px;height:180px;border-radius:16px;background:var(--hud);border:1px solid var(--bd);z-index:30}
