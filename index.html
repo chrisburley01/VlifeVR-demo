@@ -2,32 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
   <title>VLife • Château 2.0 (stable)</title>
-  <link rel="stylesheet" href="style.css?v=3.0" />
+  <link rel="stylesheet" href="style.css?v=3.1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 <body>
-  <!-- HUD -->
   <div id="brand"><img src="assets/Vlifelogo_1_.png" alt="VLife" /></div>
   <div id="status" hidden></div>
   <div id="minimap" aria-label="minimap"></div>
   <button id="walkBtn">Walk</button>
 
-  <!-- Scene pinned to viewport by CSS -->
   <a-scene
     id="scene"
     embedded
     background="color:#0b0c10"
     renderer="physicallyCorrectLights:true;antialias:true;colorManagement:true;powerPreference:high-performance"
+    ui-loop
   >
     <a-entity id="world"></a-entity>
 
-    <!-- Player rig -->
-    <a-entity id="rig" position="0 1.6 10">
+    <!-- Player rig uses the new movement component -->
+    <a-entity id="rig" position="0 1.6 10" player-move="speed:1.6; active:false">
       <a-entity id="cam"
         camera
         look-controls="pointerLockEnabled:false"
@@ -36,11 +32,10 @@
       ></a-entity>
     </a-entity>
 
-    <!-- lights -->
     <a-entity light="type:ambient; intensity:0.45; color:#fff"></a-entity>
     <a-entity position="0 6 0" light="type:directional; intensity:1.2; castShadow:true; color:#ffd9b2"></a-entity>
   </a-scene>
 
-  <script src="script.js?v=3.0"></script>
+  <script src="script.js?v=3.1"></script>
 </body>
 </html>
