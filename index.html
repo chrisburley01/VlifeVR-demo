@@ -2,48 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>VLife • Château 2.0</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>VLife • Château</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- A-Frame -->
+  <!-- A-Frame + three.js -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <!-- THREE is exposed by A-Frame -->
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <svg viewBox="0 0 200 60" class="logo"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#73e3ff"/><stop offset="1" stop-color="#7bffb3"/></linearGradient></defs>
-        <text x="0" y="45" font-size="44" font-family="Poppins, Inter, system-ui" fill="url(#g)" font-weight="800">VLife</text>
-      </svg>
-      <span class="tag">Château 2.0</span>
-    </div>
-    <div class="hud">
-      <canvas id="mapCanvas" width="220" height="220"></canvas>
-    </div>
+  <!-- UI: Logo + Help + Minimap -->
+  <header class="ui">
+    <img id="vlifeLogo" alt="VLife" src="assets/Vlifelogo_1_.png" />
+    <button id="helpBtn">?</button>
   </header>
 
-  <a-scene id="scene" renderer="colorManagement: true; physicallyCorrectLights: true; antialias: true" cursor="rayOrigin:mouse" raycaster="objects: .interact, .teleport;">
-    <!-- camera rig -->
-    <a-entity id="rig" position="0 1.6 0" movement-controls="enabled:false">
-      <a-entity id="cam" camera look-controls="pointerLockEnabled:false; touchEnabled:true"></a-entity>
-      <a-entity id="gazeCursor" cursor="fuse: false"></a-entity>
+  <div id="minimap">
+    <canvas id="mapCanvas" width="280" height="280"></canvas>
+    <div class="label">Minimap</div>
+  </div>
+
+  <!-- Scene -->
+  <a-scene id="scene" renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true"
+           background="color: #0b0c11">
+    <!-- Assets (posters used in rooms/frames) -->
+    <a-assets>
+      <img id="forestPoster" src="assets/Forrest360.jpg" crossorigin="anonymous" />
+      <!-- Fallback tiny poster so we never crash if a link thumb fails -->
+      <canvas id="fallbackPoster" width="64" height="36"></canvas>
+    </a-assets>
+
+    <!-- Rig + camera -->
+    <a-entity id="rig" position="0 1.6 0">
+      <a-entity id="cam" camera look-controls wasd-controls="acceleration: 20">
+        <a-entity id="cursor" cursor="fuse: true; fuseTimeout: 900"
+                  position="0 0 -1" geometry="primitive: ring; radiusInner:0.01; radiusOuter:0.016"
+                  material="color: #ffffff; shader: flat; opacity: 0.9">
+        </a-entity>
+      </a-entity>
     </a-entity>
 
-    <!-- world root -->
+    <!-- World root -->
     <a-entity id="env"></a-entity>
-
-    <!-- sky / light -->
-    <a-entity light="type:ambient; intensity:0.35; color:#ffffff"></a-entity>
-    <a-sky color="#0f0f14"></a-sky>
-
-    <!-- fallback poster if any thumb missing -->
-    <a-assets>
-      <img id="fallbackPoster" crossorigin="anonymous"
-           src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='512' height='288'><rect width='100%' height='100%' fill='%2318232e'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23a8c7ff' font-family='Arial' font-size='36'>VLife Link</text></svg>">
-      <!-- Tiny forest image used in Cabin window -->
-      <img id="forestPoster" crossorigin="anonymous"
-           src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='640' height='360'><defs><linearGradient id='s' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='%2387c8ff'/><stop offset='1' stop-color='%237bb36a'/></linearGradient></defs><rect width='100%' height='100%' fill='url(%23s)'/><g fill='%234f8245'><?xml-stylesheet?><rect x='0' y='260' width='640' height='100'/></g></svg>">
-    </a-assets>
   </a-scene>
 
   <script src="script.js"></script>
