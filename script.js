@@ -1,5 +1,4 @@
-
-/* VLife Diagnostic 2.53 — Visible test world */
+/* VLife Diagnostic 2.54 — visible test world + mono fix companion */
 
 console.log("🔵 script.js loaded");
 const scene  = document.getElementById("scene");
@@ -31,12 +30,7 @@ scene.addEventListener("loaded", () => {
 });
 
 /* --------------- CONFIG --------------- */
-const CFG = {
-  ROOM: 12,
-  COR_W: 4, COR_L: 18,
-  WALL_H: 3,
-  WALK_SPEED: 1.6
-};
+const CFG = { WALK_SPEED: 1.6 };
 
 /* --------------- WORLD ---------------- */
 function buildWorld(){
@@ -50,6 +44,7 @@ function buildWorld(){
   ground.setAttribute("width", "100");
   ground.setAttribute("height", "100");
   ground.setAttribute("color", "#222");
+  ground.setAttribute("shadow", "cast:false; receive:true");
   world.appendChild(ground);
 
   // Sky dome
@@ -57,7 +52,7 @@ function buildWorld(){
   sky.setAttribute("color", "#0a0c12");
   world.appendChild(sky);
 
-  // Central cube to ensure visibility
+  // Central cube (always visible)
   const cube = document.createElement("a-box");
   cube.setAttribute("position", "0 1.5 -4");
   cube.setAttribute("depth", "2");
@@ -67,24 +62,23 @@ function buildWorld(){
   cube.setAttribute("shadow", "cast:true; receive:true");
   world.appendChild(cube);
 
-  // Add simple corridor markers
-  addMarker(4, 0, 0, "#f55");
+  // Four coloured markers
+  addMarker(4, 0, 0,  "#f55");
   addMarker(-4, 0, 0, "#5f5");
-  addMarker(0, 0, 4, "#ff5");
+  addMarker(0, 0, 4,  "#ff5");
   addMarker(0, 0, -4, "#55f");
 }
 
 function addLight(type, opts={}){
   const e = document.createElement("a-entity");
-  let lightDef = `type:${type};`;
-  for (const [k,v] of Object.entries(opts)) {
+  let def = `type:${type};`;
+  for (const [k,v] of Object.entries(opts)){
     if (k === "position") e.setAttribute("position", v);
-    else lightDef += `${k}:${v};`;
+    else def += `${k}:${v};`;
   }
-  e.setAttribute("light", lightDef);
+  e.setAttribute("light", def);
   world.appendChild(e);
 }
-
 function addMarker(x,y,z,color){
   const sphere = document.createElement("a-sphere");
   sphere.setAttribute("position", `${x} ${y+1} ${z}`);
