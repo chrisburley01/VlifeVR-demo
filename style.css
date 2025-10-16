@@ -1,49 +1,90 @@
-:root { --glass: rgba(255,255,255,.06); --stroke: rgba(255,255,255,.18); }
-html,body { margin:0; height:100%; background:#0b0c11; color:#dffef3;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+:root {
+  --hud-bg: rgba(18, 22, 28, 0.72);
+  --hud-brd: rgba(255,255,255,0.08);
+  --hud-txt: #d7e9f7;
+  --brand-size: 160px;
+}
 
-a-scene { position: fixed; inset: 0; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* Top bar */
-.ui { position: fixed; left: 16px; top: 16px; right: 16px; display:flex;
-  align-items:center; justify-content:space-between; z-index: 20; pointer-events:none; }
-#vlifeLogo { width:190px; height:auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.5)); }
-#helpBtn {
-  pointer-events:auto;
-  width:46px; height:46px; border-radius:12px; border:1px solid var(--stroke);
-  background:var(--glass); color:#dffef3; font-size:20px; font-weight:700; cursor:pointer;
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #0b0c10;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+.hud {
+  position: fixed;
+  z-index: 5;
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--hud-brd);
+  border-radius: 14px;
+  color: var(--hud-txt);
+  background: var(--hud-bg);
 }
 
-/* Minimap – non-blocking by default */
-#minimap{
-  position: fixed; right: 18px; bottom: 94px; z-index: 20;
-  border-radius: 16px; border:1px solid var(--stroke); background: var(--glass);
-  backdrop-filter: blur(8px); box-shadow: 0 12px 30px rgba(0,0,0,.35);
-  pointer-events:none; /* let taps pass through to scene */
-}
-#mapCanvas { display:block; width:180px; height:180px; margin:10px; }
-#minimap .label { text-align:center; color:#c9d9ff; font-weight:600; padding:0 0 8px; }
-
-/* Expand/collapse button is the only clickable part */
-#mapToggle{
-  pointer-events:auto;
-  position:absolute; top:6px; left:6px; width:28px; height:28px; border-radius:8px;
-  border:1px solid var(--stroke); background:rgba(0,0,0,.25); color:#e9f4ff; cursor:pointer;
+/* Brand */
+.brand {
+  position: fixed;
+  z-index: 6;
+  left: 18px;
+  top: 18px;
+  width: var(--brand-size);
+  height: auto;
+  background: rgba(0,0,0,0.18);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
 }
 
-/* collapsed = smaller true “mini” */
-#minimap.collapsed #mapCanvas { width:120px; height:120px; }
-#minimap.collapsed { border-radius:14px; }
+/* Help */
+.help {
+  right: 16px;
+  top: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  font-size: 20px;
+}
+
+/* Minimap */
+.minimap {
+  right: 16px;
+  bottom: 110px;
+  width: 230px;
+  padding: 10px 10px 6px 10px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+.minimap canvas {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: #000;
+}
+.mini-title {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 6px;
+  opacity: 0.85;
+}
 
 /* Walk button */
-#walkBtn{
-  position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: 18px; z-index: 20; width: 90px; height: 46px; border-radius: 14px;
-  border:1px solid var(--stroke); background: var(--glass); color:#eafff6;
-  font-weight:700; letter-spacing:.02em; backdrop-filter: blur(8px); cursor:pointer;
-  user-select:none;
+.walk {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 24px;
+  padding: 14px 28px;
+  font-size: 18px;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.35);
 }
 
-/* Prevent accidental selection on touch */
-* { -webkit-tap-highlight-color: transparent; }
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  :root { --brand-size: 140px; }
+  .minimap { width: 200px; bottom: 100px; }
+  .walk { font-size: 16px; padding: 12px 24px; }
+}
