@@ -2,47 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-  <title>VLife • Château 2.0 (movement fixed)</title>
-  <link rel="stylesheet" href="style.css?v=3.2" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no" />
+  <title>VLife • Château 2.1</title>
+  <link rel="stylesheet" href="style.css?v=2.1" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 <body>
   <div id="brand"><img src="assets/Vlifelogo_1_.png" alt="VLife" /></div>
-  <div id="status" hidden></div>
+  <div id="toast">World ready</div>
 
-  <!-- HUD controls -->
-  <div id="controls">
+  <div id="hud">
     <button id="backBtn" class="ghost">Back</button>
     <button id="walkBtn">Walk</button>
+    <button id="flipBtn" class="ghost" title="Flip forward/back">Flip</button>
   </div>
 
-  <div id="minimap" aria-label="minimap"></div>
+  <div id="minimap"><canvas id="mm" width="180" height="180"></canvas></div>
 
-  <a-scene
-    id="scene"
-    embedded
-    background="color:#0b0c10"
-    renderer="physicallyCorrectLights:true;antialias:true;colorManagement:true;powerPreference:high-performance"
-    ui-loop
-  >
+  <a-scene id="scene"
+           background="color:#0b0c10"
+           renderer="physicallyCorrectLights:true;antialias:true;colorManagement:true"
+           ui-loop>
     <a-entity id="world"></a-entity>
 
-    <!-- Player rig uses the movement component -->
+    <!-- Player rig (movement+collisions handled in script.js) -->
     <a-entity id="rig" position="0 1.6 10"
-              player-move="speed:1.6; active:false; invert:true">
+              player-move="speed:1.6; forwardSign:1; active:false; back:false">
       <a-entity id="cam"
-        camera
-        look-controls="pointerLockEnabled:false"
-        cursor="rayOrigin: mouse"
-        raycaster="objects: .frame; far: 50; interval: 0">
+                camera
+                look-controls="pointerLockEnabled:false"
+                cursor="rayOrigin: mouse">
       </a-entity>
     </a-entity>
 
+    <!-- Lights -->
     <a-entity light="type:ambient; intensity:0.45; color:#fff"></a-entity>
     <a-entity position="0 6 0" light="type:directional; intensity:1.2; castShadow:true; color:#ffd9b2"></a-entity>
   </a-scene>
 
-  <script src="script.js?v=3.2"></script>
+  <script src="script.js?v=2.1"></script>
 </body>
 </html>
