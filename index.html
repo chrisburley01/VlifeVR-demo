@@ -1,40 +1,49 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VLife Château 2.5</title>
-  <link rel="stylesheet" href="styles.css?v=2.5" />
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+  />
+  <title>VLife • Diagnostic MWE</title>
+  <link rel="stylesheet" href="styles.css?v=2.52" />
+  <!-- A-Frame MUST load before our script -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 
 <body>
-  <!-- Splash -->
-  <div id="splash">Loading VLife Château 2.5 …</div>
+  <!-- Splash / Status -->
+  <div id="splash">Loading VLife…</div>
+  <div id="status" hidden></div>
+
+  <!-- Optional logo: comment out if you don’t have the file -->
+  <!-- <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife" /> -->
 
   <!-- HUD -->
-  <img id="logo" src="assets/Vlifelogo_1_.png" alt="VLife logo" />
-  <div id="help">?</div>
-  <div id="minimapContainer" class="minimap">
-    <canvas id="minimap"></canvas>
-    <div>Minimap</div>
-  </div>
   <button id="walkBtn">Walk</button>
-  <button id="vrBtn">VR</button>
 
-  <!-- 3D Scene -->
+  <!-- Scene -->
   <a-scene
+    id="scene"
     renderer="colorManagement:true;physicallyCorrectLights:true;alpha:false;
               highRefreshRate:true;antialias:true;powerPreference:high-performance"
     background="color:#0b0c10"
-    vr-mode-ui="enabled:true"
-    embedded>
+    embedded
+  >
     <a-entity id="world"></a-entity>
+
     <a-entity id="rig" position="0 1.6 0">
-      <a-camera id="cam" wasd-controls-enabled="false" look-controls="pointerLockEnabled:false"></a-camera>
+      <a-entity id="cam"
+        camera
+        look-controls="pointerLockEnabled:false"
+        raycaster="objects: .teleport, .interact; far: 80; interval: 0"
+        cursor="rayOrigin: mouse"
+      ></a-entity>
     </a-entity>
   </a-scene>
 
-  <script src="script.js?v=2.5"></script>
+  <!-- Our script LAST -->
+  <script src="script.js?v=2.52"></script>
 </body>
 </html>
