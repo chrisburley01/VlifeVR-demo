@@ -2,34 +2,45 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-  <title>VLife • Diagnostic MWE</title>
-  <link rel="stylesheet" href="style.css?v=2.54" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+  />
+  <title>VLife • Château 2.0 (stable)</title>
+  <link rel="stylesheet" href="style.css?v=3.0" />
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 </head>
 <body>
-  <div id="splash">Loading VLife…</div>
+  <!-- HUD -->
+  <div id="brand"><img src="assets/Vlifelogo_1_.png" alt="VLife" /></div>
   <div id="status" hidden></div>
-
+  <div id="minimap" aria-label="minimap"></div>
   <button id="walkBtn">Walk</button>
 
+  <!-- Scene pinned to viewport by CSS -->
   <a-scene
     id="scene"
     embedded
-    renderer="colorManagement:true;physicallyCorrectLights:true;alpha:false;highRefreshRate:true;antialias:true;powerPreference:high-performance"
     background="color:#0b0c10"
+    renderer="physicallyCorrectLights:true;antialias:true;colorManagement:true;powerPreference:high-performance"
   >
     <a-entity id="world"></a-entity>
-    <a-entity id="rig" position="0 1.6 0">
+
+    <!-- Player rig -->
+    <a-entity id="rig" position="0 1.6 10">
       <a-entity id="cam"
         camera
         look-controls="pointerLockEnabled:false"
-        raycaster="objects: .teleport, .interact; far: 80; interval: 0"
         cursor="rayOrigin: mouse"
+        raycaster="objects: .frame; far: 50; interval: 0"
       ></a-entity>
     </a-entity>
+
+    <!-- lights -->
+    <a-entity light="type:ambient; intensity:0.45; color:#fff"></a-entity>
+    <a-entity position="0 6 0" light="type:directional; intensity:1.2; castShadow:true; color:#ffd9b2"></a-entity>
   </a-scene>
 
-  <script src="script.js?v=2.54"></script>
+  <script src="script.js?v=3.0"></script>
 </body>
 </html>
